@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { PerformanceChart } from "@/components/dashboard/performance-chart"
 import { PlayerRatings } from "@/components/dashboard/player-ratings"
 import { TeamRadarChart } from "@/components/dashboard/team-radar-chart"
@@ -39,18 +39,6 @@ const viewTitles: Record<string, string> = {
 }
 
 function SnsFooter() {
-  useEffect(() => {
-    // X (Twitter) ウィジェットを読み込む
-    const script = document.createElement("script")
-    script.src = "https://platform.twitter.com/widgets.js"
-    script.async = true
-    script.charset = "utf-8"
-    document.body.appendChild(script)
-    return () => {
-      document.body.removeChild(script)
-    }
-  }, [])
-
   return (
     <div className="mt-8 pt-6 border-t border-border">
       <div className="grid grid-cols-2 gap-6">
@@ -65,20 +53,16 @@ function SnsFooter() {
               </svg>
             </div>
             <span className="text-sm font-semibold text-foreground">Instagram</span>
-            <a
-              href="https://www.instagram.com/vonds.ichihara/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-auto text-xs text-muted-foreground hover:text-primary transition-colors"
-            >
+            <a href="https://www.instagram.com/vonds.ichihara/" target="_blank" rel="noopener noreferrer"
+              className="ml-auto text-xs text-muted-foreground hover:text-primary transition-colors">
               @vonds.ichihara →
             </a>
           </div>
-          <div className="rounded-lg border border-border overflow-hidden bg-card" style={{minHeight: '400px'}}>
+          <div className="rounded-lg border border-border overflow-hidden" style={{height: '450px'}}>
             <iframe
               src="https://www.instagram.com/vonds.ichihara/embed/"
               width="100%"
-              height="400"
+              height="450"
               frameBorder="0"
               scrolling="no"
               allowTransparency={true}
@@ -96,25 +80,20 @@ function SnsFooter() {
               </svg>
             </div>
             <span className="text-sm font-semibold text-foreground">X (Twitter)</span>
-            <a
-              href="https://x.com/VondsTeam"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-auto text-xs text-muted-foreground hover:text-primary transition-colors"
-            >
+            <a href="https://x.com/VondsTeam" target="_blank" rel="noopener noreferrer"
+              className="ml-auto text-xs text-muted-foreground hover:text-primary transition-colors">
               @VondsTeam →
             </a>
           </div>
-          <div className="rounded-lg border border-border overflow-hidden bg-card" style={{minHeight: '400px'}}>
-            <a
-              className="twitter-timeline"
-              data-lang="ja"
-              data-height="400"
-              data-theme="light"
-              href="https://twitter.com/VondsTeam"
-            >
-              Tweets by VondsTeam
-            </a>
+          <div className="rounded-lg border border-border overflow-hidden bg-white" style={{height: '450px'}}>
+            <iframe
+              src="https://syndication.twitter.com/srv/timeline-profile/screen-name/VondsTeam?dnt=false&embedId=twitter-widget-0&lang=ja&showHeader=true&showReplies=false&transparent=false&widgetsVersion=2615f7e52b7e0%3A1702314776716"
+              width="100%"
+              height="450"
+              frameBorder="0"
+              scrolling="yes"
+              className="block"
+            />
           </div>
         </div>
       </div>
@@ -128,11 +107,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
-      {/* サイドバー */}
-      <div
-        className={`flex flex-col h-full border-r border-border bg-[hsl(var(--sidebar-background))] transition-all duration-200 ${collapsed ? "w-[56px]" : "w-[200px]"}`}
-      >
-        {/* ロゴ */}
+      <div className={`flex flex-col h-full border-r border-border bg-[hsl(var(--sidebar-background))] transition-all duration-200 ${collapsed ? "w-[56px]" : "w-[200px]"}`}>
         <div className={`flex items-center border-b border-border ${collapsed ? "justify-center px-2 py-3" : "gap-3 px-4 py-3"}`}>
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-white border border-border">
             <Image src="/vonds-logo.png" alt="VONDS市原" width={44} height={44} className="object-contain" />
@@ -144,77 +119,50 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-
-        {/* メインメニュー */}
         <div className="flex-1 overflow-y-auto py-3">
           {!collapsed && <p className="px-4 py-1 text-xs font-medium text-muted-foreground">メインメニュー</p>}
           <nav className="mt-1">
             {mainMenuItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveView(item.id)}
-                title={collapsed ? item.label : undefined}
+              <button key={item.id} onClick={() => setActiveView(item.id)} title={collapsed ? item.label : undefined}
                 className={`flex w-full items-center gap-3 py-2 text-sm transition-colors
                   ${collapsed ? "justify-center px-0" : "px-4"}
-                  ${activeView === item.id ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-accent"}`}
-              >
+                  ${activeView === item.id ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-accent"}`}>
                 <item.icon className="h-4 w-4 shrink-0" />
                 {!collapsed && item.label}
               </button>
             ))}
           </nav>
         </div>
-
-        {/* フッター */}
         <div className="border-t border-border py-2">
-          <button
-            title={collapsed ? "設定" : undefined}
-            className={`flex w-full items-center gap-3 py-2 text-sm text-foreground hover:bg-accent ${collapsed ? "justify-center px-0" : "px-4"}`}
-          >
+          <button title={collapsed ? "設定" : undefined}
+            className={`flex w-full items-center gap-3 py-2 text-sm text-foreground hover:bg-accent ${collapsed ? "justify-center px-0" : "px-4"}`}>
             <Settings className="h-4 w-4 shrink-0" />
             {!collapsed && "設定"}
           </button>
         </div>
       </div>
 
-      {/* メインコンテンツ */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* ヘッダー */}
         <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-          >
+          <button onClick={() => setCollapsed(!collapsed)}
+            className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
             {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
           </button>
           <h1 className="text-lg font-semibold">{viewTitles[activeView] || "ダッシュボード"}</h1>
-          <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground">
-            <span>2025-26</span>
-          </div>
+          <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground"><span>2025-26</span></div>
         </header>
 
-        {/* コンテンツ */}
         <main className="flex-1 overflow-auto p-6">
           {activeView === "overview" && (
             <div className="space-y-6">
               <MatchInfoCard />
-              <div className="grid gap-6 lg:grid-cols-2">
-                <LeagueStandings />
-                <TargetProgress />
-              </div>
-              <div className="grid gap-6 lg:grid-cols-2">
-                <PlayerRatings />
-                <RecentMatches />
-              </div>
+              <div className="grid gap-6 lg:grid-cols-2"><LeagueStandings /><TargetProgress /></div>
+              <div className="grid gap-6 lg:grid-cols-2"><PlayerRatings /><RecentMatches /></div>
               <SnsFooter />
             </div>
           )}
           {activeView === "players" && (
-            <div className="space-y-6">
-              <UpcomingMatches />
-              <PlayerCardsGrid />
-              <SnsFooter />
-            </div>
+            <div className="space-y-6"><UpcomingMatches /><PlayerCardsGrid /><SnsFooter /></div>
           )}
           {activeView === "official-matches" && (
             <div className="space-y-6"><OfficialMatches /><SnsFooter /></div>
