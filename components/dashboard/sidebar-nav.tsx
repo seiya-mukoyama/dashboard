@@ -11,6 +11,7 @@ import {
   ChevronDown,
   Dumbbell,
   Medal,
+  Calendar,
 } from "lucide-react"
 import {
   Sidebar,
@@ -36,16 +37,17 @@ interface SidebarNavProps {
 }
 
 const mainMenuItems = [
-  { id: "overview", label: "概要", icon: LayoutDashboard },
-  { id: "players", label: "選手評価", icon: Users },
-  { id: "team", label: "チーム分析", icon: Shield },
+  { id: "overview", label: "チーム", icon: LayoutDashboard },
+  { id: "players", label: "選手", icon: Users },
   { id: "official-matches", label: "公式戦", icon: Medal },
   { id: "training-matches", label: "トレーニングマッチ", icon: Dumbbell },
+  { id: "training", label: "トレーニング", icon: Target },
+  { id: "events", label: "イベント", icon: Calendar },
 ]
 
 const analysisItems = [
   { id: "performance", label: "パフォーマンス", icon: TrendingUp },
-  { id: "goals", label: "ゴール分析", icon: Target },
+  { id: "goals", label: "ゴール分析", icon: Shield },
 ]
 
 export function SidebarNav({ activeView, onViewChange }: SidebarNavProps) {
@@ -53,12 +55,12 @@ export function SidebarNav({ activeView, onViewChange }: SidebarNavProps) {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border pb-4">
         <div className="flex items-center gap-3 px-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Trophy className="h-5 w-5 text-primary-foreground" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg overflow-hidden bg-white border border-border">
+            <div style={{fontSize:'20px',fontWeight:'bold',color:'#16a34a'}}>V</div>
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-semibold text-sidebar-foreground">
-              FC Analytics
+              VONDS市原
             </span>
             <span className="text-xs text-muted-foreground">
               2025-26 シーズン
