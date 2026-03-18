@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { PerformanceChart } from "@/components/dashboard/performance-chart"
 import { PlayerRatings } from "@/components/dashboard/player-ratings"
 import { TeamRadarChart } from "@/components/dashboard/team-radar-chart"
@@ -39,45 +39,85 @@ const viewTitles: Record<string, string> = {
 }
 
 function SnsFooter() {
-  return (
-    <div className="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-border">
-      {/* Instagram */}
-      <a
-        href="https://www.instagram.com/vonds.ichihara/"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors group"
-      >
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-            <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-          </svg>
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">Instagram</p>
-          <p className="text-xs text-muted-foreground">@vonds.ichihara</p>
-        </div>
-      </a>
+  useEffect(() => {
+    // X (Twitter) ウィジェットを読み込む
+    const script = document.createElement("script")
+    script.src = "https://platform.twitter.com/widgets.js"
+    script.async = true
+    script.charset = "utf-8"
+    document.body.appendChild(script)
+    return () => {
+      document.body.removeChild(script)
+    }
+  }, [])
 
-      {/* X (Twitter) */}
-      <a
-        href="https://x.com/VondsTeam"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors group"
-      >
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="white">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.632 5.905-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-          </svg>
-        </div>
+  return (
+    <div className="mt-8 pt-6 border-t border-border">
+      <div className="grid grid-cols-2 gap-6">
+        {/* Instagram */}
         <div>
-          <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">X (Twitter)</p>
-          <p className="text-xs text-muted-foreground">@VondsTeam</p>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+              </svg>
+            </div>
+            <span className="text-sm font-semibold text-foreground">Instagram</span>
+            <a
+              href="https://www.instagram.com/vonds.ichihara/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto text-xs text-muted-foreground hover:text-primary transition-colors"
+            >
+              @vonds.ichihara →
+            </a>
+          </div>
+          <div className="rounded-lg border border-border overflow-hidden bg-card" style={{minHeight: '400px'}}>
+            <iframe
+              src="https://www.instagram.com/vonds.ichihara/embed/"
+              width="100%"
+              height="400"
+              frameBorder="0"
+              scrolling="no"
+              allowTransparency={true}
+              className="block"
+            />
+          </div>
         </div>
-      </a>
+
+        {/* X (Twitter) */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="white">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.632 5.905-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            </div>
+            <span className="text-sm font-semibold text-foreground">X (Twitter)</span>
+            <a
+              href="https://x.com/VondsTeam"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto text-xs text-muted-foreground hover:text-primary transition-colors"
+            >
+              @VondsTeam →
+            </a>
+          </div>
+          <div className="rounded-lg border border-border overflow-hidden bg-card" style={{minHeight: '400px'}}>
+            <a
+              className="twitter-timeline"
+              data-lang="ja"
+              data-height="400"
+              data-theme="light"
+              href="https://twitter.com/VondsTeam"
+            >
+              Tweets by VondsTeam
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -177,28 +217,16 @@ export default function DashboardPage() {
             </div>
           )}
           {activeView === "official-matches" && (
-            <div className="space-y-6">
-              <OfficialMatches />
-              <SnsFooter />
-            </div>
+            <div className="space-y-6"><OfficialMatches /><SnsFooter /></div>
           )}
           {activeView === "training-matches" && (
-            <div className="space-y-6">
-              <TrainingMatches />
-              <SnsFooter />
-            </div>
+            <div className="space-y-6"><TrainingMatches /><SnsFooter /></div>
           )}
           {activeView === "training" && (
-            <div className="space-y-6">
-              <StatsCards />
-              <SnsFooter />
-            </div>
+            <div className="space-y-6"><StatsCards /><SnsFooter /></div>
           )}
           {activeView === "events" && (
-            <div className="space-y-6">
-              <UpcomingMatches />
-              <SnsFooter />
-            </div>
+            <div className="space-y-6"><UpcomingMatches /><SnsFooter /></div>
           )}
         </main>
       </div>
