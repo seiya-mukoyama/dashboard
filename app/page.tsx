@@ -92,8 +92,61 @@ export default function DashboardPage() {
           </nav>
         </div>
 
-        {/* フッター */}
+        {/* フッター：SNS + 設定 */}
         <div className="border-t border-border py-2">
+          {/* SNSリンク */}
+          {!collapsed && (
+            <div className="flex items-center justify-between px-4 py-2">
+              {/* Instagram */}
+              <a
+                href="https://www.instagram.com/vonds_ichihara/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                title="Instagram"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+                </svg>
+                <span>Instagram</span>
+              </a>
+              {/* X (Twitter) */}
+              <a
+                href="https://twitter.com/vonds_ichihara"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                title="X (Twitter)"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.632 5.905-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+                <span>X</span>
+              </a>
+            </div>
+          )}
+          {collapsed && (
+            <div className="flex flex-col items-center gap-1 py-1">
+              <a href="https://www.instagram.com/vonds_ichihara/" target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
+                title="Instagram">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+                </svg>
+              </a>
+              <a href="https://twitter.com/vonds_ichihara" target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
+                title="X (Twitter)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.632 5.905-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+              </a>
+            </div>
+          )}
           <button
             title={collapsed ? "設定" : undefined}
             className={`flex w-full items-center gap-3 py-2 text-sm text-foreground hover:bg-accent
@@ -109,7 +162,6 @@ export default function DashboardPage() {
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* ヘッダー */}
         <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
-          {/* 折りたたみボタン */}
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
