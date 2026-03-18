@@ -81,7 +81,7 @@ export const trainingMatches = [
   },
 ]
 
-const resultColors = {
+const resultColors: Record<string, string> = {
   win: "bg-primary text-primary-foreground",
   draw: "bg-chart-3 text-foreground",
   loss: "bg-destructive text-destructive-foreground",
@@ -93,7 +93,7 @@ const resultLabels = {
   loss: "敗",
 }
 
-const typeColors = {
+const typeColors: Record<string, string> = {
   紅白戦: "bg-chart-5/20 text-chart-5 border-chart-5/30",
   練習試合: "bg-chart-2/20 text-chart-2 border-chart-2/30",
   キャンプ試合: "bg-chart-4/20 text-chart-4 border-chart-4/30",
