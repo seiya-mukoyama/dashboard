@@ -32,10 +32,12 @@ const viewTitles: Record<string, string> = {
 
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState("overview")
+  const [sidebarOpen, setSidebarOpen] = useState(true)
 
   return (
     <SidebarProvider
-      defaultOpen={true}
+      open={sidebarOpen}
+      onOpenChange={setSidebarOpen}
       style={{ "--sidebar-width": "200px" } as React.CSSProperties}
     >
       <SidebarNav activeView={activeView} onViewChange={setActiveView} />
