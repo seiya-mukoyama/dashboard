@@ -38,6 +38,50 @@ const viewTitles: Record<string, string> = {
   events: "イベント",
 }
 
+function SnsFooter() {
+  return (
+    <div className="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-border">
+      {/* Instagram */}
+      <a
+        href="https://www.instagram.com/vonds.ichihara/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors group"
+      >
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+            <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+          </svg>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">Instagram</p>
+          <p className="text-xs text-muted-foreground">@vonds.ichihara</p>
+        </div>
+      </a>
+
+      {/* X (Twitter) */}
+      <a
+        href="https://x.com/VondsTeam"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors group"
+      >
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="white">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.632 5.905-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">X (Twitter)</p>
+          <p className="text-xs text-muted-foreground">@VondsTeam</p>
+        </div>
+      </a>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState("overview")
   const [collapsed, setCollapsed] = useState(false)
@@ -51,13 +95,7 @@ export default function DashboardPage() {
         {/* ロゴ */}
         <div className={`flex items-center border-b border-border ${collapsed ? "justify-center px-2 py-3" : "gap-3 px-4 py-3"}`}>
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-white border border-border">
-            <Image
-              src="/vonds-logo.png"
-              alt="VONDS市原"
-              width={44}
-              height={44}
-              className="object-contain"
-            />
+            <Image src="/vonds-logo.png" alt="VONDS市原" width={44} height={44} className="object-contain" />
           </div>
           {!collapsed && (
             <div>
@@ -69,9 +107,7 @@ export default function DashboardPage() {
 
         {/* メインメニュー */}
         <div className="flex-1 overflow-y-auto py-3">
-          {!collapsed && (
-            <p className="px-4 py-1 text-xs font-medium text-muted-foreground">メインメニュー</p>
-          )}
+          {!collapsed && <p className="px-4 py-1 text-xs font-medium text-muted-foreground">メインメニュー</p>}
           <nav className="mt-1">
             {mainMenuItems.map((item) => (
               <button
@@ -80,10 +116,7 @@ export default function DashboardPage() {
                 title={collapsed ? item.label : undefined}
                 className={`flex w-full items-center gap-3 py-2 text-sm transition-colors
                   ${collapsed ? "justify-center px-0" : "px-4"}
-                  ${activeView === item.id
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-foreground hover:bg-accent"
-                  }`}
+                  ${activeView === item.id ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-accent"}`}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
                 {!collapsed && item.label}
@@ -92,65 +125,11 @@ export default function DashboardPage() {
           </nav>
         </div>
 
-        {/* フッター：SNS + 設定 */}
+        {/* フッター */}
         <div className="border-t border-border py-2">
-          {/* SNSリンク */}
-          {!collapsed && (
-            <div className="flex items-center justify-between px-4 py-2">
-              {/* Instagram */}
-              <a
-                href="https://www.instagram.com/vonds_ichihara/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                title="Instagram"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-                </svg>
-                <span>Instagram</span>
-              </a>
-              {/* X (Twitter) */}
-              <a
-                href="https://twitter.com/vonds_ichihara"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                title="X (Twitter)"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.632 5.905-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-                <span>X</span>
-              </a>
-            </div>
-          )}
-          {collapsed && (
-            <div className="flex flex-col items-center gap-1 py-1">
-              <a href="https://www.instagram.com/vonds_ichihara/" target="_blank" rel="noopener noreferrer"
-                className="flex items-center justify-center w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
-                title="Instagram">
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-                </svg>
-              </a>
-              <a href="https://twitter.com/vonds_ichihara" target="_blank" rel="noopener noreferrer"
-                className="flex items-center justify-center w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
-                title="X (Twitter)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.632 5.905-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-              </a>
-            </div>
-          )}
           <button
             title={collapsed ? "設定" : undefined}
-            className={`flex w-full items-center gap-3 py-2 text-sm text-foreground hover:bg-accent
-              ${collapsed ? "justify-center px-0" : "px-4"}`}
+            className={`flex w-full items-center gap-3 py-2 text-sm text-foreground hover:bg-accent ${collapsed ? "justify-center px-0" : "px-4"}`}
           >
             <Settings className="h-4 w-4 shrink-0" />
             {!collapsed && "設定"}
@@ -165,12 +144,8 @@ export default function DashboardPage() {
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-            title={collapsed ? "サイドバーを開く" : "サイドバーをたたむ"}
           >
-            {collapsed
-              ? <PanelLeftOpen className="h-5 w-5" />
-              : <PanelLeftClose className="h-5 w-5" />
-            }
+            {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
           </button>
           <h1 className="text-lg font-semibold">{viewTitles[activeView] || "ダッシュボード"}</h1>
           <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground">
@@ -191,18 +166,40 @@ export default function DashboardPage() {
                 <PlayerRatings />
                 <RecentMatches />
               </div>
+              <SnsFooter />
             </div>
           )}
           {activeView === "players" && (
             <div className="space-y-6">
               <UpcomingMatches />
               <PlayerCardsGrid />
+              <SnsFooter />
             </div>
           )}
-          {activeView === "official-matches" && <OfficialMatches />}
-          {activeView === "training-matches" && <TrainingMatches />}
-          {activeView === "training" && <StatsCards />}
-          {activeView === "events" && <UpcomingMatches />}
+          {activeView === "official-matches" && (
+            <div className="space-y-6">
+              <OfficialMatches />
+              <SnsFooter />
+            </div>
+          )}
+          {activeView === "training-matches" && (
+            <div className="space-y-6">
+              <TrainingMatches />
+              <SnsFooter />
+            </div>
+          )}
+          {activeView === "training" && (
+            <div className="space-y-6">
+              <StatsCards />
+              <SnsFooter />
+            </div>
+          )}
+          {activeView === "events" && (
+            <div className="space-y-6">
+              <UpcomingMatches />
+              <SnsFooter />
+            </div>
+          )}
         </main>
       </div>
     </div>
