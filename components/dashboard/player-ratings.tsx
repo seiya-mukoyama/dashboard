@@ -53,14 +53,14 @@ const players = [
   },
 ]
 
-const formColors = {
+const formColors: Record<string, string> = {
   excellent: "bg-primary text-primary-foreground",
   good: "bg-chart-2 text-background",
   average: "bg-chart-3 text-background",
   poor: "bg-destructive text-destructive-foreground",
 }
 
-const formLabels = {
+const formLabels: Record<string, string> = {
   excellent: "絶好調",
   good: "好調",
   average: "普通",
