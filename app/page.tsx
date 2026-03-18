@@ -16,8 +16,9 @@ import { UpcomingMatches } from "@/components/dashboard/upcoming-matches"
 import { StatsCards } from "@/components/dashboard/stats-cards"
 import {
   LayoutDashboard, Users, Medal, Dumbbell, Target, Calendar,
-  TrendingUp, Shield, Settings, ChevronDown, Trophy,
+  Settings, ChevronLeft, ChevronRight,
 } from "lucide-react"
+import Image from "next/image"
 
 const mainMenuItems = [
   { id: "overview", label: "チーム", icon: LayoutDashboard },
@@ -28,97 +29,90 @@ const mainMenuItems = [
   { id: "events", label: "イベント", icon: Calendar },
 ]
 
-const analysisItems = [
-  { id: "performance", label: "パフォーマンス", icon: TrendingUp },
-  { id: "goals", label: "ゴール分析", icon: Shield },
-]
-
 const viewTitles: Record<string, string> = {
   overview: "チーム",
   players: "選手",
-  team: "チーム分析",
   "official-matches": "公式戦",
   "training-matches": "トレーニングマッチ",
   training: "トレーニング",
   events: "イベント",
-  performance: "パフォーマンス分析",
-  goals: "ゴール分析",
 }
 
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState("overview")
-  const [analysisOpen, setAnalysisOpen] = useState(true)
+  const [collapsed, setCollapsed] = useState(false)
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
       {/* サイドバー */}
-      <div className="w-[200px] shrink-0 flex flex-col h-full border-r border-border bg-[hsl(var(--sidebar-background))]">
+      <div
+        className={`flex flex-col h-full border-r border-border bg-[hsl(var(--sidebar-background))] transition-all duration-200 ${collapsed ? "w-[56px]" : "w-[200px]"}`}
+      >
         {/* ロゴ */}
-        <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary">
-            <Trophy className="h-5 w-5 text-primary-foreground" />
+        <div className={`flex items-center border-b border-border ${collapsed ? "justify-center px-2 py-3" : "gap-3 px-4 py-3"}`}>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-white border border-border">
+            <Image
+              src="/vonds-logo.png"
+              alt="VONDS市原"
+              width={36}
+              height={36}
+              className="object-contain"
+              onError={() => {}}
+            />
           </div>
-          <div>
-            <p className="text-sm font-bold text-foreground">VONDS市原</p>
-            <p className="text-xs text-muted-foreground">2025-26 シーズン</p>
-          </div>
+          {!collapsed && (
+            <div>
+              <p className="text-sm font-bold text-foreground leading-tight">VONDS市原</p>
+              <p className="text-xs text-muted-foreground">2025-26 シーズン</p>
+            </div>
+          )}
         </div>
 
         {/* メインメニュー */}
         <div className="flex-1 overflow-y-auto py-3">
-          <p className="px-4 py-1 text-xs font-medium text-muted-foreground">メインメニュー</p>
+          {!collapsed && (
+            <p className="px-4 py-1 text-xs font-medium text-muted-foreground">メインメニュー</p>
+          )}
           <nav className="mt-1">
             {mainMenuItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActiveView(item.id)}
-                className={`flex w-full items-center gap-3 px-4 py-2 text-sm transition-colors
+                title={collapsed ? item.label : undefined}
+                className={`flex w-full items-center gap-3 py-2 text-sm transition-colors
+                  ${collapsed ? "justify-center px-0" : "px-4"}
                   ${activeView === item.id
                     ? "bg-primary/10 text-primary font-medium"
                     : "text-foreground hover:bg-accent"
                   }`}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
-                {item.label}
+                {!collapsed && item.label}
               </button>
             ))}
           </nav>
-
-          {/* 詳細分析 */}
-          <div className="mt-3">
-            <button
-              onClick={() => setAnalysisOpen(!analysisOpen)}
-              className="flex w-full items-center justify-between px-4 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-            >
-              <span>詳細分析</span>
-              <ChevronDown className={`h-3 w-3 transition-transform ${analysisOpen ? "rotate-180" : ""}`} />
-            </button>
-            {analysisOpen && (
-              <nav className="mt-1">
-                {analysisItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveView(item.id)}
-                    className={`flex w-full items-center gap-3 px-4 py-2 text-sm transition-colors
-                      ${activeView === item.id
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-foreground hover:bg-accent"
-                      }`}
-                  >
-                    <item.icon className="h-4 w-4 shrink-0" />
-                    {item.label}
-                  </button>
-                ))}
-              </nav>
-            )}
-          </div>
         </div>
 
         {/* フッター */}
-        <div className="border-t border-border py-3">
-          <button className="flex w-full items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-accent">
+        <div className="border-t border-border py-2">
+          <button
+            title={collapsed ? "設定" : undefined}
+            className={`flex w-full items-center gap-3 py-2 text-sm text-foreground hover:bg-accent
+              ${collapsed ? "justify-center px-0" : "px-4"}`}
+          >
             <Settings className="h-4 w-4 shrink-0" />
-            設定
+            {!collapsed && "設定"}
+          </button>
+          {/* 折りたたみボタン */}
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className={`flex w-full items-center gap-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground
+              ${collapsed ? "justify-center px-0" : "px-4"}`}
+          >
+            {collapsed
+              ? <ChevronRight className="h-4 w-4 shrink-0" />
+              : <><ChevronLeft className="h-4 w-4 shrink-0" /><span>たたむ</span></>
+            }
           </button>
         </div>
       </div>
@@ -158,25 +152,6 @@ export default function DashboardPage() {
           {activeView === "training-matches" && <TrainingMatches />}
           {activeView === "training" && <StatsCards />}
           {activeView === "events" && <UpcomingMatches />}
-          {activeView === "performance" && (
-            <div className="space-y-6">
-              <StatsCards />
-              <PerformanceChart />
-              <div className="grid gap-6 lg:grid-cols-2">
-                <TeamRadarChart />
-                <GoalsChart />
-              </div>
-            </div>
-          )}
-          {activeView === "goals" && (
-            <div className="space-y-6">
-              <StatsCards />
-              <div className="grid gap-6 lg:grid-cols-2">
-                <GoalsChart />
-                <PlayerRatings />
-              </div>
-            </div>
-          )}
         </main>
       </div>
     </div>
