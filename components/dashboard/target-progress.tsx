@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { TrendingUp, TrendingDown, Trophy, Goal, ShieldX, Users } from "lucide-react"
+import { TrendingUp, TrendingDown, Trophy, Goal, ShieldX, Users, Timer } from "lucide-react"
 
 const targets = [
   {
@@ -34,6 +34,14 @@ const targets = [
     inverse: true,
   },
   {
+    label: "平均APT",
+    current: 28.5,
+    target: 32,
+    icon: Timer,
+    description: "平均アクチュアルプレーイングタイム（多いほど良い）",
+    isApt: true,
+  },
+  {
     label: "平均観客動員数",
     current: 28500,
     target: 35000,
@@ -55,7 +63,6 @@ export function TargetProgress() {
           {targets.map((item) => {
             const Icon = item.icon
             let progress: number
-            let expectedCurrent: number
             let diff: number
             let isOnTrack: boolean
 
@@ -63,15 +70,19 @@ export function TargetProgress() {
               progress = (item.current / item.target) * 100
               diff = item.current - item.target
               isOnTrack = item.current >= item.target * 0.9
+            } else if (item.isApt) {
+              progress = (item.current / item.target) * 100
+              diff = item.current - item.target
+              isOnTrack = item.current >= item.target * 0.9
             } else if (item.inverse) {
               const expectedRate = item.target / item.totalGames!
-              expectedCurrent = Math.round(expectedRate * item.season!)
+              const expectedCurrent = Math.round(expectedRate * item.season!)
               diff = expectedCurrent - item.current
               isOnTrack = item.current <= expectedCurrent
               progress = Math.min(100, ((item.target - item.current) / item.target) * 100)
             } else {
               const expectedRate = item.target / item.totalGames!
-              expectedCurrent = Math.round(expectedRate * item.season!)
+              const expectedCurrent = Math.round(expectedRate * item.season!)
               diff = item.current - expectedCurrent
               isOnTrack = item.current >= expectedCurrent
               progress = (item.current / item.target) * 100
@@ -92,10 +103,18 @@ export function TargetProgress() {
                   <div className="text-right">
                     <div className="flex items-center gap-2">
                       <span className="text-lg font-bold text-card-foreground">
-                        {item.isAttendance ? item.current.toLocaleString() : item.current}
+                        {item.isAttendance
+                          ? item.current.toLocaleString()
+                          : item.isApt
+                          ? `${item.current}分`
+                          : item.current}
                       </span>
                       <span className="text-sm text-muted-foreground">
-                        / {item.isAttendance ? item.target.toLocaleString() : item.target}
+                        / {item.isAttendance
+                          ? item.target.toLocaleString()
+                          : item.isApt
+                          ? `${item.target}分`
+                          : item.target}
                       </span>
                     </div>
                     <div className="flex items-center justify-end gap-1 mt-0.5">
@@ -104,15 +123,15 @@ export function TargetProgress() {
                       ) : (
                         <TrendingDown className="h-3 w-3 text-destructive" />
                       )}
-                      <span
-                        className={`text-xs font-medium ${
-                          isOnTrack ? "text-primary" : "text-destructive"
-                        }`}
-                      >
+                      <span className={`text-xs font-medium ${isOnTrack ? "text-primary" : "text-destructive"}`}>
                         {item.isAttendance
                           ? diff >= 0
                             ? `+${diff.toLocaleString()}人`
                             : `${diff.toLocaleString()}人`
+                          : item.isApt
+                          ? diff >= 0
+                            ? `+${diff.toFixed(1)}分`
+                            : `${diff.toFixed(1)}分`
                           : item.inverse
                           ? diff >= 0
                             ? `${Math.abs(diff)}点少ない`
