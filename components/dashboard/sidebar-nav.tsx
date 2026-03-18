@@ -52,17 +52,17 @@ const analysisItems = [
 
 export function SidebarNav({ activeView, onViewChange }: SidebarNavProps) {
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border pb-4">
-        <div className="flex items-center gap-3 px-2">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg overflow-hidden bg-white border border-border">
-            <div style={{fontSize:'20px',fontWeight:'bold',color:'#16a34a'}}>V</div>
+        <div className="flex items-center gap-3 px-2 pt-2">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary">
+            <Trophy className="h-6 w-6 text-primary-foreground" />
           </div>
-          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-semibold text-sidebar-foreground">
+          <div className="flex flex-col min-w-0">
+            <span className="text-sm font-bold text-sidebar-foreground truncate">
               VONDS市原
             </span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-muted-foreground truncate">
               2025-26 シーズン
             </span>
           </div>
