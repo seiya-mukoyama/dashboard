@@ -34,7 +34,10 @@ export default function DashboardPage() {
   const [activeView, setActiveView] = useState("overview")
 
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider
+      defaultOpen={true}
+      style={{ "--sidebar-width": "200px" } as React.CSSProperties}
+    >
       <SidebarNav activeView={activeView} onViewChange={setActiveView} />
       <SidebarInset>
         <Header title={viewTitles[activeView] || "ダッシュボード"} />
@@ -52,14 +55,12 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
-
           {activeView === "players" && (
             <div className="space-y-6">
               <UpcomingMatches />
               <PlayerCardsGrid />
             </div>
           )}
-
           {activeView === "team" && (
             <div className="space-y-6">
               <StatsCards />
@@ -70,31 +71,26 @@ export default function DashboardPage() {
               <LeagueStandings />
             </div>
           )}
-
           {activeView === "official-matches" && (
             <div className="space-y-6">
               <OfficialMatches />
             </div>
           )}
-
           {activeView === "training-matches" && (
             <div className="space-y-6">
               <TrainingMatches />
             </div>
           )}
-
           {activeView === "training" && (
             <div className="space-y-6">
               <StatsCards />
             </div>
           )}
-
           {activeView === "events" && (
             <div className="space-y-6">
               <UpcomingMatches />
             </div>
           )}
-
           {activeView === "performance" && (
             <div className="space-y-6">
               <StatsCards />
@@ -105,7 +101,6 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
-
           {activeView === "goals" && (
             <div className="space-y-6">
               <StatsCards />
