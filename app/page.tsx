@@ -16,7 +16,7 @@ import { UpcomingMatches } from "@/components/dashboard/upcoming-matches"
 import { StatsCards } from "@/components/dashboard/stats-cards"
 import {
   LayoutDashboard, Users, Medal, Dumbbell, Target, Calendar,
-  Settings, ChevronLeft, ChevronRight,
+  Settings, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -50,14 +50,13 @@ export default function DashboardPage() {
       >
         {/* ロゴ */}
         <div className={`flex items-center border-b border-border ${collapsed ? "justify-center px-2 py-3" : "gap-3 px-4 py-3"}`}>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-white border border-border">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-white border border-border">
             <Image
               src="/vonds-logo.png"
               alt="VONDS市原"
-              width={36}
-              height={36}
+              width={44}
+              height={44}
               className="object-contain"
-              onError={() => {}}
             />
           </div>
           {!collapsed && (
@@ -103,26 +102,26 @@ export default function DashboardPage() {
             <Settings className="h-4 w-4 shrink-0" />
             {!collapsed && "設定"}
           </button>
-          {/* 折りたたみボタン */}
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className={`flex w-full items-center gap-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground
-              ${collapsed ? "justify-center px-0" : "px-4"}`}
-          >
-            {collapsed
-              ? <ChevronRight className="h-4 w-4 shrink-0" />
-              : <><ChevronLeft className="h-4 w-4 shrink-0" /><span>たたむ</span></>
-            }
-          </button>
         </div>
       </div>
 
       {/* メインコンテンツ */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* ヘッダー */}
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
+        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
+          {/* 折りたたみボタン */}
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            title={collapsed ? "サイドバーを開く" : "サイドバーをたたむ"}
+          >
+            {collapsed
+              ? <PanelLeftOpen className="h-5 w-5" />
+              : <PanelLeftClose className="h-5 w-5" />
+            }
+          </button>
           <h1 className="text-lg font-semibold">{viewTitles[activeView] || "ダッシュボード"}</h1>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground">
             <span>2025-26</span>
           </div>
         </header>
