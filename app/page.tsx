@@ -19,11 +19,13 @@ import { UpcomingMatches } from "@/components/dashboard/upcoming-matches"
 import { StatsCards } from "@/components/dashboard/stats-cards"
 
 const viewTitles: Record<string, string> = {
-  overview: "ダッシュボード概要",
-  players: "選手評価",
+  overview: "チーム",
+  players: "選手",
   team: "チーム分析",
   "official-matches": "公式戦",
   "training-matches": "トレーニングマッチ",
+  training: "トレーニング",
+  events: "イベント",
   performance: "パフォーマンス分析",
   goals: "ゴール分析",
 }
@@ -32,7 +34,7 @@ export default function DashboardPage() {
   const [activeView, setActiveView] = useState("overview")
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <SidebarNav activeView={activeView} onViewChange={setActiveView} />
       <SidebarInset>
         <Header title={viewTitles[activeView] || "ダッシュボード"} />
@@ -78,6 +80,18 @@ export default function DashboardPage() {
           {activeView === "training-matches" && (
             <div className="space-y-6">
               <TrainingMatches />
+            </div>
+          )}
+
+          {activeView === "training" && (
+            <div className="space-y-6">
+              <StatsCards />
+            </div>
+          )}
+
+          {activeView === "events" && (
+            <div className="space-y-6">
+              <UpcomingMatches />
             </div>
           )}
 
