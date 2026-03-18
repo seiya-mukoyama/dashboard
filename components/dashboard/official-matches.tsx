@@ -109,7 +109,7 @@ export const officialMatches = [
   },
 ]
 
-const resultColors = {
+const resultColors: Record<string, string> = {
   win: "bg-primary text-primary-foreground",
   draw: "bg-chart-3 text-foreground",
   loss: "bg-destructive text-destructive-foreground",
