@@ -13,7 +13,7 @@ import { PlayerCardsGrid, type Player } from "@/components/dashboard/player-card
 import {
   LayoutDashboard, Users, Medal, Dumbbell, Target, Calendar,
   Settings, PanelLeftClose, PanelLeftOpen, Heart, Repeat2,
-  ArrowLeft, ExternalLink,
+  ArrowLeft, ExternalLink, Cake, Ruler, Weight,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -131,7 +131,6 @@ function SnsFooter() {
   )
 }
 
-// 選手詳細ページ
 function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }) {
   return (
     <div className="space-y-6">
@@ -140,10 +139,11 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
         <ArrowLeft className="h-4 w-4" />
         選手一覧に戻る
       </button>
-      <div className="grid gap-6 lg:grid-cols-3">
+
+      <div className="grid gap-8 lg:grid-cols-3">
         {/* 選手写真 */}
         <div className="lg:col-span-1">
-          <div className="relative bg-gradient-to-b from-[hsl(142,72%,85%)] to-[hsl(142,72%,94%)] rounded-xl overflow-hidden aspect-square">
+          <div className="relative bg-gradient-to-b from-[hsl(142,72%,85%)] to-[hsl(142,72%,94%)] rounded-2xl overflow-hidden aspect-square shadow-sm">
             <Image
               src={player.image}
               alt={player.name}
@@ -156,28 +156,50 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
                 {player.position}
               </span>
             </div>
-            <div className="absolute top-3 right-3 text-4xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-              {player.number}
-            </div>
           </div>
         </div>
 
         {/* 選手情報 */}
-        <div className="lg:col-span-2 space-y-4">
-          <div>
-            <p className="text-sm text-muted-foreground">背番号 {player.number}</p>
-            <h2 className="text-3xl font-bold text-foreground mt-1">{player.name}</h2>
-            <p className="text-lg text-muted-foreground mt-1">{player.nameEn}</p>
+        <div className="lg:col-span-2 space-y-5">
+          {/* 名前 */}
+          <div className="border-b border-border pb-4">
+            <h2 className="text-3xl font-bold text-foreground">{player.name}</h2>
+            <p className="text-base text-muted-foreground mt-1">{player.nameEn}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-card border border-border p-4">
-              <p className="text-xs text-muted-foreground mb-1">ポジション</p>
-              <p className="text-lg font-bold text-foreground">{player.position}</p>
+          {/* 基本情報グリッド */}
+          <div className="grid grid-cols-3 gap-3">
+            {/* 生年月日 */}
+            <div className="rounded-xl bg-card border border-border p-4 space-y-1">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Cake className="h-3.5 w-3.5" />
+                <span className="text-xs">生年月日</span>
+              </div>
+              <p className="text-base font-semibold text-foreground">
+                {player.birthdate || "—"}
+              </p>
             </div>
-            <div className="rounded-lg bg-card border border-border p-4">
-              <p className="text-xs text-muted-foreground mb-1">背番号</p>
-              <p className="text-lg font-bold text-foreground">{player.number}</p>
+
+            {/* 身長 */}
+            <div className="rounded-xl bg-card border border-border p-4 space-y-1">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Ruler className="h-3.5 w-3.5" />
+                <span className="text-xs">身長</span>
+              </div>
+              <p className="text-base font-semibold text-foreground">
+                {player.height ? `${player.height} cm` : "—"}
+              </p>
+            </div>
+
+            {/* 体重 */}
+            <div className="rounded-xl bg-card border border-border p-4 space-y-1">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Weight className="h-3.5 w-3.5" />
+                <span className="text-xs">体重</span>
+              </div>
+              <p className="text-base font-semibold text-foreground">
+                {player.weight ? `${player.weight} kg` : "—"}
+              </p>
             </div>
           </div>
 
