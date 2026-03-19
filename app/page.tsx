@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState } from "react"
 import { LeagueStandings } from "@/components/dashboard/league-standings"
 import { TargetProgress } from "@/components/dashboard/target-progress"
 import { PlayerRatings } from "@/components/dashboard/player-ratings"
@@ -13,7 +13,7 @@ import { UpcomingMatches } from "@/components/dashboard/upcoming-matches"
 import { PlayerCardsGrid } from "@/components/dashboard/player-cards-grid"
 import {
   LayoutDashboard, Users, Medal, Dumbbell, Target, Calendar,
-  Settings, PanelLeftClose, PanelLeftOpen,
+  Settings, PanelLeftClose, PanelLeftOpen, ExternalLink,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -35,44 +35,30 @@ const viewTitles: Record<string, string> = {
   events: "イベント",
 }
 
-function XTimeline() {
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const loadWidget = () => {
-      if (typeof window !== "undefined" && (window as any).twttr?.widgets) {
-        if (containerRef.current) {
-          containerRef.current.innerHTML = ""
-          const anchor = document.createElement("a")
-          anchor.className = "twitter-timeline"
-          anchor.setAttribute("data-lang", "ja")
-          anchor.setAttribute("data-height", "450")
-          anchor.setAttribute("data-theme", "light")
-          anchor.setAttribute("data-chrome", "noheader nofooter")
-          anchor.href = "https://twitter.com/VondsTeam"
-          anchor.textContent = "Tweets by VondsTeam"
-          containerRef.current.appendChild(anchor)
-          ;(window as any).twttr.widgets.load(containerRef.current)
-        }
-      }
-    }
-
-    const existing = document.getElementById("twitter-widget-script")
-    if (existing) {
-      loadWidget()
-    } else {
-      const script = document.createElement("script")
-      script.id = "twitter-widget-script"
-      script.src = "https://platform.twitter.com/widgets.js"
-      script.async = true
-      script.charset = "utf-8"
-      script.onload = loadWidget
-      document.body.appendChild(script)
-    }
-  }, [])
-
-  return <div ref={containerRef} className="w-full" style={{ minHeight: 450 }} />
-}
+// X の直近ポストサンプル（実際はAPIから取得予定）
+const xPosts = [
+  {
+    id: 1,
+    text: "【試合結果】JFLカップ 第1節\nVONDS市原FC 2-1 いわてグルージャ盛岡\n\n初戦勝利！次節も応援よろしくお願いします⚽️🟡",
+    date: "3月22日",
+    likes: 142,
+    retweets: 38,
+  },
+  {
+    id: 2,
+    text: "【選手紹介】MF 山本 健選手\n今シーズンも精力的なプレーに期待！\n#VONDS市原 #JFL",
+    date: "3月20日",
+    likes: 89,
+    retweets: 21,
+  },
+  {
+    id: 3,
+    text: "本日のトレーニングの様子をお届け📸\n開幕に向けて仕上がってきています！\n#VONDS市原 #JFL2026",
+    date: "3月19日",
+    likes: 67,
+    retweets: 15,
+  },
+]
 
 function SnsFooter() {
   return (
@@ -121,8 +107,36 @@ function SnsFooter() {
               @VondsTeam →
             </a>
           </div>
-          <div className="rounded-lg border border-border overflow-hidden">
-            <XTimeline />
+          <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
+            {xPosts.map((post) => (
+              <a
+                key={post.id}
+                href="https://x.com/VondsTeam"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col gap-2 p-4 bg-card hover:bg-accent transition-colors group"
+              >
+                <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">
+                  {post.text}
+                </p>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-xs text-muted-foreground">{post.date}</span>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span>♥ {post.likes}</span>
+                    <span>↺ {post.retweets}</span>
+                    <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+              </a>
+            ))}
+            <a
+              href="https://x.com/VondsTeam"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 p-3 bg-card hover:bg-accent transition-colors text-xs text-muted-foreground hover:text-primary"
+            >
+              X でもっと見る →
+            </a>
           </div>
         </div>
       </div>
