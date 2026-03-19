@@ -54,19 +54,18 @@ const xPosts = [
   { id: 8, text: "新体制発表！今シーズンも熱いサッカーをお届けします⚽\n監督・選手一同、全力で戦います！\n#VONDS市原 #2026シーズン", date: "3月10日", likes: 445, retweets: 132 },
 ]
 
-// スタッツ項目の定義
 const STATS_CONFIG = [
-  { key: "packingRate",   label: "パッキングレート", unit: "",    color: "text-blue-600" },
-  { key: "pReceive",      label: "Pレシーブ",         unit: "",    color: "text-blue-400" },
-  { key: "impect",        label: "インペクト",         unit: "",    color: "text-purple-600" },
-  { key: "iReceive",      label: "Iレシーブ",          unit: "",    color: "text-purple-400" },
-  { key: "maxSpeed",      label: "最大速度",           unit: "km/h", color: "text-orange-500" },
-  { key: "hiDistance",    label: "HI",                unit: "m",   color: "text-red-500" },
-  { key: "playTime",      label: "出場時間",           unit: "分",  color: "text-gray-600" },
-  { key: "goals",         label: "ゴール",             unit: "",    color: "text-green-600" },
-  { key: "assists",       label: "アシスト",           unit: "",    color: "text-green-500" },
-  { key: "preAssists",    label: "プレアシスト",       unit: "",    color: "text-teal-500" },
-  { key: "lineBreaks",    label: "ラインブレイク",     unit: "",    color: "text-indigo-500" },
+  { key: "packingRate", label: "パッキングレート", unit: "",    color: "text-blue-600" },
+  { key: "pReceive",   label: "Pレシーブ",        unit: "",    color: "text-blue-400" },
+  { key: "impect",     label: "インペクト",        unit: "",    color: "text-purple-600" },
+  { key: "iReceive",   label: "Iレシーブ",         unit: "",    color: "text-purple-400" },
+  { key: "maxSpeed",   label: "最大速度",          unit: "km/h", color: "text-orange-500" },
+  { key: "hiDistance", label: "HI",               unit: "m",   color: "text-red-500" },
+  { key: "playTime",   label: "出場時間",          unit: "分",  color: "text-gray-600" },
+  { key: "goals",      label: "ゴール",            unit: "",    color: "text-green-600" },
+  { key: "assists",    label: "アシスト",          unit: "",    color: "text-green-500" },
+  { key: "preAssists", label: "プレアシスト",      unit: "",    color: "text-teal-500" },
+  { key: "lineBreaks", label: "ラインブレイク",    unit: "",    color: "text-indigo-500" },
 ]
 
 type PlayerStats = {
@@ -85,9 +84,9 @@ type PlayerStats = {
 
 function StatCard({ label, value, unit, color }: { label: string; value: number | null; unit: string; color: string }) {
   return (
-    <div className="rounded-xl bg-card border border-border p-4 space-y-1">
-      <p className={`text-xs text-muted-foreground`}>{label}</p>
-      <p className={`text-xl font-bold ${value !== null ? color : "text-muted-foreground"}`}>
+    <div className="rounded-xl bg-card border border-border p-3 space-y-0.5">
+      <p className="text-xs text-muted-foreground leading-tight">{label}</p>
+      <p className={`text-lg font-bold ${value !== null ? color : "text-muted-foreground"}`}>
         {value !== null ? `${value}${unit ? " " + unit : ""}` : "—"}
       </p>
     </div>
@@ -200,7 +199,6 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
       .catch(() => {})
   }, [player.name])
 
-  // 最大速度はAPIから取得、それ以外は将来のスプレッドシート連携まで—表示
   const displayStats: PlayerStats = { ...stats, maxSpeed }
 
   return (
@@ -211,8 +209,10 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
         選手一覧に戻る
       </button>
 
-      {/* プロフィール */}
-      <div className="grid gap-8 lg:grid-cols-3">
+      {/* 左：写真　右：情報 */}
+      <div className="grid gap-6 lg:grid-cols-3">
+
+        {/* 写真 */}
         <div className="lg:col-span-1">
           <div className="relative bg-gradient-to-b from-[hsl(142,72%,85%)] to-[hsl(142,72%,94%)] rounded-2xl overflow-hidden aspect-square shadow-sm">
             <Image src={player.image} alt={player.name} fill
@@ -225,80 +225,84 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
           </div>
         </div>
 
-        <div className="lg:col-span-2 space-y-5">
-          <div className="border-b border-border pb-4">
-            <h2 className="text-3xl font-bold text-foreground">{player.name}</h2>
-            <p className="text-base text-muted-foreground mt-1">{player.nameEn}</p>
+        {/* 右：名前 + 基本情報 + 最大速度 + スタッツ */}
+        <div className="lg:col-span-2 space-y-4">
+
+          {/* 名前行：名前（小さめ）+ 公式サイトリンク（右寄せ） */}
+          <div className="flex items-start justify-between gap-3 border-b border-border pb-3">
+            <div>
+              <h2 className="text-xl font-bold text-foreground">{player.name}</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">{player.nameEn}</p>
+            </div>
+            {player.profileUrl && (
+              <a href={player.profileUrl} target="_blank" rel="noopener noreferrer"
+                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-xs text-foreground">
+                <ExternalLink className="h-3.5 w-3.5" />
+                公式サイトで詳細を見る
+              </a>
+            )}
           </div>
 
-          {/* 基本情報 */}
-          <div className="grid grid-cols-4 gap-3">
-            <div className="rounded-xl bg-card border border-border p-4 space-y-1">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Cake className="h-3.5 w-3.5" />
+          {/* 生年月日・年齢・身長・体重 */}
+          <div className="grid grid-cols-4 gap-2">
+            <div className="rounded-xl bg-card border border-border p-3 space-y-0.5">
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Cake className="h-3 w-3" />
                 <span className="text-xs">生年月日</span>
               </div>
-              <p className="text-base font-semibold text-foreground">{player.birthdate || "—"}</p>
+              <p className="text-sm font-semibold text-foreground">{player.birthdate || "—"}</p>
             </div>
-            <div className="rounded-xl bg-card border border-border p-4 space-y-1">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Users className="h-3.5 w-3.5" />
+            <div className="rounded-xl bg-card border border-border p-3 space-y-0.5">
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Users className="h-3 w-3" />
                 <span className="text-xs">年齢</span>
               </div>
-              <p className="text-base font-semibold text-foreground">{age !== null ? `${age}歳` : "—"}</p>
+              <p className="text-sm font-semibold text-foreground">{age !== null ? `${age}歳` : "—"}</p>
             </div>
-            <div className="rounded-xl bg-card border border-border p-4 space-y-1">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Ruler className="h-3.5 w-3.5" />
+            <div className="rounded-xl bg-card border border-border p-3 space-y-0.5">
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Ruler className="h-3 w-3" />
                 <span className="text-xs">身長</span>
               </div>
-              <p className="text-base font-semibold text-foreground">{player.height ? `${player.height} cm` : "—"}</p>
+              <p className="text-sm font-semibold text-foreground">{player.height ? `${player.height} cm` : "—"}</p>
             </div>
-            <div className="rounded-xl bg-card border border-border p-4 space-y-1">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Weight className="h-3.5 w-3.5" />
+            <div className="rounded-xl bg-card border border-border p-3 space-y-0.5">
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Weight className="h-3 w-3" />
                 <span className="text-xs">体重</span>
               </div>
-              <p className="text-base font-semibold text-foreground">{player.weight ? `${player.weight} kg` : "—"}</p>
+              <p className="text-sm font-semibold text-foreground">{player.weight ? `${player.weight} kg` : "—"}</p>
             </div>
           </div>
 
-          {/* 最大速度 */}
-          <div className="rounded-xl bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 p-4 flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 text-white shrink-0">
-              <Zap className="h-5 w-5" />
+          {/* 最大速度バナー */}
+          <div className="rounded-xl bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 p-3 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-500 text-white shrink-0">
+              <Zap className="h-4 w-4" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">最大速度（シーズン最高記録）</p>
-              <p className="text-2xl font-black text-orange-500">
+              <p className="text-xl font-black text-orange-500">
                 {maxSpeed !== null ? `${maxSpeed} km/h` : "— km/h"}
               </p>
             </div>
           </div>
 
-          {player.profileUrl && (
-            <a href={player.profileUrl} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-sm text-foreground">
-              <ExternalLink className="h-4 w-4" />
-              公式サイトで詳細を見る
-            </a>
-          )}
-        </div>
-      </div>
-
-      {/* スタッツ 4カラム */}
-      <div className="rounded-xl border border-border bg-card p-5">
-        <h3 className="text-sm font-semibold text-foreground mb-4">スタッツ</h3>
-        <div className="grid grid-cols-4 gap-3">
-          {STATS_CONFIG.filter(s => s.key !== "maxSpeed").map(({ key, label, unit, color }) => (
-            <StatCard
-              key={key}
-              label={label}
-              value={displayStats[key as keyof PlayerStats]}
-              unit={unit}
-              color={color}
-            />
-          ))}
+          {/* スタッツ 4カラム */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-2">スタッツ</p>
+            <div className="grid grid-cols-4 gap-2">
+              {STATS_CONFIG.filter(s => s.key !== "maxSpeed").map(({ key, label, unit, color }) => (
+                <StatCard
+                  key={key}
+                  label={label}
+                  value={displayStats[key as keyof PlayerStats]}
+                  unit={unit}
+                  color={color}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
