@@ -3,10 +3,13 @@ import { NextResponse } from "next/server"
 const SHEET_ID = "1vnHF5iHJkirI6PhUzD3isKmdkz6Vani4aQfItMgL80k"
 const GID = "0"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export async function GET() {
   try {
     const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`
-    const res = await fetch(url, { next: { revalidate: 3600 } })
+    const res = await fetch(url, { cache: "no-store" })
     if (!res.ok) throw new Error("Failed to fetch sheet")
     const csv = await res.text()
 
