@@ -10,6 +10,7 @@ import { TrainingMatches } from "@/components/dashboard/training-matches"
 import { StatsCards } from "@/components/dashboard/stats-cards"
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches"
 import { PlayerCardsGrid, type Player } from "@/components/dashboard/player-cards-grid"
+import { BodyCompositionChart } from "@/components/dashboard/body-composition-chart"
 import {
   LayoutDashboard, Users, Medal, Dumbbell, Target, Calendar,
   Settings, PanelLeftClose, PanelLeftOpen, Heart, Repeat2,
@@ -153,6 +154,7 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
         選手一覧に戻る
       </button>
 
+      {/* プロフィール */}
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-1">
           <div className="relative bg-gradient-to-b from-[hsl(142,72%,85%)] to-[hsl(142,72%,94%)] rounded-2xl overflow-hidden aspect-square shadow-sm">
@@ -180,17 +182,13 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
               </div>
               <p className="text-base font-semibold text-foreground">{player.birthdate || "—"}</p>
             </div>
-
             <div className="rounded-xl bg-card border border-border p-4 space-y-1">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Users className="h-3.5 w-3.5" />
                 <span className="text-xs">年齢</span>
               </div>
-              <p className="text-base font-semibold text-foreground">
-                {age !== null ? `${age}歳` : "—"}
-              </p>
+              <p className="text-base font-semibold text-foreground">{age !== null ? `${age}歳` : "—"}</p>
             </div>
-
             <div className="rounded-xl bg-card border border-border p-4 space-y-1">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Ruler className="h-3.5 w-3.5" />
@@ -200,7 +198,6 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
                 {player.height ? `${player.height} cm` : "—"}
               </p>
             </div>
-
             <div className="rounded-xl bg-card border border-border p-4 space-y-1">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Weight className="h-3.5 w-3.5" />
@@ -220,6 +217,12 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
             </a>
           )}
         </div>
+      </div>
+
+      {/* 体組成推移グラフ */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h3 className="text-sm font-semibold text-foreground mb-4">体組成推移</h3>
+        <BodyCompositionChart playerName={player.name} />
       </div>
     </div>
   )
