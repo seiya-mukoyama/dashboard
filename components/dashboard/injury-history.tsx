@@ -1,36 +1,20 @@
 "use client"
-
 import { useEffect, useState } from "react"
 import { AlertTriangle } from "lucide-react"
-
-type InjuryRecord = {
-  date: string
-  type: string
-  duration: string
-  status: "recovering" | "recovered"
-}
-
-type Props = {
-  playerName: string
-}
-
+type InjuryRecord = { date: string; type: string; duration: string; status: "recovering" | "recovered" }
+type Props = { playerName: string }
 export function InjuryHistory({ playerName }: Props) {
   const [injuries, setInjuries] = useState<InjuryRecord[]>([])
   const [loading, setLoading] = useState(true)
-
   useEffect(() => {
     if (!playerName) return
     setLoading(true)
     fetch(`/api/injuries?playerName=${encodeURIComponent(playerName)}`)
-      .then(r => r.json())
-      .then(data => setInjuries(Array.isArray(data) ? data : []))
-      .catch(() => setInjuries([]))
-      .finally(() => setLoading(false))
+      .then(r => r.json()).then(data => setInjuries(Array.isArray(data) ? data : []))
+      .catch(() => setInjuries([])).finally(() => setLoading(false))
   }, [playerName])
-
   if (loading) return <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">読み込み中...</div>
   if (injuries.length === 0) return <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">怪我の記録はありません</div>
-
   return (
     <div className="space-y-2">
       {injuries.map((injury, i) => (

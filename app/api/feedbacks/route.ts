@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
-
 const SHEET_ID = process.env.SHEET_ID
 const API_KEY = process.env.GOOGLE_API_KEY
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const playerName = searchParams.get("playerName")
@@ -14,19 +12,7 @@ export async function GET(request: Request) {
     if (!res.ok) return NextResponse.json([])
     const json = await res.json()
     const rows: string[][] = json.values ?? []
-    const validCategories = ["technical", "physical", "mental", "tactical"]
-    const feedbacks = rows.slice(1)
-      .filter(row => row[0]?.trim() === playerName.trim())
-      .map(row => ({
-        date: row[1] ?? "",
-        from: row[2] ?? "",
-        comment: row[3] ?? "",
-        category: (validCategories.includes(row[4]?.trim()) ? row[4].trim() : "technical") as "technical" | "physical" | "mental" | "tactical",
-      }))
-      .filter(r => r.date && r.comment)
-      .sort((a, b) => b.date.localeCompare(a.date))
-    return NextResponse.json(feedbacks)
-  } catch {
-    return NextResponse.json([])
-  }
+    const valid = ["technical","physical","mental","tactical"]
+    return NextResponse.json(rows.slice(1).filter(r => r[0]?.trim()===playerName.trim()).map(r => ({ date: r[1]??'', from: r[2]??'', comment: r[3]??'', category: valid.includes(r[4]?.trim())?r[4].trim():'technical' as "technical"|"physical"|"mental"|"tactical" })).filter(r => r.date && r.comment).sort((a,b)=>b.date.localeCompare(a.date)))
+  } catch { return NextResponse.json([]) }
 }

@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
-
 const SHEET_ID = process.env.SHEET_ID
 const API_KEY = process.env.GOOGLE_API_KEY
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const playerName = searchParams.get("playerName")
@@ -14,17 +12,6 @@ export async function GET(request: Request) {
     if (!res.ok) return NextResponse.json([])
     const json = await res.json()
     const rows: string[][] = json.values ?? []
-    const injuries = rows.slice(1)
-      .filter(row => row[0]?.trim() === playerName.trim())
-      .map(row => ({
-        date: row[1] ?? "",
-        type: row[2] ?? "",
-        duration: row[3] ?? "",
-        status: (row[4]?.trim() === "recovering" ? "recovering" : "recovered") as "recovering" | "recovered",
-      }))
-      .filter(r => r.date && r.type)
-    return NextResponse.json(injuries)
-  } catch {
-    return NextResponse.json([])
-  }
+    return NextResponse.json(rows.slice(1).filter(r => r[0]?.trim() === playerName.trim()).map(r => ({ date: r[1]??'', type: r[2]??'', duration: r[3]??'', status: r[4]?.trim()==='recovering'?'recovering':'recovered' as "recovering"|"recovered" })).filter(r => r.date && r.type))
+  } catch { return NextResponse.json([]) }
 }
