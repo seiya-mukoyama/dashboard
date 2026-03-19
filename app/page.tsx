@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { LeagueStandings } from "@/components/dashboard/league-standings"
 import { TargetProgress } from "@/components/dashboard/target-progress"
 import { RecentMatches } from "@/components/dashboard/recent-matches"
@@ -14,7 +14,7 @@ import { BodyCompositionChart } from "@/components/dashboard/body-composition-ch
 import {
   LayoutDashboard, Users, Medal, Dumbbell, Target, Calendar,
   Settings, PanelLeftClose, PanelLeftOpen, Heart, Repeat2,
-  ArrowLeft, ExternalLink, Cake, Ruler, Weight,
+  ArrowLeft, ExternalLink, Cake, Ruler, Weight, Zap,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -53,6 +53,46 @@ const xPosts = [
   { id: 7, text: "【試合プレビュー】明日のJFLカップに向けて準備完了✅\nスタジアムで一緒に戦いましょう！\n#VONDS市原 #JFL", date: "3月15日", likes: 178, retweets: 63 },
   { id: 8, text: "新体制発表！今シーズンも熱いサッカーをお届けします⚽\n監督・選手一同、全力で戦います！\n#VONDS市原 #2026シーズン", date: "3月10日", likes: 445, retweets: 132 },
 ]
+
+// スタッツ項目の定義
+const STATS_CONFIG = [
+  { key: "packingRate",   label: "パッキングレート", unit: "",    color: "text-blue-600" },
+  { key: "pReceive",      label: "Pレシーブ",         unit: "",    color: "text-blue-400" },
+  { key: "impect",        label: "インペクト",         unit: "",    color: "text-purple-600" },
+  { key: "iReceive",      label: "Iレシーブ",          unit: "",    color: "text-purple-400" },
+  { key: "maxSpeed",      label: "最大速度",           unit: "km/h", color: "text-orange-500" },
+  { key: "hiDistance",    label: "HI",                unit: "m",   color: "text-red-500" },
+  { key: "playTime",      label: "出場時間",           unit: "分",  color: "text-gray-600" },
+  { key: "goals",         label: "ゴール",             unit: "",    color: "text-green-600" },
+  { key: "assists",       label: "アシスト",           unit: "",    color: "text-green-500" },
+  { key: "preAssists",    label: "プレアシスト",       unit: "",    color: "text-teal-500" },
+  { key: "lineBreaks",    label: "ラインブレイク",     unit: "",    color: "text-indigo-500" },
+]
+
+type PlayerStats = {
+  maxSpeed: number | null
+  packingRate: number | null
+  pReceive: number | null
+  impect: number | null
+  iReceive: number | null
+  hiDistance: number | null
+  playTime: number | null
+  goals: number | null
+  assists: number | null
+  preAssists: number | null
+  lineBreaks: number | null
+}
+
+function StatCard({ label, value, unit, color }: { label: string; value: number | null; unit: string; color: string }) {
+  return (
+    <div className="rounded-xl bg-card border border-border p-4 space-y-1">
+      <p className={`text-xs text-muted-foreground`}>{label}</p>
+      <p className={`text-xl font-bold ${value !== null ? color : "text-muted-foreground"}`}>
+        {value !== null ? `${value}${unit ? " " + unit : ""}` : "—"}
+      </p>
+    </div>
+  )
+}
 
 function SnsFooter() {
   return (
@@ -146,6 +186,23 @@ function calcAge(birthdate: string): number | null {
 
 function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }) {
   const age = calcAge(player.birthdate)
+  const [maxSpeed, setMaxSpeed] = useState<number | null>(null)
+  const [stats] = useState<PlayerStats>({
+    maxSpeed: null, packingRate: null, pReceive: null, impect: null,
+    iReceive: null, hiDistance: null, playTime: null,
+    goals: null, assists: null, preAssists: null, lineBreaks: null,
+  })
+
+  useEffect(() => {
+    fetch(`/api/speed?name=${encodeURIComponent(player.name)}`)
+      .then(r => r.json())
+      .then(d => { if (d.maxSpeed) setMaxSpeed(d.maxSpeed) })
+      .catch(() => {})
+  }, [player.name])
+
+  // 最大速度はAPIから取得、それ以外は将来のスプレッドシート連携まで—表示
+  const displayStats: PlayerStats = { ...stats, maxSpeed }
+
   return (
     <div className="space-y-6">
       <button onClick={onBack}
@@ -174,6 +231,7 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
             <p className="text-base text-muted-foreground mt-1">{player.nameEn}</p>
           </div>
 
+          {/* 基本情報 */}
           <div className="grid grid-cols-4 gap-3">
             <div className="rounded-xl bg-card border border-border p-4 space-y-1">
               <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -194,17 +252,26 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
                 <Ruler className="h-3.5 w-3.5" />
                 <span className="text-xs">身長</span>
               </div>
-              <p className="text-base font-semibold text-foreground">
-                {player.height ? `${player.height} cm` : "—"}
-              </p>
+              <p className="text-base font-semibold text-foreground">{player.height ? `${player.height} cm` : "—"}</p>
             </div>
             <div className="rounded-xl bg-card border border-border p-4 space-y-1">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Weight className="h-3.5 w-3.5" />
                 <span className="text-xs">体重</span>
               </div>
-              <p className="text-base font-semibold text-foreground">
-                {player.weight ? `${player.weight} kg` : "—"}
+              <p className="text-base font-semibold text-foreground">{player.weight ? `${player.weight} kg` : "—"}</p>
+            </div>
+          </div>
+
+          {/* 最大速度 */}
+          <div className="rounded-xl bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 p-4 flex items-center gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 text-white shrink-0">
+              <Zap className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">最大速度（シーズン最高記録）</p>
+              <p className="text-2xl font-black text-orange-500">
+                {maxSpeed !== null ? `${maxSpeed} km/h` : "— km/h"}
               </p>
             </div>
           </div>
@@ -216,6 +283,22 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
               公式サイトで詳細を見る
             </a>
           )}
+        </div>
+      </div>
+
+      {/* スタッツ 4カラム */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h3 className="text-sm font-semibold text-foreground mb-4">スタッツ</h3>
+        <div className="grid grid-cols-4 gap-3">
+          {STATS_CONFIG.filter(s => s.key !== "maxSpeed").map(({ key, label, unit, color }) => (
+            <StatCard
+              key={key}
+              label={label}
+              value={displayStats[key as keyof PlayerStats]}
+              unit={unit}
+              color={color}
+            />
+          ))}
         </div>
       </div>
 
