@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { LeagueStandings } from "@/components/dashboard/league-standings"
 import { TargetProgress } from "@/components/dashboard/target-progress"
-import { PlayerRatings } from "@/components/dashboard/player-ratings"
 import { RecentMatches } from "@/components/dashboard/recent-matches"
 import { MatchInfoCard } from "@/components/dashboard/match-info-card"
 import { OfficialMatches } from "@/components/dashboard/official-matches"
@@ -50,7 +49,6 @@ function SnsFooter() {
   return (
     <div className="mt-8 pt-6 border-t border-border">
       <div className="grid grid-cols-2 gap-6">
-        {/* Instagram */}
         <div className="flex flex-col">
           <div className="flex items-center gap-2 mb-3">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600">
@@ -65,17 +63,13 @@ function SnsFooter() {
               <span className="ml-2 text-xs text-muted-foreground">フォロワー 6,017人</span>
             </div>
             <a href="https://www.instagram.com/vonds.ichihara/" target="_blank" rel="noopener noreferrer"
-              className="ml-auto text-xs text-muted-foreground hover:text-primary transition-colors">
-              @vonds.ichihara →
-            </a>
+              className="ml-auto text-xs text-muted-foreground hover:text-primary transition-colors">@vonds.ichihara →</a>
           </div>
           <div className="rounded-lg border border-border overflow-hidden">
             <iframe src="https://www.instagram.com/vonds.ichihara/embed/" width="100%" height="500"
               frameBorder="0" scrolling="yes" allowTransparency={true} className="block" />
           </div>
         </div>
-
-        {/* X (Twitter) */}
         <div className="flex flex-col">
           <div className="flex items-center gap-2 mb-3">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black">
@@ -88,9 +82,7 @@ function SnsFooter() {
               <span className="ml-2 text-xs text-muted-foreground">フォロワー 2,341人</span>
             </div>
             <a href="https://x.com/VondsTeam" target="_blank" rel="noopener noreferrer"
-              className="ml-auto text-xs text-muted-foreground hover:text-primary transition-colors">
-              @VondsTeam →
-            </a>
+              className="ml-auto text-xs text-muted-foreground hover:text-primary transition-colors">@VondsTeam →</a>
           </div>
           <div className="rounded-lg border border-border overflow-y-auto divide-y divide-border" style={{ height: 500 }}>
             {xPosts.map((post) => (
@@ -182,8 +174,6 @@ export default function DashboardPage() {
           <div className="ml-auto text-sm text-muted-foreground">2025-26</div>
         </header>
         <main className="flex-1 overflow-auto p-6">
-
-          {/* チームページ: 左=最近の試合、右=今後5試合 → 入れ替えて 左=今後5試合、右=最近の試合 */}
           {activeView === "overview" && (
             <div className="space-y-6">
               <MatchInfoCard />
@@ -198,15 +188,11 @@ export default function DashboardPage() {
               <SnsFooter />
             </div>
           )}
-
-          {/* 選手ページ: SNSフッターなし */}
           {activeView === "players" && (
             <div className="space-y-6">
-              <PlayerRatings />
               <PlayerCardsGrid />
             </div>
           )}
-
           {activeView === "official-matches" && <div className="space-y-6"><OfficialMatches /></div>}
           {activeView === "training-matches" && <div className="space-y-6"><TrainingMatches /></div>}
           {activeView === "training" && <div className="space-y-6"><StatsCards /></div>}
