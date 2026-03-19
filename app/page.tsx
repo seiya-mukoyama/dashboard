@@ -131,7 +131,20 @@ function SnsFooter() {
   )
 }
 
+function calcAge(birthdate: string): number | null {
+  if (!birthdate) return null
+  const parts = birthdate.split("/")
+  if (parts.length !== 3) return null
+  const birth = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+  const today = new Date()
+  let age = today.getFullYear() - birth.getFullYear()
+  const m = today.getMonth() - birth.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
+  return age
+}
+
 function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }) {
+  const age = calcAge(player.birthdate)
   return (
     <div className="space-y-6">
       <button onClick={onBack}
@@ -141,16 +154,10 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
       </button>
 
       <div className="grid gap-8 lg:grid-cols-3">
-        {/* 選手写真 */}
         <div className="lg:col-span-1">
           <div className="relative bg-gradient-to-b from-[hsl(142,72%,85%)] to-[hsl(142,72%,94%)] rounded-2xl overflow-hidden aspect-square shadow-sm">
-            <Image
-              src={player.image}
-              alt={player.name}
-              fill
-              className="object-contain object-bottom"
-              unoptimized
-            />
+            <Image src={player.image} alt={player.name} fill
+              className="object-contain object-bottom" unoptimized />
             <div className="absolute top-3 left-3">
               <span className={`text-xs font-bold px-2 py-1 rounded-md border ${positionColors[player.position] || "bg-gray-100 text-gray-700 border-gray-300"}`}>
                 {player.position}
@@ -159,28 +166,31 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
           </div>
         </div>
 
-        {/* 選手情報 */}
         <div className="lg:col-span-2 space-y-5">
-          {/* 名前 */}
           <div className="border-b border-border pb-4">
             <h2 className="text-3xl font-bold text-foreground">{player.name}</h2>
             <p className="text-base text-muted-foreground mt-1">{player.nameEn}</p>
           </div>
 
-          {/* 基本情報グリッド */}
-          <div className="grid grid-cols-3 gap-3">
-            {/* 生年月日 */}
+          <div className="grid grid-cols-4 gap-3">
             <div className="rounded-xl bg-card border border-border p-4 space-y-1">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Cake className="h-3.5 w-3.5" />
                 <span className="text-xs">生年月日</span>
               </div>
+              <p className="text-base font-semibold text-foreground">{player.birthdate || "—"}</p>
+            </div>
+
+            <div className="rounded-xl bg-card border border-border p-4 space-y-1">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Users className="h-3.5 w-3.5" />
+                <span className="text-xs">年齢</span>
+              </div>
               <p className="text-base font-semibold text-foreground">
-                {player.birthdate || "—"}
+                {age !== null ? `${age}歳` : "—"}
               </p>
             </div>
 
-            {/* 身長 */}
             <div className="rounded-xl bg-card border border-border p-4 space-y-1">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Ruler className="h-3.5 w-3.5" />
@@ -191,7 +201,6 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
               </p>
             </div>
 
-            {/* 体重 */}
             <div className="rounded-xl bg-card border border-border p-4 space-y-1">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Weight className="h-3.5 w-3.5" />
@@ -203,7 +212,6 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
             </div>
           </div>
 
-          {/* 公式サイトリンク */}
           {player.profileUrl && (
             <a href={player.profileUrl} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-sm text-foreground">
