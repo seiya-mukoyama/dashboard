@@ -1,19 +1,16 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { PerformanceChart } from "@/components/dashboard/performance-chart"
-import { PlayerRatings } from "@/components/dashboard/player-ratings"
-import { TeamRadarChart } from "@/components/dashboard/team-radar-chart"
-import { RecentMatches } from "@/components/dashboard/recent-matches"
-import { OfficialMatches } from "@/components/dashboard/official-matches"
-import { TrainingMatches } from "@/components/dashboard/training-matches"
-import { GoalsChart } from "@/components/dashboard/goals-chart"
+import { useState } from "react"
 import { LeagueStandings } from "@/components/dashboard/league-standings"
 import { TargetProgress } from "@/components/dashboard/target-progress"
-import { PlayerCardsGrid } from "@/components/dashboard/player-cards-grid"
+import { PlayerRatings } from "@/components/dashboard/player-ratings"
+import { RecentMatches } from "@/components/dashboard/recent-matches"
 import { MatchInfoCard } from "@/components/dashboard/match-info-card"
-import { UpcomingMatches } from "@/components/dashboard/upcoming-matches"
+import { OfficialMatches } from "@/components/dashboard/official-matches"
+import { TrainingMatches } from "@/components/dashboard/training-matches"
 import { StatsCards } from "@/components/dashboard/stats-cards"
+import { UpcomingMatches } from "@/components/dashboard/upcoming-matches"
+import { PlayerCardsGrid } from "@/components/dashboard/player-cards-grid"
 import {
   LayoutDashboard, Users, Medal, Dumbbell, Target, Calendar,
   Settings, PanelLeftClose, PanelLeftOpen,
@@ -38,43 +35,6 @@ const viewTitles: Record<string, string> = {
   events: "イベント",
 }
 
-function XTimeline() {
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const loadWidget = () => {
-      if (containerRef.current && (window as any).twttr?.widgets) {
-        (window as any).twttr.widgets.load(containerRef.current)
-      }
-    }
-
-    if ((window as any).twttr) {
-      loadWidget()
-    } else {
-      const script = document.createElement("script")
-      script.src = "https://platform.twitter.com/widgets.js"
-      script.async = true
-      script.onload = loadWidget
-      document.head.appendChild(script)
-    }
-  }, [])
-
-  return (
-    <div ref={containerRef} className="overflow-auto" style={{height: '450px'}}>
-      <a
-        className="twitter-timeline"
-        data-lang="ja"
-        data-height="450"
-        data-theme="light"
-        data-chrome="noheader nofooter"
-        href="https://twitter.com/VondsTeam"
-      >
-        Tweets by VondsTeam
-      </a>
-    </div>
-  )
-}
-
 function SnsFooter() {
   return (
     <div className="mt-8 pt-6 border-t border-border">
@@ -95,7 +55,7 @@ function SnsFooter() {
               @vonds.ichihara →
             </a>
           </div>
-          <div className="rounded-lg border border-border overflow-hidden" style={{height: '450px'}}>
+          <div className="rounded-lg border border-border overflow-hidden">
             <iframe
               src="https://www.instagram.com/vonds.ichihara/embed/"
               width="100%"
@@ -122,8 +82,15 @@ function SnsFooter() {
               @VondsTeam →
             </a>
           </div>
-          <div className="rounded-lg border border-border overflow-hidden bg-white" style={{height: '450px'}}>
-            <XTimeline />
+          <div className="rounded-lg border border-border overflow-hidden">
+            <iframe
+              src="https://syndication.twitter.com/srv/timeline-profile/screen-name/VondsTeam?dnt=false&embedId=twitter-widget-0&frame=false&hideBorder=false&hideFooter=false&hideHeader=false&hideScrollBar=false&lang=ja&maxHeight=450px&origin=https%3A%2F%2Fdashboard-7rky.vercel.app&sessionId=&showHeader=true&showReplies=false&theme=light&transparent=false&widgetsVersion=2615f7e52b7e0%3A1702314776716"
+              width="100%"
+              height="450"
+              frameBorder="0"
+              scrolling="yes"
+              className="block"
+            />
           </div>
         </div>
       </div>
@@ -137,6 +104,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
+      {/* サイドバー */}
       <div className={`flex flex-col h-full border-r border-border bg-[hsl(var(--sidebar-background))] transition-all duration-200 ${collapsed ? "w-[56px]" : "w-[200px]"}`}>
         <div className={`flex items-center border-b border-border ${collapsed ? "justify-center px-2 py-3" : "gap-3 px-4 py-3"}`}>
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-white border border-border">
@@ -172,6 +140,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* メインコンテンツ */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
           <button onClick={() => setCollapsed(!collapsed)}
@@ -179,33 +148,28 @@ export default function DashboardPage() {
             {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
           </button>
           <h1 className="text-lg font-semibold">{viewTitles[activeView] || "ダッシュボード"}</h1>
-          <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground"><span>2025-26</span></div>
+          <div className="ml-auto text-sm text-muted-foreground">2025-26</div>
         </header>
-
         <main className="flex-1 overflow-auto p-6">
           {activeView === "overview" && (
             <div className="space-y-6">
               <MatchInfoCard />
-              <div className="grid gap-6 lg:grid-cols-2"><LeagueStandings /><TargetProgress /></div>
-              <div className="grid gap-6 lg:grid-cols-2"><PlayerRatings /><RecentMatches /></div>
+              <div className="grid gap-6 lg:grid-cols-2">
+                <LeagueStandings />
+                <TargetProgress />
+              </div>
+              <div className="grid gap-6 lg:grid-cols-2">
+                <PlayerRatings />
+                <RecentMatches />
+              </div>
               <SnsFooter />
             </div>
           )}
-          {activeView === "players" && (
-            <div className="space-y-6"><UpcomingMatches /><PlayerCardsGrid /><SnsFooter /></div>
-          )}
-          {activeView === "official-matches" && (
-            <div className="space-y-6"><OfficialMatches /><SnsFooter /></div>
-          )}
-          {activeView === "training-matches" && (
-            <div className="space-y-6"><TrainingMatches /><SnsFooter /></div>
-          )}
-          {activeView === "training" && (
-            <div className="space-y-6"><StatsCards /><SnsFooter /></div>
-          )}
-          {activeView === "events" && (
-            <div className="space-y-6"><UpcomingMatches /><SnsFooter /></div>
-          )}
+          {activeView === "players" && <div className="space-y-6"><UpcomingMatches /><PlayerCardsGrid /><SnsFooter /></div>}
+          {activeView === "official-matches" && <div className="space-y-6"><OfficialMatches /><SnsFooter /></div>}
+          {activeView === "training-matches" && <div className="space-y-6"><TrainingMatches /><SnsFooter /></div>}
+          {activeView === "training" && <div className="space-y-6"><StatsCards /><SnsFooter /></div>}
+          {activeView === "events" && <div className="space-y-6"><UpcomingMatches /><SnsFooter /></div>}
         </main>
       </div>
     </div>
