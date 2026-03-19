@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { LeagueStandings } from "@/components/dashboard/league-standings"
 import { TargetProgress } from "@/components/dashboard/target-progress"
 import { PlayerRatings } from "@/components/dashboard/player-ratings"
@@ -33,6 +33,45 @@ const viewTitles: Record<string, string> = {
   "training-matches": "トレーニングマッチ",
   training: "トレーニング",
   events: "イベント",
+}
+
+function XTimeline() {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const loadWidget = () => {
+      if (typeof window !== "undefined" && (window as any).twttr?.widgets) {
+        if (containerRef.current) {
+          containerRef.current.innerHTML = ""
+          const anchor = document.createElement("a")
+          anchor.className = "twitter-timeline"
+          anchor.setAttribute("data-lang", "ja")
+          anchor.setAttribute("data-height", "450")
+          anchor.setAttribute("data-theme", "light")
+          anchor.setAttribute("data-chrome", "noheader nofooter")
+          anchor.href = "https://twitter.com/VondsTeam"
+          anchor.textContent = "Tweets by VondsTeam"
+          containerRef.current.appendChild(anchor)
+          ;(window as any).twttr.widgets.load(containerRef.current)
+        }
+      }
+    }
+
+    const existing = document.getElementById("twitter-widget-script")
+    if (existing) {
+      loadWidget()
+    } else {
+      const script = document.createElement("script")
+      script.id = "twitter-widget-script"
+      script.src = "https://platform.twitter.com/widgets.js"
+      script.async = true
+      script.charset = "utf-8"
+      script.onload = loadWidget
+      document.body.appendChild(script)
+    }
+  }, [])
+
+  return <div ref={containerRef} className="w-full" style={{ minHeight: 450 }} />
 }
 
 function SnsFooter() {
@@ -83,14 +122,7 @@ function SnsFooter() {
             </a>
           </div>
           <div className="rounded-lg border border-border overflow-hidden">
-            <iframe
-              src="https://syndication.twitter.com/srv/timeline-profile/screen-name/VondsTeam?dnt=false&embedId=twitter-widget-0&frame=false&hideBorder=false&hideFooter=false&hideHeader=false&hideScrollBar=false&lang=ja&maxHeight=450px&origin=https%3A%2F%2Fdashboard-7rky.vercel.app&sessionId=&showHeader=true&showReplies=false&theme=light&transparent=false&widgetsVersion=2615f7e52b7e0%3A1702314776716"
-              width="100%"
-              height="450"
-              frameBorder="0"
-              scrolling="yes"
-              className="block"
-            />
+            <XTimeline />
           </div>
         </div>
       </div>
@@ -104,7 +136,6 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
-      {/* サイドバー */}
       <div className={`flex flex-col h-full border-r border-border bg-[hsl(var(--sidebar-background))] transition-all duration-200 ${collapsed ? "w-[56px]" : "w-[200px]"}`}>
         <div className={`flex items-center border-b border-border ${collapsed ? "justify-center px-2 py-3" : "gap-3 px-4 py-3"}`}>
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-white border border-border">
@@ -140,7 +171,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* メインコンテンツ */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
           <button onClick={() => setCollapsed(!collapsed)}
