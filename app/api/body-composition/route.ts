@@ -5,14 +5,17 @@ const SHEET_ID = "15-qo-D-rrIn6J7hUA-A_qfL8sqozgf7d1gxs0BHmaWs"
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
-// 日付シート一覧（増えたら追加）
 const SHEET_DATES = [
   "03月01日","03月03日","03月04日","03月05日","03月06日",
   "03月07日","03月08日","03月11日","03月12日","03月13日",
   "03月14日","03月15日","03月16日","03月18日","03月19日",
 ]
 
-// CSV1行をカラム配列に変換（ダブルクォート・カンマ対応）
+// スペース（半角・全角）を除去して正規化
+function normName(s: string): string {
+  return s.replace(/[\s\u3000]/g, "")
+}
+
 function splitCSVLine(line: string): string[] {
   const cols: string[] = []
   let cur = ""
@@ -40,6 +43,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "name is required" }, { status: 400 })
   }
 
+  const normalizedTarget = normName(playerName)
   const allRecords: { date: string; weight: number | null; fat: number | null; muscle: number | null }[] = []
 
   for (const sheetDate of SHEET_DATES) {
@@ -52,16 +56,15 @@ export async function GET(req: Request) {
       const lines = csv.trim().split("\n")
       if (lines.length < 2) continue
 
-      // ヘッダー行をスキップしてデータ行を処理
-      // A=0:時間, B=1:選手名, C=2:体重, D=3:BMI, E=4:体脂肪率%, F=5:筋量,
-      // G=6:水分量, H=7:体脂肪量, I=8:除脂肪体重, J=9:骨量, K=10:内臓脂肪,
-      // L=11:タンパク質%, M=12:骨格筋量
+      // A=0:時間, B=1:選手名, C=2:体重, D=3:BMI, E=4:体脂肪率%,
+      // F=5:筋量, G=6:水分量, H=7:体脂肪量, I=8:除脂肪体重,
+      // J=9:骨量, K=10:内臓脂肪, L=11:タンパク質%, M=12:骨格筋量
       const matched: string[][] = []
       for (let i = 1; i < lines.length; i++) {
         const cols = splitCSVLine(lines[i])
         if (cols.length < 3) continue
-        const name = cols[1].replace(/"/g, "").trim()
-        if (name === playerName) {
+        const name = normName(cols[1].replace(/"/g, ""))
+        if (name === normalizedTarget) {
           matched.push(cols)
         }
       }
@@ -74,15 +77,14 @@ export async function GET(req: Request) {
       const fat    = parseFloat(last[4]) || null
       const muscle = last[12] ? (parseFloat(last[12]) || null) : null
 
-      // 日付ラベル: "03月16日" → "3/16"
       const dateLabel = sheetDate
-        .replace(/^0/, "")      // 先頭の0を除去
+        .replace(/^0/, "")
         .replace("月", "/")
         .replace("日", "")
 
       allRecords.push({ date: dateLabel, weight, fat, muscle })
     } catch {
-      // シート取得エラーはスキップ
+      // スキップ
     }
   }
 
