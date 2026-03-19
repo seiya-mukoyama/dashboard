@@ -13,7 +13,7 @@ import { UpcomingMatches } from "@/components/dashboard/upcoming-matches"
 import { PlayerCardsGrid } from "@/components/dashboard/player-cards-grid"
 import {
   LayoutDashboard, Users, Medal, Dumbbell, Target, Calendar,
-  Settings, PanelLeftClose, PanelLeftOpen, ExternalLink,
+  Settings, PanelLeftClose, PanelLeftOpen, Heart, Repeat2,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -35,37 +35,25 @@ const viewTitles: Record<string, string> = {
   events: "イベント",
 }
 
-// X の直近ポストサンプル（実際はAPIから取得予定）
 const xPosts = [
-  {
-    id: 1,
-    text: "【試合結果】JFLカップ 第1節\nVONDS市原FC 2-1 いわてグルージャ盛岡\n\n初戦勝利！次節も応援よろしくお願いします⚽️🟡",
-    date: "3月22日",
-    likes: 142,
-    retweets: 38,
-  },
-  {
-    id: 2,
-    text: "【選手紹介】MF 山本 健選手\n今シーズンも精力的なプレーに期待！\n#VONDS市原 #JFL",
-    date: "3月20日",
-    likes: 89,
-    retweets: 21,
-  },
-  {
-    id: 3,
-    text: "本日のトレーニングの様子をお届け📸\n開幕に向けて仕上がってきています！\n#VONDS市原 #JFL2026",
-    date: "3月19日",
-    likes: 67,
-    retweets: 15,
-  },
+  { id: 1, text: "【試合結果】JFLカップ 第1節\nVONDS市原FC 2-1 いわてグルージャ盛岡\n\n初戦勝利！次節も応援よろしくお願いします⚽️🟡", date: "3月22日", likes: 142, retweets: 38 },
+  { id: 2, text: "【選手紹介】MF 山本 健選手\n今シーズンも精力的なプレーに期待！\n#VONDS市原 #JFL", date: "3月20日", likes: 89, retweets: 21 },
+  { id: 3, text: "本日のトレーニングの様子をお届け📸\n開幕に向けて仕上がってきています！\n#VONDS市原 #JFL2026", date: "3月19日", likes: 67, retweets: 15 },
+  { id: 4, text: "【お知らせ】ホームゲーム チケット発売開始！\n市原臨海競技場にぜひ来てください🏟️\nhttps://vonds.jp/ticket", date: "3月18日", likes: 203, retweets: 87 },
+  { id: 5, text: "【選手紹介】FW 田中 翔太選手\n昨シーズン12ゴールの得点王！\n今季も期待してください🔥\n#VONDS市原", date: "3月17日", likes: 312, retweets: 95 },
+  { id: 6, text: "本日は選手たちのオフ日🏖️\nリフレッシュして明日からまた練習頑張ります！\n#VONDS市原 #チームビルディング", date: "3月16日", likes: 54, retweets: 12 },
+  { id: 7, text: "【試合プレビュー】明日のJFLカップに向けて準備完了✅\nスタジアムで一緒に戦いましょう！\n#VONDS市原 #JFL", date: "3月15日", likes: 178, retweets: 63 },
+  { id: 8, text: "新体制発表！今シーズンも熱いサッカーをお届けします⚽\n監督・選手一同、全力で戦います！\n#VONDS市原 #2026シーズン", date: "3月10日", likes: 445, retweets: 132 },
 ]
 
 function SnsFooter() {
   return (
     <div className="mt-8 pt-6 border-t border-border">
       <div className="grid grid-cols-2 gap-6">
+
         {/* Instagram */}
-        <div>
+        <div className="flex flex-col">
+          {/* ヘッダー */}
           <div className="flex items-center gap-2 mb-3">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -74,19 +62,23 @@ function SnsFooter() {
                 <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
               </svg>
             </div>
-            <span className="text-sm font-semibold text-foreground">Instagram</span>
+            <div>
+              <span className="text-sm font-semibold text-foreground">Instagram</span>
+              <span className="ml-2 text-xs text-muted-foreground">フォロワー 6,017人</span>
+            </div>
             <a href="https://www.instagram.com/vonds.ichihara/" target="_blank" rel="noopener noreferrer"
               className="ml-auto text-xs text-muted-foreground hover:text-primary transition-colors">
               @vonds.ichihara →
             </a>
           </div>
-          <div className="rounded-lg border border-border overflow-hidden">
+          {/* iFrame（スクロール可） */}
+          <div className="rounded-lg border border-border overflow-hidden flex-1">
             <iframe
               src="https://www.instagram.com/vonds.ichihara/embed/"
               width="100%"
-              height="450"
+              height="500"
               frameBorder="0"
-              scrolling="no"
+              scrolling="yes"
               allowTransparency={true}
               className="block"
             />
@@ -94,51 +86,66 @@ function SnsFooter() {
         </div>
 
         {/* X (Twitter) */}
-        <div>
+        <div className="flex flex-col">
+          {/* ヘッダー */}
           <div className="flex items-center gap-2 mb-3">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="white">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.632 5.905-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
               </svg>
             </div>
-            <span className="text-sm font-semibold text-foreground">X (Twitter)</span>
+            <div>
+              <span className="text-sm font-semibold text-foreground">X (Twitter)</span>
+              <span className="ml-2 text-xs text-muted-foreground">フォロワー 2,341人</span>
+            </div>
             <a href="https://x.com/VondsTeam" target="_blank" rel="noopener noreferrer"
               className="ml-auto text-xs text-muted-foreground hover:text-primary transition-colors">
               @VondsTeam →
             </a>
           </div>
-          <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
+          {/* スクロール可能なタイムライン */}
+          <div className="rounded-lg border border-border overflow-y-auto divide-y divide-border" style={{ height: 500 }}>
             {xPosts.map((post) => (
               <a
                 key={post.id}
                 href="https://x.com/VondsTeam"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex flex-col gap-2 p-4 bg-card hover:bg-accent transition-colors group"
+                className="flex flex-col gap-2 p-4 bg-card hover:bg-accent transition-colors group block"
               >
-                <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">
-                  {post.text}
-                </p>
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-xs text-muted-foreground">{post.date}</span>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span>♥ {post.likes}</span>
-                    <span>↺ {post.retweets}</span>
-                    <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex items-start gap-2">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="white">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.632 5.905-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1 mb-1">
+                      <span className="text-xs font-semibold text-foreground">VONDS市原FC</span>
+                      <span className="text-xs text-muted-foreground">@VondsTeam · {post.date}</span>
+                    </div>
+                    <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">
+                      {post.text}
+                    </p>
+                    <div className="flex items-center gap-4 mt-2">
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-pink-500 transition-colors">
+                        <Heart className="h-3 w-3" />{post.likes}
+                      </span>
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-green-500 transition-colors">
+                        <Repeat2 className="h-3 w-3" />{post.retweets}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </a>
             ))}
-            <a
-              href="https://x.com/VondsTeam"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 p-3 bg-card hover:bg-accent transition-colors text-xs text-muted-foreground hover:text-primary"
-            >
+            <a href="https://x.com/VondsTeam" target="_blank" rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 p-3 bg-card hover:bg-accent transition-colors text-xs text-muted-foreground hover:text-primary">
               X でもっと見る →
             </a>
           </div>
         </div>
+
       </div>
     </div>
   )
