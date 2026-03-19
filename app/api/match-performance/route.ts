@@ -12,20 +12,30 @@ export async function GET(request: Request) {
     if (!res.ok) return NextResponse.json([])
     const json = await res.json()
     const rows: string[][] = json.values ?? []
-    // 列構成: A=選手名, B=日付, C=対戦相手, D=結果, E=得点, F=アシスト, G=出場時間, H=評価
+    // A=選手名, B=日付, C=試合, D=結果, E=得点, F=アシスト, G=プレアシスト
+    // H=出場時間, I=パッキング, J=パッキングR, K=インパクト, L=インパクトR
+    // M=HI, N=最大速度, O=走行距離, P=ラインブレイク
     return NextResponse.json(
       rows.slice(1)
         .filter(r => r[0]?.trim() === playerName.trim())
         .map(r => ({
           date: r[1] ?? '',
-          opponent: r[2] ?? '',
+          match: r[2] ?? '',
           result: r[3] ?? '',
           goals: Number(r[4]) || 0,
           assists: Number(r[5]) || 0,
-          minutes: Number(r[6]) || 0,
-          rating: Number(r[7]) || 0,
+          preAssists: Number(r[6]) || 0,
+          minutes: Number(r[7]) || 0,
+          packing: Number(r[8]) || 0,
+          packingReceive: Number(r[9]) || 0,
+          impact: Number(r[10]) || 0,
+          impactReceive: Number(r[11]) || 0,
+          hi: Number(r[12]) || 0,
+          maxSpeed: Number(r[13]) || 0,
+          distance: Number(r[14]) || 0,
+          lineBreak: Number(r[15]) || 0,
         }))
-        .filter(r => r.date && r.opponent)
+        .filter(r => r.date && r.match)
         .sort((a, b) => b.date.localeCompare(a.date))
     )
   } catch { return NextResponse.json([]) }

@@ -3,12 +3,20 @@ import { useEffect, useState } from "react"
 
 type MatchRecord = {
   date: string
-  opponent: string
+  match: string
   result: string
   goals: number
   assists: number
+  preAssists: number
   minutes: number
-  rating: number
+  packing: number
+  packingReceive: number
+  impact: number
+  impactReceive: number
+  hi: number
+  maxSpeed: number
+  distance: number
+  lineBreak: number
 }
 
 type Props = { playerName: string }
@@ -32,38 +40,38 @@ export function MatchPerformance({ playerName }: Props) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm whitespace-nowrap">
         <thead>
           <tr className="border-b border-border">
-            <th className="text-left py-2 px-3 text-muted-foreground font-medium">日付</th>
-            <th className="text-left py-2 px-3 text-muted-foreground font-medium">対戦相手</th>
-            <th className="text-center py-2 px-3 text-muted-foreground font-medium">結果</th>
-            <th className="text-center py-2 px-3 text-muted-foreground font-medium">得点</th>
-            <th className="text-center py-2 px-3 text-muted-foreground font-medium">アシスト</th>
-            <th className="text-center py-2 px-3 text-muted-foreground font-medium">出場時間</th>
-            <th className="text-center py-2 px-3 text-muted-foreground font-medium">評価</th>
+            {["日付","試合","結果","得点","アシスト","プレアシスト","出場時間","パッキング","パッキングR","インパクト","インパクトR","HI","最大速度","走行距離","ラインブレイク"].map(h => (
+              <th key={h} className="text-center py-2 px-2 text-muted-foreground font-medium text-xs">{h}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
           {matches.map((m, i) => (
             <tr key={i} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
-              <td className="py-2 px-3 text-muted-foreground">{m.date}</td>
-              <td className="py-2 px-3 text-card-foreground font-medium">{m.opponent}</td>
-              <td className="py-2 px-3 text-center">
+              <td className="py-2 px-2 text-muted-foreground text-xs">{m.date}</td>
+              <td className="py-2 px-2 text-card-foreground text-xs">{m.match}</td>
+              <td className="py-2 px-2 text-center">
                 <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                  m.result.startsWith('W') || m.result.startsWith('勝') ? 'bg-primary/15 text-primary' :
-                  m.result.startsWith('L') || m.result.startsWith('負') ? 'bg-destructive/15 text-destructive' :
+                  m.result.includes('勝') || m.result.startsWith('W') ? 'bg-primary/15 text-primary' :
+                  m.result.includes('負') || m.result.startsWith('L') ? 'bg-destructive/15 text-destructive' :
                   'bg-secondary text-muted-foreground'
                 }`}>{m.result}</span>
               </td>
-              <td className="py-2 px-3 text-center text-card-foreground">{m.goals}</td>
-              <td className="py-2 px-3 text-center text-card-foreground">{m.assists}</td>
-              <td className="py-2 px-3 text-center text-muted-foreground">{m.minutes}分</td>
-              <td className="py-2 px-3 text-center">
-                <span className={`font-bold ${m.rating >= 8 ? 'text-primary' : m.rating >= 6 ? 'text-card-foreground' : 'text-muted-foreground'}`}>
-                  {m.rating > 0 ? m.rating.toFixed(1) : '-'}
-                </span>
-              </td>
+              <td className="py-2 px-2 text-center text-card-foreground text-xs">{m.goals}</td>
+              <td className="py-2 px-2 text-center text-card-foreground text-xs">{m.assists}</td>
+              <td className="py-2 px-2 text-center text-card-foreground text-xs">{m.preAssists}</td>
+              <td className="py-2 px-2 text-center text-muted-foreground text-xs">{m.minutes}分</td>
+              <td className="py-2 px-2 text-center text-card-foreground text-xs">{m.packing > 0 ? m.packing.toFixed(1) : '-'}</td>
+              <td className="py-2 px-2 text-center text-card-foreground text-xs">{m.packingReceive > 0 ? m.packingReceive.toFixed(1) : '-'}</td>
+              <td className="py-2 px-2 text-center text-card-foreground text-xs">{m.impact > 0 ? m.impact.toFixed(1) : '-'}</td>
+              <td className="py-2 px-2 text-center text-card-foreground text-xs">{m.impactReceive > 0 ? m.impactReceive.toFixed(1) : '-'}</td>
+              <td className="py-2 px-2 text-center text-muted-foreground text-xs">{m.hi > 0 ? m.hi.toFixed(0) : '-'}</td>
+              <td className="py-2 px-2 text-center text-muted-foreground text-xs">{m.maxSpeed > 0 ? m.maxSpeed.toFixed(1) : '-'}</td>
+              <td className="py-2 px-2 text-center text-muted-foreground text-xs">{m.distance > 0 ? m.distance.toFixed(0) : '-'}</td>
+              <td className="py-2 px-2 text-center text-card-foreground text-xs">{m.lineBreak > 0 ? m.lineBreak : '-'}</td>
             </tr>
           ))}
         </tbody>
