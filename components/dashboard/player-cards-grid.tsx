@@ -11,6 +11,9 @@ export type Player = {
   position: string
   image: string
   profileUrl: string
+  birthdate: string
+  height: string
+  weight: string
 }
 
 const positionOrder = ["GK", "DF", "MF", "FW"]
@@ -62,7 +65,6 @@ export function PlayerCardsGrid({ onSelectPlayer }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* ポジションフィルター */}
       <div className="flex gap-2 flex-wrap items-center">
         {positions.map(pos => (
           <button key={pos} onClick={() => setActivePos(pos)}
@@ -76,7 +78,6 @@ export function PlayerCardsGrid({ onSelectPlayer }: Props) {
         <span className="ml-auto text-xs text-muted-foreground">{filtered.length}選手</span>
       </div>
 
-      {/* 選手カード */}
       {Object.entries(grouped).map(([pos, list]) => (
         <div key={pos}>
           {activePos === "ALL" && (
