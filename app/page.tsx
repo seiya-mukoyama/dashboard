@@ -39,9 +39,9 @@ const xPosts = [
   { id: 1, text: "【試合結果】JFLカップ 第1節\nVONDS市原FC 2-1 いわてグルージャ盛岡\n\n初戦勝利！次節も応援よろしくお願いします⚽️🟡", date: "3月22日", likes: 142, retweets: 38 },
   { id: 2, text: "【選手紹介】MF 山本 健選手\n今シーズンも精力的なプレーに期待！\n#VONDS市原 #JFL", date: "3月20日", likes: 89, retweets: 21 },
   { id: 3, text: "本日のトレーニングの様子をお届け📸\n開幕に向けて仕上がってきています！\n#VONDS市原 #JFL2026", date: "3月19日", likes: 67, retweets: 15 },
-  { id: 4, text: "【お知らせ】ホームゲーム チケット発売開始！\n市原臨海競技場にぜひ来てください🏟️\nhttps://vonds.jp/ticket", date: "3月18日", likes: 203, retweets: 87 },
+  { id: 4, text: "【お知らせ】ホームゲーム チケット発売開始！\n市原臨海競技場にぜひ来てください🏟️", date: "3月18日", likes: 203, retweets: 87 },
   { id: 5, text: "【選手紹介】FW 田中 翔太選手\n昨シーズン12ゴールの得点王！\n今季も期待してください🔥\n#VONDS市原", date: "3月17日", likes: 312, retweets: 95 },
-  { id: 6, text: "本日は選手たちのオフ日🏖️\nリフレッシュして明日からまた練習頑張ります！\n#VONDS市原 #チームビルディング", date: "3月16日", likes: 54, retweets: 12 },
+  { id: 6, text: "本日は選手たちのオフ日🏖️\nリフレッシュして明日からまた練習頑張ります！\n#VONDS市原", date: "3月16日", likes: 54, retweets: 12 },
   { id: 7, text: "【試合プレビュー】明日のJFLカップに向けて準備完了✅\nスタジアムで一緒に戦いましょう！\n#VONDS市原 #JFL", date: "3月15日", likes: 178, retweets: 63 },
   { id: 8, text: "新体制発表！今シーズンも熱いサッカーをお届けします⚽\n監督・選手一同、全力で戦います！\n#VONDS市原 #2026シーズン", date: "3月10日", likes: 445, retweets: 132 },
 ]
@@ -69,7 +69,7 @@ function SnsFooter() {
               @vonds.ichihara →
             </a>
           </div>
-          <div className="rounded-lg border border-border overflow-hidden flex-1">
+          <div className="rounded-lg border border-border overflow-hidden">
             <iframe src="https://www.instagram.com/vonds.ichihara/embed/" width="100%" height="500"
               frameBorder="0" scrolling="yes" allowTransparency={true} className="block" />
           </div>
@@ -183,7 +183,7 @@ export default function DashboardPage() {
         </header>
         <main className="flex-1 overflow-auto p-6">
 
-          {/* チームページ: 選手評価→今後5試合の予定 に変更 */}
+          {/* チームページ: 左=最近の試合、右=今後5試合 → 入れ替えて 左=今後5試合、右=最近の試合 */}
           {activeView === "overview" && (
             <div className="space-y-6">
               <MatchInfoCard />
@@ -192,26 +192,25 @@ export default function DashboardPage() {
                 <TargetProgress />
               </div>
               <div className="grid gap-6 lg:grid-cols-2">
-                <UpcomingMatches />
                 <RecentMatches />
+                <UpcomingMatches />
               </div>
               <SnsFooter />
             </div>
           )}
 
-          {/* 選手ページ: 今後5試合の予定→選手評価 に変更 */}
+          {/* 選手ページ: SNSフッターなし */}
           {activeView === "players" && (
             <div className="space-y-6">
               <PlayerRatings />
               <PlayerCardsGrid />
-              <SnsFooter />
             </div>
           )}
 
-          {activeView === "official-matches" && <div className="space-y-6"><OfficialMatches /><SnsFooter /></div>}
-          {activeView === "training-matches" && <div className="space-y-6"><TrainingMatches /><SnsFooter /></div>}
-          {activeView === "training" && <div className="space-y-6"><StatsCards /><SnsFooter /></div>}
-          {activeView === "events" && <div className="space-y-6"><UpcomingMatches /><SnsFooter /></div>}
+          {activeView === "official-matches" && <div className="space-y-6"><OfficialMatches /></div>}
+          {activeView === "training-matches" && <div className="space-y-6"><TrainingMatches /></div>}
+          {activeView === "training" && <div className="space-y-6"><StatsCards /></div>}
+          {activeView === "events" && <div className="space-y-6"><UpcomingMatches /></div>}
         </main>
       </div>
     </div>
