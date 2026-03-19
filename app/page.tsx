@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { PerformanceChart } from "@/components/dashboard/performance-chart"
 import { PlayerRatings } from "@/components/dashboard/player-ratings"
 import { TeamRadarChart } from "@/components/dashboard/team-radar-chart"
@@ -36,6 +36,43 @@ const viewTitles: Record<string, string> = {
   "training-matches": "トレーニングマッチ",
   training: "トレーニング",
   events: "イベント",
+}
+
+function XTimeline() {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const loadWidget = () => {
+      if (containerRef.current && (window as any).twttr?.widgets) {
+        (window as any).twttr.widgets.load(containerRef.current)
+      }
+    }
+
+    if ((window as any).twttr) {
+      loadWidget()
+    } else {
+      const script = document.createElement("script")
+      script.src = "https://platform.twitter.com/widgets.js"
+      script.async = true
+      script.onload = loadWidget
+      document.head.appendChild(script)
+    }
+  }, [])
+
+  return (
+    <div ref={containerRef} className="overflow-auto" style={{height: '450px'}}>
+      <a
+        className="twitter-timeline"
+        data-lang="ja"
+        data-height="450"
+        data-theme="light"
+        data-chrome="noheader nofooter"
+        href="https://twitter.com/VondsTeam"
+      >
+        Tweets by VondsTeam
+      </a>
+    </div>
+  )
 }
 
 function SnsFooter() {
@@ -86,14 +123,7 @@ function SnsFooter() {
             </a>
           </div>
           <div className="rounded-lg border border-border overflow-hidden bg-white" style={{height: '450px'}}>
-            <iframe
-              src="https://syndication.twitter.com/srv/timeline-profile/screen-name/VondsTeam?dnt=false&embedId=twitter-widget-0&lang=ja&showHeader=true&showReplies=false&transparent=false&widgetsVersion=2615f7e52b7e0%3A1702314776716"
-              width="100%"
-              height="450"
-              frameBorder="0"
-              scrolling="yes"
-              className="block"
-            />
+            <XTimeline />
           </div>
         </div>
       </div>
