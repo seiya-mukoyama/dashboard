@@ -9,10 +9,11 @@ import { OfficialMatches } from "@/components/dashboard/official-matches"
 import { TrainingMatches } from "@/components/dashboard/training-matches"
 import { StatsCards } from "@/components/dashboard/stats-cards"
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches"
-import { PlayerCardsGrid } from "@/components/dashboard/player-cards-grid"
+import { PlayerCardsGrid, type Player } from "@/components/dashboard/player-cards-grid"
 import {
   LayoutDashboard, Users, Medal, Dumbbell, Target, Calendar,
   Settings, PanelLeftClose, PanelLeftOpen, Heart, Repeat2,
+  ArrowLeft, ExternalLink,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -24,6 +25,13 @@ const mainMenuItems = [
   { id: "training", label: "トレーニング", icon: Target },
   { id: "events", label: "イベント", icon: Calendar },
 ]
+
+const positionColors: Record<string, string> = {
+  GK: "bg-yellow-100 text-yellow-800 border-yellow-300",
+  DF: "bg-blue-100 text-blue-800 border-blue-300",
+  MF: "bg-green-100 text-green-800 border-green-300",
+  FW: "bg-red-100 text-red-800 border-red-300",
+}
 
 const viewTitles: Record<string, string> = {
   overview: "チーム",
@@ -123,9 +131,83 @@ function SnsFooter() {
   )
 }
 
+// 選手詳細ページ
+function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }) {
+  return (
+    <div className="space-y-6">
+      <button onClick={onBack}
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <ArrowLeft className="h-4 w-4" />
+        選手一覧に戻る
+      </button>
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* 選手写真 */}
+        <div className="lg:col-span-1">
+          <div className="relative bg-gradient-to-b from-[hsl(142,72%,85%)] to-[hsl(142,72%,94%)] rounded-xl overflow-hidden aspect-square">
+            <Image
+              src={player.image}
+              alt={player.name}
+              fill
+              className="object-contain object-bottom"
+              unoptimized
+            />
+            <div className="absolute top-3 left-3">
+              <span className={`text-xs font-bold px-2 py-1 rounded-md border ${positionColors[player.position] || "bg-gray-100 text-gray-700 border-gray-300"}`}>
+                {player.position}
+              </span>
+            </div>
+            <div className="absolute top-3 right-3 text-4xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+              {player.number}
+            </div>
+          </div>
+        </div>
+
+        {/* 選手情報 */}
+        <div className="lg:col-span-2 space-y-4">
+          <div>
+            <p className="text-sm text-muted-foreground">背番号 {player.number}</p>
+            <h2 className="text-3xl font-bold text-foreground mt-1">{player.name}</h2>
+            <p className="text-lg text-muted-foreground mt-1">{player.nameEn}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg bg-card border border-border p-4">
+              <p className="text-xs text-muted-foreground mb-1">ポジション</p>
+              <p className="text-lg font-bold text-foreground">{player.position}</p>
+            </div>
+            <div className="rounded-lg bg-card border border-border p-4">
+              <p className="text-xs text-muted-foreground mb-1">背番号</p>
+              <p className="text-lg font-bold text-foreground">{player.number}</p>
+            </div>
+          </div>
+
+          {/* 公式サイトリンク */}
+          {player.profileUrl && (
+            <a href={player.profileUrl} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-sm text-foreground">
+              <ExternalLink className="h-4 w-4" />
+              公式サイトで詳細を見る
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState("overview")
   const [collapsed, setCollapsed] = useState(false)
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
+
+  const handleViewChange = (view: string) => {
+    setActiveView(view)
+    setSelectedPlayer(null)
+  }
+
+  const headerTitle = selectedPlayer
+    ? selectedPlayer.name
+    : viewTitles[activeView] || "ダッシュボード"
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
@@ -145,7 +227,7 @@ export default function DashboardPage() {
           {!collapsed && <p className="px-4 py-1 text-xs font-medium text-muted-foreground">メインメニュー</p>}
           <nav className="mt-1">
             {mainMenuItems.map((item) => (
-              <button key={item.id} onClick={() => setActiveView(item.id)} title={collapsed ? item.label : undefined}
+              <button key={item.id} onClick={() => handleViewChange(item.id)} title={collapsed ? item.label : undefined}
                 className={`flex w-full items-center gap-3 py-2 text-sm transition-colors
                   ${collapsed ? "justify-center px-0" : "px-4"}
                   ${activeView === item.id ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-accent"}`}>
@@ -170,7 +252,7 @@ export default function DashboardPage() {
             className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
             {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
           </button>
-          <h1 className="text-lg font-semibold">{viewTitles[activeView] || "ダッシュボード"}</h1>
+          <h1 className="text-lg font-semibold">{headerTitle}</h1>
           <div className="ml-auto text-sm text-muted-foreground">2025-26</div>
         </header>
         <main className="flex-1 overflow-auto p-6">
@@ -189,14 +271,14 @@ export default function DashboardPage() {
             </div>
           )}
           {activeView === "players" && (
-            <div className="space-y-6">
-              <PlayerCardsGrid />
-            </div>
+            selectedPlayer
+              ? <PlayerDetail player={selectedPlayer} onBack={() => setSelectedPlayer(null)} />
+              : <PlayerCardsGrid onSelectPlayer={setSelectedPlayer} />
           )}
-          {activeView === "official-matches" && <div className="space-y-6"><OfficialMatches /></div>}
-          {activeView === "training-matches" && <div className="space-y-6"><TrainingMatches /></div>}
-          {activeView === "training" && <div className="space-y-6"><StatsCards /></div>}
-          {activeView === "events" && <div className="space-y-6"><UpcomingMatches /></div>}
+          {activeView === "official-matches" && <OfficialMatches />}
+          {activeView === "training-matches" && <TrainingMatches />}
+          {activeView === "training" && <StatsCards />}
+          {activeView === "events" && <UpcomingMatches />}
         </main>
       </div>
     </div>
