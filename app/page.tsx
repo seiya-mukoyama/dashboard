@@ -50,10 +50,8 @@ function SnsFooter() {
   return (
     <div className="mt-8 pt-6 border-t border-border">
       <div className="grid grid-cols-2 gap-6">
-
         {/* Instagram */}
         <div className="flex flex-col">
-          {/* ヘッダー */}
           <div className="flex items-center gap-2 mb-3">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -71,23 +69,14 @@ function SnsFooter() {
               @vonds.ichihara →
             </a>
           </div>
-          {/* iFrame（スクロール可） */}
           <div className="rounded-lg border border-border overflow-hidden flex-1">
-            <iframe
-              src="https://www.instagram.com/vonds.ichihara/embed/"
-              width="100%"
-              height="500"
-              frameBorder="0"
-              scrolling="yes"
-              allowTransparency={true}
-              className="block"
-            />
+            <iframe src="https://www.instagram.com/vonds.ichihara/embed/" width="100%" height="500"
+              frameBorder="0" scrolling="yes" allowTransparency={true} className="block" />
           </div>
         </div>
 
         {/* X (Twitter) */}
         <div className="flex flex-col">
-          {/* ヘッダー */}
           <div className="flex items-center gap-2 mb-3">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="white">
@@ -103,16 +92,10 @@ function SnsFooter() {
               @VondsTeam →
             </a>
           </div>
-          {/* スクロール可能なタイムライン */}
           <div className="rounded-lg border border-border overflow-y-auto divide-y divide-border" style={{ height: 500 }}>
             {xPosts.map((post) => (
-              <a
-                key={post.id}
-                href="https://x.com/VondsTeam"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-col gap-2 p-4 bg-card hover:bg-accent transition-colors group block"
-              >
+              <a key={post.id} href="https://x.com/VondsTeam" target="_blank" rel="noopener noreferrer"
+                className="flex flex-col gap-2 p-4 bg-card hover:bg-accent transition-colors group block">
                 <div className="flex items-start gap-2">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black mt-0.5">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="white">
@@ -124,9 +107,7 @@ function SnsFooter() {
                       <span className="text-xs font-semibold text-foreground">VONDS市原FC</span>
                       <span className="text-xs text-muted-foreground">@VondsTeam · {post.date}</span>
                     </div>
-                    <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">
-                      {post.text}
-                    </p>
+                    <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">{post.text}</p>
                     <div className="flex items-center gap-4 mt-2">
                       <span className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-pink-500 transition-colors">
                         <Heart className="h-3 w-3" />{post.likes}
@@ -145,7 +126,6 @@ function SnsFooter() {
             </a>
           </div>
         </div>
-
       </div>
     </div>
   )
@@ -202,6 +182,8 @@ export default function DashboardPage() {
           <div className="ml-auto text-sm text-muted-foreground">2025-26</div>
         </header>
         <main className="flex-1 overflow-auto p-6">
+
+          {/* チームページ: 選手評価→今後5試合の予定 に変更 */}
           {activeView === "overview" && (
             <div className="space-y-6">
               <MatchInfoCard />
@@ -210,13 +192,22 @@ export default function DashboardPage() {
                 <TargetProgress />
               </div>
               <div className="grid gap-6 lg:grid-cols-2">
-                <PlayerRatings />
+                <UpcomingMatches />
                 <RecentMatches />
               </div>
               <SnsFooter />
             </div>
           )}
-          {activeView === "players" && <div className="space-y-6"><UpcomingMatches /><PlayerCardsGrid /><SnsFooter /></div>}
+
+          {/* 選手ページ: 今後5試合の予定→選手評価 に変更 */}
+          {activeView === "players" && (
+            <div className="space-y-6">
+              <PlayerRatings />
+              <PlayerCardsGrid />
+              <SnsFooter />
+            </div>
+          )}
+
           {activeView === "official-matches" && <div className="space-y-6"><OfficialMatches /><SnsFooter /></div>}
           {activeView === "training-matches" && <div className="space-y-6"><TrainingMatches /><SnsFooter /></div>}
           {activeView === "training" && <div className="space-y-6"><StatsCards /><SnsFooter /></div>}
