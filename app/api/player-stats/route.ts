@@ -150,7 +150,14 @@ export async function GET(request: Request) {
               if (!rawName) return
               const normRaw = normName(rawName)
               // パッキングシートの選手（姓のみ）と照合
-              const matched = Object.values(stats).find(s => normName(s.fullName) === normRaw)
+              // フルネーム完全一致 → 姓のみ照合の順で試みる
+              const normFirst = normRaw.split('')[0] // 不使用
+              const matched = Object.values(stats).find(s => normName(s.fullName) === normRaw) ??
+                Object.values(stats).find(s => {
+                  const lastName = normName(s.fullName.split(/[\s\u3000]/)[0])
+                  const trackingLastName = normName(rawName.split(/[\s\u3000]/)[0])
+                  return lastName === trackingLastName
+                })
               if (!matched) return
               if (idxDist >= 0) matched.distance = Math.round(parseFloat(cols[idxDist]) || 0) || null
               if (idxSpeed >= 0) matched.maxSpeed = parseFloat(cols[idxSpeed]) || null
