@@ -131,16 +131,39 @@ export async function GET() {
       group.halves.push(buildStats(col, half))
     }
 
+    // 数値キー一覧（合計計算用）
+    const NUM_KEYS = ['goalsFor','goalsAgainst','packingRate','impact','boxEntries','goalAreaEntries',
+                      'lineBreak','lineBreakAC','crosses','shots','corners','freeKicks',
+                      'opp_packingRate','opp_impact','opp_boxEntries','opp_goalAreaEntries',
+                      'opp_lineBreak','opp_lineBreakAC','opp_crosses','opp_shots','opp_corners','opp_freeKicks'] as const
+
     const matches = matchOrder.map(key => {
       const m = matchMap.get(key)!
       const sortedHalves = [...m.halves].sort((a, b) => {
         const ai = HALF_ORDER.indexOf(a.half); const bi = HALF_ORDER.indexOf(b.half)
         return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi)
       })
-      const total = sortedHalves[0]
+
+      // 既存の合計列があればそれを使い、なければ前半+後半+3本目を合算
+      const existingTotal = sortedHalves.find(h => h.half === '合計')
+      const total = existingTotal ?? (() => {
+        const sum: Record<string, number> = { goalsFor: 0, goalsAgainst: 0 }
+        NUM_KEYS.forEach(k => {
+          // 得点・失点は前半だけカウント（重複を避けるため）
+          // 実際は各ハーフの値を合算
+          sum[k] = sortedHalves.reduce((acc, h) => acc + (h[k] ?? 0), 0)
+        })
+        return { half: '合計', ...sum } as ReturnType<typeof buildStats>
+      })()
+
+      // 合計をhalvesの先頭に追加（まだない場合）
+      const halvesWithTotal = existingTotal
+        ? sortedHalves
+        : [total, ...sortedHalves]
+
       return {
         date: m.date, tournament: m.tournament, opponent: m.opponent,
-        halves: sortedHalves,
+        halves: halvesWithTotal,
         goalsFor: total.goalsFor, goalsAgainst: total.goalsAgainst,
         packingRate: total.packingRate, impact: total.impact,
         boxEntries: total.boxEntries, goalAreaEntries: total.goalAreaEntries,
