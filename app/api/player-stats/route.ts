@@ -2,11 +2,12 @@ import { NextResponse } from "next/server"
 
 const PACKING_SHEET_ID = "1i1PmWTCT_x73GlDHTes9lN-e956gKPfapdY_P_nK11g"
 const PLAYERS_SHEET_ID = "1vnHF5iHJkirI6PhUzD3isKmdkz6Vani4aQfItMgL80k"
-// 後半シートのgid
 const HALVES = [
-  { gid: "0",          label: "前半" },
-  { gid: "2146914840", label: "後半" },
+  { gid: "0" },
+  { gid: "2146914840" },
 ]
+
+const POS_ORDER: Record<string, number> = { GK: 1, DF: 2, MF: 3, FW: 4 }
 
 function parseCSVLine(line: string): string[] {
   const cols: string[] = []; let cur = ""; let inQ = false
@@ -29,30 +30,39 @@ function extractNum(s: string): number {
 
 export async function GET() {
   try {
-    // 選手一覧取得（ポジション情報）
+    // 選手一覧取得（姓→フルネーム・ポジションマップ）
     const playersUrl = `https://docs.google.com/spreadsheets/d/${PLAYERS_SHEET_ID}/export?format=csv&gid=0`
     const playersRes = await fetch(playersUrl, { cache: "no-store" })
     const playersCsv = await playersRes.text()
-    const posMap: Record<string, string> = {}
+
+    // 姓→{fullName, pos} マップ
+    const lastNameMap: Record<string, { fullName: string; pos: string }> = {}
     playersCsv.split("\n").slice(1).forEach(line => {
       const cols = parseCSVLine(line)
-      const name = cols[1]?.trim()
-      const pos  = cols[3]?.trim()
-      if (name && pos) {
-        // 姓のみで照合できるようにする
-        const lastName = name.split(/[\s　]/)[0]
-        posMap[lastName] = pos
-        posMap[name] = pos
-      }
+      const fullName = cols[1]?.trim()
+      const pos      = cols[3]?.trim()
+      if (!fullName || !pos) return
+      // 姓（スペース前）で登録
+      const lastName = fullName.split(/[\s\u3000]/)[0]
+      if (lastName) lastNameMap[lastName] = { fullName, pos }
+      // フルネームでも登録
+      lastNameMap[fullName] = { fullName, pos }
     })
 
-    // パッキング個人シートから集計
     type PlayerStats = {
-      name: string; pos: string
+      lastName: string; fullName: string; pos: string
       packing: number; packingR: number
       impact: number; impactR: number
     }
     const stats: Record<string, PlayerStats> = {}
+
+    const getOrCreate = (lastName: string): PlayerStats => {
+      if (!stats[lastName]) {
+        const info = lastNameMap[lastName] ?? { fullName: lastName, pos: "-" }
+        stats[lastName] = { lastName, fullName: info.fullName, pos: info.pos, packing: 0, packingR: 0, impact: 0, impactR: 0 }
+      }
+      return stats[lastName]
+    }
 
     for (const { gid } of HALVES) {
       const url = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/export?format=csv&gid=${gid}`
@@ -65,49 +75,29 @@ export async function GET() {
         const cat = cols[1]?.trim()
         if (!cat || SKIP_CATS.has(cat)) return
 
-        // この行の選手名
-        const playerName = cat
-        if (!stats[playerName]) {
-          const pos = posMap[playerName] ?? posMap[playerName.split(/[\s　]/)[0]] ?? "-"
-          stats[playerName] = { name: playerName, pos, packing: 0, packingR: 0, impact: 0, impactR: 0 }
-        }
+        const p = getOrCreate(cat)
 
-        // G列以降のDesからポイント集計
         for (let i = 6; i < cols.length; i++) {
           const d = cols[i]?.trim()
           if (!d) continue
 
-          // この行の選手のパッキング（Pass系 + Packing系）
           if (/^P [\d.]+/.test(d) || /^Packing [\d.]+/.test(d)) {
-            stats[playerName].packing += extractNum(d)
+            p.packing += extractNum(d)
           }
           if (/^I [\d.]+/.test(d) || /^Impect [\d.]+/.test(d)) {
-            stats[playerName].impact += extractNum(d)
+            p.impact += extractNum(d)
           }
 
-          // レシーブ（他の選手名 Res → Packingポイントのカウント）
+          // "名前 Res" → 次列の Packing/Impect をレシーブとして加算
           const resMatch = d.match(/^(.+?) Res$/)
           if (resMatch) {
-            // 次の列にPacking N やImpect Nがあるか確認
-            for (let j = i + 1; j < Math.min(i + 3, cols.length); j++) {
+            const recLastName = resMatch[1].split(/[\s\u3000]/)[0]
+            const rec = getOrCreate(recLastName)
+            for (let j = i + 1; j < Math.min(i + 4, cols.length); j++) {
               const next = cols[j]?.trim()
               if (!next) continue
-              if (/^Packing [\d.]+/.test(next)) {
-                const recName = resMatch[1]
-                if (!stats[recName]) {
-                  const pos = posMap[recName] ?? "-"
-                  stats[recName] = { name: recName, pos, packing: 0, packingR: 0, impact: 0, impactR: 0 }
-                }
-                stats[recName].packingR += extractNum(next)
-              }
-              if (/^Impect [\d.]+/.test(next)) {
-                const recName = resMatch[1]
-                if (!stats[recName]) {
-                  const pos = posMap[recName] ?? "-"
-                  stats[recName] = { name: recName, pos, packing: 0, packingR: 0, impact: 0, impactR: 0 }
-                }
-                stats[recName].impactR += extractNum(next)
-              }
+              if (/^Packing [\d.]+/.test(next)) rec.packingR += extractNum(next)
+              if (/^Impect [\d.]+/.test(next))  rec.impactR  += extractNum(next)
             }
           }
         }
@@ -116,14 +106,21 @@ export async function GET() {
 
     const round1 = (v: number) => Math.round(v * 10) / 10
 
-    const result = Object.values(stats).map(s => ({
-      name: s.name,
-      pos: s.pos,
-      packing: round1(s.packing),
-      packingR: round1(s.packingR),
-      impact: round1(s.impact),
-      impactR: round1(s.impactR),
-    })).sort((a, b) => b.packing - a.packing)
+    const result = Object.values(stats)
+      .map(s => ({
+        name: s.fullName,
+        pos: s.pos,
+        packing: round1(s.packing),
+        packingR: round1(s.packingR),
+        impact: round1(s.impact),
+        impactR: round1(s.impactR),
+      }))
+      .sort((a, b) => {
+        const pa = POS_ORDER[a.pos] ?? 9
+        const pb = POS_ORDER[b.pos] ?? 9
+        if (pa !== pb) return pa - pb
+        return b.packing - a.packing
+      })
 
     return NextResponse.json(result)
   } catch (e) {
