@@ -38,100 +38,121 @@ async function getGvizSig(sheetName?: string): Promise<string> {
   } catch { return '' }
 }
 
-type HalfData = {
-  label: string
-  labels: string[]
-  vonds: { packing: number[]; impact: number[] }
-  opp:   { packing: number[]; impact: number[] }
-}
+// 1本分のデータを集計（最大18バケット=90分、実際のデータがある分だけ使用）
+async function fetchHalf(csvUrl: string): Promise<{ vP: number[]; vI: number[]; oP: number[]; oI: number[] } | null> {
+  const res = await fetch(csvUrl, { cache: "no-store" })
+  if (!res.ok) return null
+  const csv = await res.text()
+  if (!csv.trim()) return null
 
-// CSVテキストからHalfDataを生成（labelは呼び出し元から指定）
-function csvToHalfData(csv: string, label: string): HalfData | null {
-  const MAX_BUCKETS = 18
-  const vP = new Array(MAX_BUCKETS).fill(0), vI = new Array(MAX_BUCKETS).fill(0)
-  const oP = new Array(MAX_BUCKETS).fill(0), oI = new Array(MAX_BUCKETS).fill(0)
+  const BUCKETS = 18
+  const vP = new Array(BUCKETS).fill(0)
+  const vI = new Array(BUCKETS).fill(0)
+  const oP = new Array(BUCKETS).fill(0)
+  const oI = new Array(BUCKETS).fill(0)
 
-  csv.split("\n").slice(1).map(parseCSVLine).forEach(cols => {
-    const cat = cols[1]?.trim(); const click = cols[3]?.trim()
+  const rows = csv.split("\n").slice(1).map(parseCSVLine)
+  let hasData = false
+
+  rows.forEach(cols => {
+    const cat = cols[1]?.trim()
+    const click = cols[3]?.trim()
     if (!cat || !click) return
-    const min = toMinutes(click); if (min === null) return
+    const min = toMinutes(click)
+    if (min === null) return
     const isOpp = cat === "相手"
-    const bucket = Math.floor(min / 5); if (bucket < 0 || bucket >= MAX_BUCKETS) return
+    const lb = Math.floor(min / 5)
+    if (lb < 0 || lb >= BUCKETS) return
+    hasData = true
     for (let i = 6; i < cols.length; i++) {
       const d = cols[i]?.trim(); if (!d) continue
-      if (/^P [\d.]+/.test(d) || /^Packing [\d.]+/.test(d)) { const pts = extractNum(d); if (isOpp) oP[bucket] += pts; else vP[bucket] += pts }
-      if (/^I [\d.]+/.test(d) || /^Impect [\d.]+/.test(d)) { const pts = extractNum(d); if (isOpp) oI[bucket] += pts; else vI[bucket] += pts }
+      if (/^P [\d.]+/.test(d) || /^Packing [\d.]+/.test(d)) { const pts = extractNum(d); if (isOpp) oP[lb] += pts; else vP[lb] += pts }
+      if (/^I [\d.]+/.test(d) || /^Impect [\d.]+/.test(d)) { const pts = extractNum(d); if (isOpp) oI[lb] += pts; else vI[lb] += pts }
     }
   })
 
-  const lastBucket = Math.max(vP.findLastIndex(v => v > 0), oP.findLastIndex(v => v > 0))
+  if (!hasData) return null
+  return { vP, vI, oP, oI }
+}
+
+function buildHalfResult(data: { vP: number[]; vI: number[]; oP: number[]; oI: number[] }, label: string) {
+  const cumSum = (arr: number[]) => { let acc = 0; return arr.map(v => { acc += v; return Math.round(acc * 10) / 10 }) }
+
+  const lastBucket = Math.max(
+    data.vP.findLastIndex(v => v > 0),
+    data.oP.findLastIndex(v => v > 0)
+  )
   if (lastBucket < 0) return null
 
-  const maxBucket = Math.min(lastBucket + 1, MAX_BUCKETS)
-  const cumSum = (arr: number[]) => { let acc = 0; return arr.map(v => { acc += v; return Math.round(acc * 10) / 10 }) }
-  const labels = [...Array.from({ length: maxBucket }, (_, i) => `${i * 5}-${(i + 1) * 5}`), `${maxBucket * 5}-EX`]
-  const cV = [...cumSum(vP).slice(0, maxBucket)]; cV.push(cV[cV.length-1] ?? 0)
-  const cVI = [...cumSum(vI).slice(0, maxBucket)]; cVI.push(cVI[cVI.length-1] ?? 0)
-  const cO = [...cumSum(oP).slice(0, maxBucket)]; cO.push(cO[cO.length-1] ?? 0)
-  const cOI = [...cumSum(oI).slice(0, maxBucket)]; cOI.push(cOI[cOI.length-1] ?? 0)
+  const maxBucket = Math.min(lastBucket + 1, 18)
+  const cumV  = cumSum(data.vP).slice(0, maxBucket)
+  const cumVI = cumSum(data.vI).slice(0, maxBucket)
+  const cumO  = cumSum(data.oP).slice(0, maxBucket)
+  const cumOI = cumSum(data.oI).slice(0, maxBucket)
 
-  return { label, labels, vonds: { packing: cV, impact: cVI }, opp: { packing: cO, impact: cOI } }
-}
+  // ラベル: 0-5, 5-10, ... + EX
+  const labels = Array.from({ length: maxBucket }, (_, i) => `${i * 5}-${(i + 1) * 5}`)
+  labels.push(`${maxBucket * 5}-EX`)
+  cumV.push(cumV[cumV.length - 1] ?? 0)
+  cumVI.push(cumVI[cumVI.length - 1] ?? 0)
+  cumO.push(cumO[cumO.length - 1] ?? 0)
+  cumOI.push(cumOI[cumOI.length - 1] ?? 0)
 
-async function fetchHalfByName(sheetName: string, label: string): Promise<HalfData | null> {
-  const url = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
-  const res = await fetch(url, { cache: "no-store" })
-  if (!res.ok) return null
-  const csv = await res.text()
-  if (!csv.trim()) return null
-  return csvToHalfData(csv, label)
-}
-
-async function fetchHalfDefault(label: string): Promise<HalfData | null> {
-  const url = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv`
-  const res = await fetch(url, { cache: "no-store" })
-  if (!res.ok) return null
-  const csv = await res.text()
-  if (!csv.trim()) return null
-  return csvToHalfData(csv, label)
+  return { label, labels, vonds: { packing: cumV, impact: cumVI }, opp: { packing: cumO, impact: cumOI } }
 }
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const date = searchParams.get("date") ?? ""
-  if (!date) return NextResponse.json({ halves: [], noData: true })
+
+  if (!date) {
+    return NextResponse.json({ halves: [], noData: true })
+  }
 
   try {
     const defaultSig = await getGvizSig()
-    const halfNames = ["前半", "後半", "3本目", "4本目", "5本目"]
-    const halves: HalfData[] = []
+    const halves = []
 
-    for (const halfName of halfNames) {
-      const sheetName = `${date}${halfName}`
-      const sig = await getGvizSig(sheetName)
-      if (!sig) continue
+    // 前半・後半・3本目・4本目... まで自動検出
+    const halfNames = [
+      { name: `${date}前半`, label: '前半' },
+      { name: `${date}後半`, label: '後半' },
+      { name: `${date}3本目`, label: '3本目' },
+      { name: `${date}4本目`, label: '4本目' },
+    ]
 
-      let data: HalfData | null = null
+    // 後半・3本目が存在するかを先に確認（前半がデフォルトシートと一致するケースの判定に使用）
+    const sigs = await Promise.all(halfNames.map(h => getGvizSig(h.name)))
 
-      if (sig !== defaultSig) {
+    for (let i = 0; i < halfNames.length; i++) {
+      const { name, label } = halfNames[i]
+      const sig = sigs[i]
+
+      let csvUrl = ''
+      if (sig && sig !== defaultSig) {
         // 別シートとして存在
-        data = await fetchHalfByName(sheetName, halfName)
-      } else if (halfName === "前半") {
-        // sigが一致 → 前半が最初のシートの可能性
-        // 後半が存在するか確認
-        const secondSig = await getGvizSig(`${date}後半`)
-        if (secondSig && secondSig !== defaultSig) {
-          data = await fetchHalfDefault(halfName)
+        csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`
+      } else if (sig === defaultSig && label === '前半') {
+        // 前半がデフォルトと同じ → 後半か3本目が存在すれば前半=最初のシート
+        const hasOther = sigs.slice(1).some(s => s && s !== defaultSig)
+        if (hasOther) {
+          csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv`
         }
-        // 後半も存在しない → データなし（ループ継続しても3本目以降は見つからないのでbreak）
-        if (!data) break
       }
-      // それ以外（後半/3本目以降でsigが一致）→ 存在しないのでスキップ
 
-      if (data) halves.push(data)
+      if (!csvUrl) continue
+
+      const data = await fetchHalf(csvUrl)
+      if (!data) continue
+
+      const result = buildHalfResult(data, label)
+      if (result) halves.push(result)
     }
 
-    if (halves.length === 0) return NextResponse.json({ halves: [], noData: true })
+    if (halves.length === 0) {
+      return NextResponse.json({ halves: [], noData: true })
+    }
+
     return NextResponse.json({ halves })
   } catch {
     return NextResponse.json({ error: "error" }, { status: 500 })

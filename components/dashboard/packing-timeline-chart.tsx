@@ -1,68 +1,90 @@
 "use client"
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import { useEffect, useRef } from "react"
+import { Chart, type ChartConfiguration } from "chart.js/auto"
 
-export type HalfData = {
+type HalfData = {
   label: string
   labels: string[]
   vonds: { packing: number[]; impact: number[] }
   opp:   { packing: number[]; impact: number[] }
 }
 
-// 後方互換のため旧型も残す
 export type TimelineData = {
-  labels?: string[]
   halves?: HalfData[]
+  // 旧形式との後方互換
+  labels?: string[]
   vonds?: { packing: number[]; impact: number[] }
   opp?:   { packing: number[]; impact: number[] }
-}
-
-type Props = {
-  data: TimelineData | null
-  opponent: string
+  noData?: boolean
 }
 
 function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
-  const chartData = half.labels.map((label, i) => ({
-    time: label,
-    "VONDS パッキング": half.vonds.packing[i] ?? 0,
-    "VONDS インペクト": half.vonds.impact[i] ?? 0,
-    [`${opponent} パッキング`]: half.opp.packing[i] ?? 0,
-    [`${opponent} インペクト`]: half.opp.impact[i] ?? 0,
-  }))
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const chartRef  = useRef<Chart | null>(null)
+
+  useEffect(() => {
+    if (!canvasRef.current) return
+    chartRef.current?.destroy()
+
+    const GREEN     = 'rgb(34,197,94)'
+    const GREEN_DIM = 'rgba(34,197,94,0.45)'
+    const GRAY      = 'rgb(148,163,184)'
+    const GRAY_DIM  = 'rgba(148,163,184,0.4)'
+
+    const cfg: ChartConfiguration = {
+      type: 'line',
+      data: {
+        labels: half.labels,
+        datasets: [
+          { label: 'VONDS パッキング',   data: half.vonds.packing, borderColor: GREEN,     backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, tension: 0 },
+          { label: 'VONDS インペクト',   data: half.vonds.impact,  borderColor: GREEN_DIM, backgroundColor: 'transparent', borderWidth: 1.5, borderDash: [4,3], pointRadius: 0, tension: 0 },
+          { label: `${opponent} パッキング`, data: half.opp.packing, borderColor: GRAY,     backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, tension: 0 },
+          { label: `${opponent} インペクト`, data: half.opp.impact,  borderColor: GRAY_DIM, backgroundColor: 'transparent', borderWidth: 1.5, borderDash: [4,3], pointRadius: 0, tension: 0 },
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: { boxWidth: 20, padding: 10, font: { size: 10 }, color: 'rgb(148,163,184)' }
+          },
+          tooltip: { mode: 'index', intersect: false }
+        },
+        scales: {
+          x: {
+            ticks: { font: { size: 10 }, color: 'rgb(148,163,184)', maxRotation: 0 },
+            grid: { color: 'rgba(148,163,184,0.1)' },
+            title: { display: true, text: '経過時間', font: { size: 10 }, color: 'rgb(148,163,184)' }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { font: { size: 10 }, color: 'rgb(148,163,184)' },
+            grid: { color: 'rgba(148,163,184,0.1)' }
+          }
+        }
+      }
+    }
+    chartRef.current = new Chart(canvasRef.current, cfg)
+    return () => { chartRef.current?.destroy() }
+  }, [half, opponent])
 
   return (
     <div>
       <p className="text-xs font-semibold text-muted-foreground mb-2">{half.label}</p>
-      <ResponsiveContainer width="100%" height={320}>
-        <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 20, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-          <XAxis
-            dataKey="time"
-            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
-            label={{ value: "経過時間", position: "insideBottomRight", offset: -5, fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-            interval={0}
-          />
-          <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
-          <Tooltip
-            contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
-            labelFormatter={(v) => `${v}分`}
-          />
-          <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
-          <Line type="stepAfter" dataKey="VONDS パッキング" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-          <Line type="stepAfter" dataKey="VONDS インペクト" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 3" dot={false} />
-          <Line type="stepAfter" dataKey={`${opponent} パッキング`} stroke="hsl(var(--muted-foreground))" strokeWidth={2} dot={false} />
-          <Line type="stepAfter" dataKey={`${opponent} インペクト`} stroke="hsl(var(--muted-foreground))" strokeWidth={2} strokeDasharray="5 3" dot={false} />
-        </LineChart>
-      </ResponsiveContainer>
+      <div style={{ height: 320 }}>
+        <canvas ref={canvasRef} />
+      </div>
     </div>
   )
 }
 
-export function PackingTimelineChart({ data, opponent }: Props) {
-  if (!data) return <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">タイムラインデータがありません</div>
-
-  // 新しい halves 形式
+export function PackingTimelineChart({ data, opponent }: { data: TimelineData; opponent: string }) {
+  // halves配列形式
   if (data.halves && data.halves.length > 0) {
     return (
       <div className="space-y-6">
@@ -73,16 +95,16 @@ export function PackingTimelineChart({ data, opponent }: Props) {
     )
   }
 
-  // 旧形式（labels直接）のフォールバック
-  if (!data.labels || data.labels.length === 0) {
-    return <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">タイムラインデータがありません</div>
+  // 旧形式フォールバック
+  if (data.labels && data.labels.length > 0 && data.vonds && data.opp) {
+    const legacy: HalfData = {
+      label: '',
+      labels: data.labels,
+      vonds: data.vonds,
+      opp: data.opp,
+    }
+    return <HalfChart half={legacy} opponent={opponent} />
   }
 
-  const legacyHalf: HalfData = {
-    label: "",
-    labels: data.labels,
-    vonds: data.vonds!,
-    opp:   data.opp!,
-  }
-  return <HalfChart half={legacyHalf} opponent={opponent} />
+  return <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">データがありません</div>
 }
