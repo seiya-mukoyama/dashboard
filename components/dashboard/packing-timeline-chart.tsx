@@ -1,7 +1,19 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { Chart, type ChartConfiguration } from "chart.js/auto"
+import {
+  Chart,
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Legend,
+  Tooltip,
+  type ChartConfiguration,
+} from "chart.js"
+
+Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Legend, Tooltip)
 
 type HalfData = {
   label: string
@@ -12,11 +24,11 @@ type HalfData = {
 
 export type TimelineData = {
   halves?: HalfData[]
-  // 旧形式との後方互換
+  noData?: boolean
+  // 旧形式後方互換
   labels?: string[]
   vonds?: { packing: number[]; impact: number[] }
   opp?:   { packing: number[]; impact: number[] }
-  noData?: boolean
 }
 
 function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
@@ -32,15 +44,15 @@ function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
     const GRAY      = 'rgb(148,163,184)'
     const GRAY_DIM  = 'rgba(148,163,184,0.4)'
 
-    const cfg: ChartConfiguration = {
+    const cfg: ChartConfiguration<'line'> = {
       type: 'line',
       data: {
         labels: half.labels,
         datasets: [
-          { label: 'VONDS パッキング',   data: half.vonds.packing, borderColor: GREEN,     backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, tension: 0 },
-          { label: 'VONDS インペクト',   data: half.vonds.impact,  borderColor: GREEN_DIM, backgroundColor: 'transparent', borderWidth: 1.5, borderDash: [4,3], pointRadius: 0, tension: 0 },
-          { label: `${opponent} パッキング`, data: half.opp.packing, borderColor: GRAY,     backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, tension: 0 },
-          { label: `${opponent} インペクト`, data: half.opp.impact,  borderColor: GRAY_DIM, backgroundColor: 'transparent', borderWidth: 1.5, borderDash: [4,3], pointRadius: 0, tension: 0 },
+          { label: 'VONDS パッキング',        data: half.vonds.packing, borderColor: GREEN,     backgroundColor: 'transparent', borderWidth: 2,   pointRadius: 0, tension: 0 },
+          { label: 'VONDS インペクト',        data: half.vonds.impact,  borderColor: GREEN_DIM, backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0, borderDash: [4, 3] },
+          { label: `${opponent} パッキング`, data: half.opp.packing,   borderColor: GRAY,      backgroundColor: 'transparent', borderWidth: 2,   pointRadius: 0, tension: 0 },
+          { label: `${opponent} インペクト`, data: half.opp.impact,    borderColor: GRAY_DIM,  backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0, borderDash: [4, 3] },
         ]
       },
       options: {
@@ -58,24 +70,27 @@ function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
         scales: {
           x: {
             ticks: { font: { size: 10 }, color: 'rgb(148,163,184)', maxRotation: 0 },
-            grid: { color: 'rgba(148,163,184,0.1)' },
+            grid:  { color: 'rgba(148,163,184,0.1)' },
             title: { display: true, text: '経過時間', font: { size: 10 }, color: 'rgb(148,163,184)' }
           },
           y: {
             beginAtZero: true,
             ticks: { font: { size: 10 }, color: 'rgb(148,163,184)' },
-            grid: { color: 'rgba(148,163,184,0.1)' }
+            grid:  { color: 'rgba(148,163,184,0.1)' }
           }
         }
       }
     }
+
     chartRef.current = new Chart(canvasRef.current, cfg)
     return () => { chartRef.current?.destroy() }
   }, [half, opponent])
 
   return (
     <div>
-      <p className="text-xs font-semibold text-muted-foreground mb-2">{half.label}</p>
+      {half.label && (
+        <p className="text-xs font-semibold text-muted-foreground mb-2">{half.label}</p>
+      )}
       <div style={{ height: 320 }}>
         <canvas ref={canvasRef} />
       </div>
@@ -84,7 +99,7 @@ function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
 }
 
 export function PackingTimelineChart({ data, opponent }: { data: TimelineData; opponent: string }) {
-  // halves配列形式
+  // halves配列形式（新形式）
   if (data.halves && data.halves.length > 0) {
     return (
       <div className="space-y-6">
@@ -97,12 +112,7 @@ export function PackingTimelineChart({ data, opponent }: { data: TimelineData; o
 
   // 旧形式フォールバック
   if (data.labels && data.labels.length > 0 && data.vonds && data.opp) {
-    const legacy: HalfData = {
-      label: '',
-      labels: data.labels,
-      vonds: data.vonds,
-      opp: data.opp,
-    }
+    const legacy: HalfData = { label: '', labels: data.labels, vonds: data.vonds, opp: data.opp }
     return <HalfChart half={legacy} opponent={opponent} />
   }
 
