@@ -2,10 +2,19 @@
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 
-export type TimelineData = {
+export type HalfData = {
+  label: string
   labels: string[]
   vonds: { packing: number[]; impact: number[] }
-  opp: { packing: number[]; impact: number[] }
+  opp:   { packing: number[]; impact: number[] }
+}
+
+// 後方互換のため旧型も残す
+export type TimelineData = {
+  labels?: string[]
+  halves?: HalfData[]
+  vonds?: { packing: number[]; impact: number[] }
+  opp?:   { packing: number[]; impact: number[] }
 }
 
 type Props = {
@@ -13,22 +22,19 @@ type Props = {
   opponent: string
 }
 
-export function PackingTimelineChart({ data, opponent }: Props) {
-  if (!data || data.labels.length === 0) {
-    return <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">タイムラインデータがありません</div>
-  }
-
-  const chartData = data.labels.map((label, i) => ({
+function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
+  const chartData = half.labels.map((label, i) => ({
     time: label,
-    "VONDS パッキング": data.vonds.packing[i] ?? 0,
-    "VONDS インペクト": data.vonds.impact[i] ?? 0,
-    [`${opponent} パッキング`]: data.opp.packing[i] ?? 0,
-    [`${opponent} インペクト`]: data.opp.impact[i] ?? 0,
+    "VONDS パッキング": half.vonds.packing[i] ?? 0,
+    "VONDS インペクト": half.vonds.impact[i] ?? 0,
+    [`${opponent} パッキング`]: half.opp.packing[i] ?? 0,
+    [`${opponent} インペクト`]: half.opp.impact[i] ?? 0,
   }))
 
   return (
     <div>
-      <ResponsiveContainer width="100%" height={240}>
+      <p className="text-xs font-semibold text-muted-foreground mb-2">{half.label}</p>
+      <ResponsiveContainer width="100%" height={320}>
         <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 20, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
           <XAxis
@@ -51,4 +57,32 @@ export function PackingTimelineChart({ data, opponent }: Props) {
       </ResponsiveContainer>
     </div>
   )
+}
+
+export function PackingTimelineChart({ data, opponent }: Props) {
+  if (!data) return <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">タイムラインデータがありません</div>
+
+  // 新しい halves 形式
+  if (data.halves && data.halves.length > 0) {
+    return (
+      <div className="space-y-6">
+        {data.halves.map((half, i) => (
+          <HalfChart key={i} half={half} opponent={opponent} />
+        ))}
+      </div>
+    )
+  }
+
+  // 旧形式（labels直接）のフォールバック
+  if (!data.labels || data.labels.length === 0) {
+    return <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">タイムラインデータがありません</div>
+  }
+
+  const legacyHalf: HalfData = {
+    label: "",
+    labels: data.labels,
+    vonds: data.vonds!,
+    opp:   data.opp!,
+  }
+  return <HalfChart half={legacyHalf} opponent={opponent} />
 }

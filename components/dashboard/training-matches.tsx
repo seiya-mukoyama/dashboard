@@ -52,7 +52,7 @@ export function TrainingMatches() {
     try {
       const r = await fetch(`/api/timeline?date=${encodeURIComponent(match.date)}`)
       const d = await r.json()
-      setTimelineData(d.labels?.length ? d : null)
+      setTimelineData((d.halves?.length || d.labels?.length) ? d : null)
     } catch {
       setTimelineData(null)
     } finally {
