@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { ChevronRight, ArrowLeft } from "lucide-react"
 import { StatsComparisonChart } from "@/components/dashboard/stats-comparison-chart"
-import { PackingTimelineChart } from "@/components/dashboard/packing-timeline-chart"
+import { PackingTimelineChart, type TimelineData } from "@/components/dashboard/packing-timeline-chart"
 
 type Match = {
   date: string; tournament: string; opponent: string
@@ -16,17 +16,11 @@ type Match = {
   opp_corners: number; opp_freeKicks: number
 }
 
-type TimelineData = {
-  labels: string[]
-  vonds: { packing: number[]; impact: number[] }
-  opp: { packing: number[]; impact: number[] }
-} | null
-
 export function TrainingMatches() {
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<number | null>(null)
-  const [timelineData, setTimelineData] = useState<TimelineData>(null)
+  const [timelineData, setTimelineData] = useState<TimelineData | null>(null)
   const [timelineLoading, setTimelineLoading] = useState(false)
 
   useEffect(() => {
@@ -42,7 +36,6 @@ export function TrainingMatches() {
     setTimelineData(null)
     setTimelineLoading(true)
     try {
-      // gid=0 で固定（今後試合ごとにgidを変えられるよう拡張可）
       const r = await fetch("/api/timeline?gid=0")
       const d = await r.json()
       setTimelineData(d.labels ? d : null)
@@ -65,7 +58,6 @@ export function TrainingMatches() {
           <ArrowLeft className="h-4 w-4" />一覧に戻る
         </button>
 
-        {/* スコア */}
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="text-xs text-muted-foreground text-center mb-3">{m.tournament || "TRM"} · {m.date}</div>
           <div className="flex items-center justify-center gap-6">
@@ -86,7 +78,6 @@ export function TrainingMatches() {
           </div>
         </div>
 
-        {/* スタッツ比較 */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="text-sm font-semibold text-foreground mb-5">スタッツ比較</h3>
           <StatsComparisonChart
@@ -96,7 +87,6 @@ export function TrainingMatches() {
           />
         </div>
 
-        {/* タイムライン */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="text-sm font-semibold text-foreground mb-4">パッキング・インペクト 時系列</h3>
           {timelineLoading
@@ -108,7 +98,6 @@ export function TrainingMatches() {
     )
   }
 
-  // 一覧
   return (
     <div className="space-y-2">
       {matches.map((m, i) => {
