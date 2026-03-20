@@ -1,18 +1,8 @@
 "use client"
 
-import { useEffect, useRef } from "react"
 import {
-  Chart,
-  LineController,
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale,
-  Legend,
-  Tooltip,
-} from "chart.js"
-
-Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Legend, Tooltip)
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from "recharts"
 
 type HalfData = {
   label: string
@@ -29,67 +19,46 @@ export type TimelineData = {
   opp?:   { packing: number[]; impact: number[] }
 }
 
+function buildChartData(half: HalfData) {
+  return half.labels.map((label, i) => ({
+    t: label,
+    vPack: half.vonds.packing[i] ?? null,
+    vImp:  half.vonds.impact[i]  ?? null,
+    oPack: half.opp.packing[i]   ?? null,
+    oImp:  half.opp.impact[i]    ?? null,
+  }))
+}
+
 function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const chartRef  = useRef<Chart | null>(null)
-
-  useEffect(() => {
-    if (!canvasRef.current) return
-    chartRef.current?.destroy()
-
-    const GREEN     = 'rgb(34,197,94)'
-    const GREEN_DIM = 'rgba(34,197,94,0.45)'
-    const GRAY      = 'rgb(148,163,184)'
-    const GRAY_DIM  = 'rgba(148,163,184,0.4)'
-
-    chartRef.current = new Chart(canvasRef.current, {
-      type: 'line',
-      data: {
-        labels: half.labels,
-        datasets: [
-          { label: 'VONDS パッキング',        data: half.vonds.packing, borderColor: GREEN,     backgroundColor: 'transparent', borderWidth: 2,   pointRadius: 0, tension: 0 },
-          { label: 'VONDS インペクト',        data: half.vonds.impact,  borderColor: GREEN_DIM, backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0, borderDash: [4, 3] },
-          { label: `${opponent} パッキング`, data: half.opp.packing,   borderColor: GRAY,      backgroundColor: 'transparent', borderWidth: 2,   pointRadius: 0, tension: 0 },
-          { label: `${opponent} インペクト`, data: half.opp.impact,    borderColor: GRAY_DIM,  backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 0, tension: 0, borderDash: [4, 3] },
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        plugins: {
-          legend: {
-            display: true,
-            position: 'bottom',
-            labels: { boxWidth: 20, padding: 10, font: { size: 10 }, color: 'rgb(148,163,184)' }
-          },
-          tooltip: { mode: 'index', intersect: false }
-        },
-        scales: {
-          x: {
-            ticks: { font: { size: 10 }, color: 'rgb(148,163,184)', maxRotation: 0 },
-            grid:  { color: 'rgba(148,163,184,0.1)' },
-            title: { display: true, text: '経過時間', font: { size: 10 }, color: 'rgb(148,163,184)' }
-          },
-          y: {
-            beginAtZero: true,
-            ticks: { font: { size: 10 }, color: 'rgb(148,163,184)' },
-            grid:  { color: 'rgba(148,163,184,0.1)' }
-          }
-        }
-      }
-    })
-    return () => { chartRef.current?.destroy() }
-  }, [half, opponent])
-
+  const data = buildChartData(half)
   return (
     <div>
       {half.label && (
-        <p className="text-xs font-semibold text-muted-foreground mb-2">{half.label}</p>
+        <p className="text-xs font-semibold text-muted-foreground mb-3">{half.label}</p>
       )}
-      <div style={{ height: 320 }}>
-        <canvas ref={canvasRef} />
-      </div>
+      <ResponsiveContainer width="100%" height={320}>
+        <LineChart data={data} margin={{ top: 4, right: 8, left: -16, bottom: 4 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
+          <XAxis
+            dataKey="t"
+            tick={{ fontSize: 10, fill: 'rgb(148,163,184)' }}
+            label={{ value: '経過時間', position: 'insideBottomRight', offset: -4, fontSize: 10, fill: 'rgb(148,163,184)' }}
+          />
+          <YAxis tick={{ fontSize: 10, fill: 'rgb(148,163,184)' }} />
+          <Tooltip
+            contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11 }}
+            labelStyle={{ color: 'var(--foreground)' }}
+          />
+          <Legend
+            wrapperStyle={{ fontSize: 10, color: 'rgb(148,163,184)', paddingTop: 8 }}
+            iconSize={16}
+          />
+          <Line type="linear" dataKey="vPack" name="VONDS パッキング"       stroke="rgb(34,197,94)"        strokeWidth={2}   dot={false} />
+          <Line type="linear" dataKey="vImp"  name="VONDS インペクト"       stroke="rgba(34,197,94,0.5)"  strokeWidth={1.5} dot={false} strokeDasharray="4 3" />
+          <Line type="linear" dataKey="oPack" name={`${opponent} パッキング`} stroke="rgb(148,163,184)"     strokeWidth={2}   dot={false} />
+          <Line type="linear" dataKey="oImp"  name={`${opponent} インペクト`} stroke="rgba(148,163,184,0.5)" strokeWidth={1.5} dot={false} strokeDasharray="4 3" />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   )
 }
