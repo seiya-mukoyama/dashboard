@@ -17,8 +17,10 @@ function toMinutes(t: string): number | null {
   const s = t.replace(/"/g, '').trim()
   if (!s) return null
   const parts = s.split(':')
+  // "M:SS" or "MM:SS" → 分:秒
   if (parts.length === 2) return parseInt(parts[0]) + parseInt(parts[1]) / 60
-  if (parts.length === 3) return parseInt(parts[0]) * 60 + parseInt(parts[1]) + parseInt(parts[2]) / 60
+  // "MM:SS:00" → Googleシートが時刻形式に変換した分:秒:00（時間ではなく分として解釈）
+  if (parts.length === 3) return parseInt(parts[0]) + parseInt(parts[1]) / 60
   return null
 }
 
@@ -77,7 +79,6 @@ export async function GET(request: Request) {
       return arr.map(v => { acc += v; return Math.round(acc * 10) / 10 })
     }
 
-    // 最後のデータがある時間帯を特定
     const lastBucket = Math.max(
       vPacking.findLastIndex(v => v > 0),
       oPacking.findLastIndex(v => v > 0)
