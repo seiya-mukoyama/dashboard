@@ -92,21 +92,22 @@ function buildHalfResult(data: BucketData, label: string) {
   return { label, labels, vonds: { packing: cumV, impact: cumVI }, opp: { packing: cumO, impact: cumOI } }
 }
 
-// 合計用：各ハーフをoffsetつきで合算（前半=+0, 後半=+9バケット, 3本目=+18...）
+// 合計用: 各ハーフを45分オフセットで結合、合計は0〜(ハーフ数×45)分
 function buildTotalResult(halvesBuckets: BucketData[]) {
-  const TOTAL_BUCKETS = 18 * (halvesBuckets.length > 0 ? halvesBuckets.length : 1)
+  const HALF_BUCKETS = 9  // 各ハーフは最大9バケット(45分分)
+  const TOTAL_BUCKETS = HALF_BUCKETS * halvesBuckets.length
   const vP = new Array(TOTAL_BUCKETS).fill(0)
   const vI = new Array(TOTAL_BUCKETS).fill(0)
   const oP = new Array(TOTAL_BUCKETS).fill(0)
   const oI = new Array(TOTAL_BUCKETS).fill(0)
 
   halvesBuckets.forEach((data, halfIdx) => {
-    const offset = halfIdx * 9  // 前半0-8, 後半9-17, 3本目18-26...
-    for (let i = 0; i < 18; i++) {
-      vP[offset + i] += data.vP[i]
-      vI[offset + i] += data.vI[i]
-      oP[offset + i] += data.oP[i]
-      oI[offset + i] += data.oI[i]
+    const offset = halfIdx * HALF_BUCKETS
+    for (let i = 0; i < HALF_BUCKETS; i++) {
+      vP[offset + i] += data.vP[i] ?? 0
+      vI[offset + i] += data.vI[i] ?? 0
+      oP[offset + i] += data.oP[i] ?? 0
+      oI[offset + i] += data.oI[i] ?? 0
     }
   })
 
@@ -120,7 +121,6 @@ function buildTotalResult(halvesBuckets: BucketData[]) {
   const cumO  = cumSum(oP).slice(0, maxBucket)
   const cumOI = cumSum(oI).slice(0, maxBucket)
 
-  // ラベルは実際の経過時間（分）
   const labels = Array.from({ length: maxBucket }, (_, i) => `${i * 5}-${(i + 1) * 5}`)
   labels.push(`${maxBucket * 5}-EX`)
   cumV.push(cumV[cumV.length-1] ?? 0); cumVI.push(cumVI[cumVI.length-1] ?? 0)
@@ -128,6 +128,7 @@ function buildTotalResult(halvesBuckets: BucketData[]) {
 
   return { label: '合計', labels, vonds: { packing: cumV, impact: cumVI }, opp: { packing: cumO, impact: cumOI } }
 }
+
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
