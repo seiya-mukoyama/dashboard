@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { ChevronRight, ArrowLeft } from "lucide-react"
 import { StatsComparisonChart } from "@/components/dashboard/stats-comparison-chart"
 import { PackingTimelineChart, type TimelineData } from "@/components/dashboard/packing-timeline-chart"
+import { PlayerStatsTable } from "@/components/dashboard/player-stats-table"
 
 type Match = {
   date: string; tournament: string; opponent: string
@@ -58,6 +59,7 @@ export function TrainingMatches() {
           <ArrowLeft className="h-4 w-4" />一覧に戻る
         </button>
 
+        {/* スコア */}
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="text-xs text-muted-foreground text-center mb-3">{m.tournament || "TRM"} · {m.date}</div>
           <div className="flex items-center justify-center gap-6">
@@ -78,6 +80,7 @@ export function TrainingMatches() {
           </div>
         </div>
 
+        {/* スタッツ比較 */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="text-sm font-semibold text-foreground mb-5">スタッツ比較</h3>
           <StatsComparisonChart
@@ -87,12 +90,19 @@ export function TrainingMatches() {
           />
         </div>
 
+        {/* タイムライン */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="text-sm font-semibold text-foreground mb-4">パッキング・インペクト 時系列</h3>
           {timelineLoading
             ? <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">読み込み中...</div>
             : <PackingTimelineChart data={timelineData} opponent={m.opponent} />
           }
+        </div>
+
+        {/* 選手別スタッツ */}
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="text-sm font-semibold text-foreground mb-4">選手別スタッツ</h3>
+          <PlayerStatsTable opponent={m.opponent} />
         </div>
       </div>
     )
