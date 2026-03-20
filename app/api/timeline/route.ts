@@ -2,13 +2,6 @@ import { NextResponse } from "next/server"
 
 const PACKING_SHEET_ID = "1i1PmWTCT_x73GlDHTes9lN-e956gKPfapdY_P_nK11g"
 
-// 試合日付 → パッキングシートのgid（前半・後半）
-// スタッツカウントのdate列（例: "3月8日"）と照合
-const MATCH_SHEETS: Record<string, { firstHalf: string; secondHalf: string }> = {
-  "3月8日":  { firstHalf: "0",          secondHalf: "2146914840" },
-  "3月15日": { firstHalf: "65946394",   secondHalf: "1289732912" },
-}
-
 function parseCSVLine(line: string): string[] {
   const cols: string[] = []; let cur = ""; let inQ = false
   for (const ch of line) {
@@ -33,13 +26,17 @@ function extractNum(s: string): number {
   return m ? parseFloat(m[0]) : 0
 }
 
-async function fetchHalf(gid: string, offset: number, vP: number[], vI: number[], oP: number[], oI: number[]) {
-  const url = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/export?format=csv&gid=${gid}`
+// シート名でCSVを取得（gid不要）
+async function fetchSheetByName(sheetName: string, offset: number,
+  vP: number[], vI: number[], oP: number[], oI: number[]): Promise<boolean> {
+  const url = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
   const res = await fetch(url, { cache: "no-store" })
-  if (!res.ok) return
-
+  if (!res.ok) return false
   const csv = await res.text()
+  if (!csv.trim() || csv.includes("error")) return false
+
   const rows = csv.split("\n").slice(1).map(parseCSVLine)
+  let hasData = false
 
   rows.forEach(cols => {
     const cat   = cols[1]?.trim()
@@ -53,6 +50,7 @@ async function fetchHalf(gid: string, offset: number, vP: number[], vI: number[]
     const localBucket = Math.floor(min / 5)
     if (localBucket < 0 || localBucket >= 9) return
     const bucket = localBucket + offset
+    hasData = true
 
     for (let i = 6; i < cols.length; i++) {
       const d = cols[i]?.trim()
@@ -67,27 +65,14 @@ async function fetchHalf(gid: string, offset: number, vP: number[], vI: number[]
       }
     }
   })
+  return hasData
 }
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  // date パラメータで試合を特定（例: "3月8日"）
   const date = searchParams.get("date") ?? ""
 
-  // dateに対応するシートを探す
-  // 完全一致優先、なければ部分一致
-  let sheets = MATCH_SHEETS[date]
-  if (!sheets) {
-    // 部分一致 e.g. "3月8日" が "3月8日" を含む
-    for (const [key, val] of Object.entries(MATCH_SHEETS)) {
-      if (date.includes(key) || key.includes(date)) {
-        sheets = val
-        break
-      }
-    }
-  }
-
-  if (!sheets) {
+  if (!date) {
     return NextResponse.json({ labels: [], vonds: { packing: [], impact: [] }, opp: { packing: [], impact: [] }, noData: true })
   }
 
@@ -98,8 +83,21 @@ export async function GET(request: Request) {
     const oPacking = new Array(BUCKETS).fill(0)
     const oImpact  = new Array(BUCKETS).fill(0)
 
-    await fetchHalf(sheets.firstHalf,  0, vPacking, vImpact, oPacking, oImpact)
-    await fetchHalf(sheets.secondHalf, 9, vPacking, vImpact, oPacking, oImpact)
+    // シート名は「{date}〇〇前半」「{date}〇〇後半」の形式
+    // gviz APIにシート名で問い合わせると、そのシートが存在すればデータが返る
+    // 存在しなければエラーが返る → hasData=false で判定
+    const firstHalfName  = `${date}前半`
+    const secondHalfName = `${date}後半`
+
+    // まず完全一致を試み、なければ部分一致でシート名を検索
+    // gviz APIはシート名の前方一致に対応しているので
+    // 「3月8日前半」で「3月8日水戸ホーリーホック前半」がヒットする
+    const hasFirst  = await fetchSheetByName(firstHalfName,  0, vPacking, vImpact, oPacking, oImpact)
+    const hasSecond = await fetchSheetByName(secondHalfName, 9, vPacking, vImpact, oPacking, oImpact)
+
+    if (!hasFirst && !hasSecond) {
+      return NextResponse.json({ labels: [], vonds: { packing: [], impact: [] }, opp: { packing: [], impact: [] }, noData: true })
+    }
 
     const cumSum = (arr: number[]) => {
       let acc = 0
@@ -118,12 +116,8 @@ export async function GET(request: Request) {
     const cumO  = cumSum(oPacking).slice(0, maxBucket)
     const cumOI = cumSum(oImpact).slice(0, maxBucket)
 
-    const labels: string[] = Array.from({ length: maxBucket }, (_, i) => {
-      const start = i * 5; const end = (i + 1) * 5
-      return `${start}-${end}`
-    })
-    // 末尾EXラベル追加
-    const exLabel = maxBucket > 9 ? "90-EX" : "45-EX"
+    const labels: string[] = Array.from({ length: maxBucket }, (_, i) => `${i * 5}-${(i + 1) * 5}`)
+    const exLabel = hasSecond ? "90-EX" : "45-EX"
     labels.push(exLabel)
     cumV.push(cumV[cumV.length - 1] ?? 0)
     cumVI.push(cumVI[cumVI.length - 1] ?? 0)
