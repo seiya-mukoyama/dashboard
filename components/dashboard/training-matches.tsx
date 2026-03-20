@@ -20,8 +20,7 @@ export function TrainingMatches() {
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<number | null>(null)
-  const [timelineFirst, setTimelineFirst] = useState<TimelineData | null>(null)
-  const [timelineSecond, setTimelineSecond] = useState<TimelineData | null>(null)
+  const [timelineData, setTimelineData] = useState<TimelineData | null>(null)
   const [timelineLoading, setTimelineLoading] = useState(false)
 
   useEffect(() => {
@@ -34,21 +33,14 @@ export function TrainingMatches() {
 
   const handleSelect = async (i: number) => {
     setSelected(i)
-    setTimelineFirst(null)
-    setTimelineSecond(null)
+    setTimelineData(null)
     setTimelineLoading(true)
     try {
-      const r = await fetch("/api/timeline?gid=0")
+      const r = await fetch("/api/timeline")
       const d = await r.json()
-      if (!d.labels) return
-      // A1セルで前半/後半を振り分け
-      if (d.half === "後半") {
-        setTimelineSecond(d)
-      } else {
-        setTimelineFirst(d)
-      }
+      setTimelineData(d.labels?.length ? d : null)
     } catch {
-      // no-op
+      setTimelineData(null)
     } finally {
       setTimelineLoading(false)
     }
@@ -99,23 +91,7 @@ export function TrainingMatches() {
           <h3 className="text-sm font-semibold text-foreground mb-4">パッキング・インペクト 時系列</h3>
           {timelineLoading
             ? <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">読み込み中...</div>
-            : <div className="space-y-6">
-                {timelineFirst && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground mb-2">前半</p>
-                    <PackingTimelineChart data={timelineFirst} opponent={m.opponent} />
-                  </div>
-                )}
-                {timelineSecond && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground mb-2">後半</p>
-                    <PackingTimelineChart data={timelineSecond} opponent={m.opponent} />
-                  </div>
-                )}
-                {!timelineFirst && !timelineSecond && (
-                  <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">タイムラインデータがありません</div>
-                )}
-              </div>
+            : <PackingTimelineChart data={timelineData} opponent={m.opponent} />
           }
         </div>
       </div>
@@ -151,10 +127,4 @@ export function TrainingMatches() {
 
 export const trainingMatches = [
   { id: "tm-1", date: "2026/02/14", opponent: "栃木シティU-25", score: "4-2", result: "win" as const, type: "TM", duration: 120 },
-  { id: "tm-2", date: "2026/02/22", opponent: "東京23FC", score: "1-1", result: "draw" as const, type: "TM", duration: 90 },
-  { id: "tm-3", date: "2026/02/22", opponent: "横河武蔵野FC", score: "5-2", result: "win" as const, type: "TM", duration: 90 },
-  { id: "tm-4", date: "2026/03/01", opponent: "東京ユナイテッドFC", score: "3-3", result: "draw" as const, type: "TM", duration: 135 },
-  { id: "tm-5", date: "2026/03/07", opponent: "tonan前橋", score: "4-2", result: "win" as const, type: "TM", duration: 90 },
-  { id: "tm-6", date: "2026/03/08", opponent: "水戸ホーリーホック", score: "4-2", result: "win" as const, type: "TM", duration: 90 },
-  { id: "tm-7", date: "2026/03/15", opponent: "shibuya city fc", score: "4-0", result: "win" as const, type: "TM", duration: 120 },
 ]
