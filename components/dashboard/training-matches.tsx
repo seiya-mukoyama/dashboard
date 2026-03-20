@@ -20,7 +20,8 @@ export function TrainingMatches() {
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<number | null>(null)
-  const [timelineData, setTimelineData] = useState<TimelineData | null>(null)
+  const [timelineFirst, setTimelineFirst] = useState<TimelineData | null>(null)
+  const [timelineSecond, setTimelineSecond] = useState<TimelineData | null>(null)
   const [timelineLoading, setTimelineLoading] = useState(false)
 
   useEffect(() => {
@@ -33,14 +34,21 @@ export function TrainingMatches() {
 
   const handleSelect = async (i: number) => {
     setSelected(i)
-    setTimelineData(null)
+    setTimelineFirst(null)
+    setTimelineSecond(null)
     setTimelineLoading(true)
     try {
       const r = await fetch("/api/timeline?gid=0")
       const d = await r.json()
-      setTimelineData(d.labels ? d : null)
+      if (!d.labels) return
+      // A1セルで前半/後半を振り分け
+      if (d.half === "後半") {
+        setTimelineSecond(d)
+      } else {
+        setTimelineFirst(d)
+      }
     } catch {
-      setTimelineData(null)
+      // no-op
     } finally {
       setTimelineLoading(false)
     }
@@ -91,7 +99,23 @@ export function TrainingMatches() {
           <h3 className="text-sm font-semibold text-foreground mb-4">パッキング・インペクト 時系列</h3>
           {timelineLoading
             ? <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">読み込み中...</div>
-            : <PackingTimelineChart data={timelineData} opponent={m.opponent} />
+            : <div className="space-y-6">
+                {timelineFirst && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">前半</p>
+                    <PackingTimelineChart data={timelineFirst} opponent={m.opponent} />
+                  </div>
+                )}
+                {timelineSecond && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">後半</p>
+                    <PackingTimelineChart data={timelineSecond} opponent={m.opponent} />
+                  </div>
+                )}
+                {!timelineFirst && !timelineSecond && (
+                  <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">タイムラインデータがありません</div>
+                )}
+              </div>
           }
         </div>
       </div>
