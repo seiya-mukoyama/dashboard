@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { ChevronRight, ArrowLeft } from "lucide-react"
 import { StatsComparisonChart } from "@/components/dashboard/stats-comparison-chart"
 
 type Match = {
@@ -9,26 +10,12 @@ type Match = {
   opponent: string
   goalsFor: number
   goalsAgainst: number
-  packingRate: number
-  impact: number
-  boxEntries: number
-  goalAreaEntries: number
-  lineBreak: number
-  lineBreakAC: number
-  crosses: number
-  shots: number
-  corners: number
-  freeKicks: number
-  opp_packingRate: number
-  opp_impact: number
-  opp_boxEntries: number
-  opp_goalAreaEntries: number
-  opp_lineBreak: number
-  opp_lineBreakAC: number
-  opp_crosses: number
-  opp_shots: number
-  opp_corners: number
-  opp_freeKicks: number
+  packingRate: number; impact: number; boxEntries: number; goalAreaEntries: number
+  lineBreak: number; lineBreakAC: number; crosses: number; shots: number
+  corners: number; freeKicks: number
+  opp_packingRate: number; opp_impact: number; opp_boxEntries: number; opp_goalAreaEntries: number
+  opp_lineBreak: number; opp_lineBreakAC: number; opp_crosses: number; opp_shots: number
+  opp_corners: number; opp_freeKicks: number
 }
 
 export function TrainingMatches() {
@@ -39,101 +26,113 @@ export function TrainingMatches() {
   useEffect(() => {
     fetch("/api/stats")
       .then(r => r.json())
-      .then(data => {
-        const m = data.matches ?? []
-        setMatches(m)
-        if (m.length > 0) setSelected(0)
-      })
+      .then(data => setMatches(data.matches ?? []))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return (
-    <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">読み込み中...</div>
-  )
-  if (matches.length === 0) return (
-    <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">試合データがありません</div>
-  )
+  if (loading) return <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">読み込み中...</div>
+  if (matches.length === 0) return <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">試合データがありません</div>
 
-  const current = selected !== null ? matches[selected] : null
+  // 詳細ビュー
+  if (selected !== null) {
+    const m = matches[selected]
+    const result = m.goalsFor > m.goalsAgainst ? "win" : m.goalsFor < m.goalsAgainst ? "lose" : "draw"
+    return (
+      <div className="space-y-4">
+        {/* 戻るボタン */}
+        <button
+          onClick={() => setSelected(null)}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          一覧に戻る
+        </button>
 
+        {/* スコア */}
+        <div className="rounded-xl border border-border bg-card p-5">
+          <div className="text-xs text-muted-foreground text-center mb-3">{m.tournament || "TRM"} · {m.date}</div>
+          <div className="flex items-center justify-center gap-6">
+            <div className="text-center flex-1">
+              <div className="text-xs font-semibold text-primary mb-2">VONDS市原</div>
+              <div className="text-5xl font-bold text-primary">{m.goalsFor}</div>
+            </div>
+            <div className="text-center">
+              <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                result === 'win' ? 'bg-primary/15 text-primary' :
+                result === 'lose' ? 'bg-destructive/15 text-destructive' :
+                'bg-secondary text-muted-foreground'
+              }`}>
+                {result === 'win' ? '勝利' : result === 'lose' ? '敗北' : '引き分け'}
+              </span>
+              <div className="text-2xl font-bold text-muted-foreground mt-2">-</div>
+            </div>
+            <div className="text-center flex-1">
+              <div className="text-xs font-semibold text-muted-foreground mb-2">{m.opponent}</div>
+              <div className="text-5xl font-bold text-muted-foreground">{m.goalsAgainst}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* スタッツ比較 */}
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="text-sm font-semibold text-foreground mb-5">スタッツ比較</h3>
+          <StatsComparisonChart
+            vonds={{ packingRate: m.packingRate, impact: m.impact, boxEntries: m.boxEntries, goalAreaEntries: m.goalAreaEntries, lineBreak: m.lineBreak, lineBreakAC: m.lineBreakAC, crosses: m.crosses, shots: m.shots, corners: m.corners, freeKicks: m.freeKicks }}
+            opp={{ packingRate: m.opp_packingRate, impact: m.opp_impact, boxEntries: m.opp_boxEntries, goalAreaEntries: m.opp_goalAreaEntries, lineBreak: m.opp_lineBreak, lineBreakAC: m.opp_lineBreakAC, crosses: m.opp_crosses, shots: m.opp_shots, corners: m.opp_corners, freeKicks: m.opp_freeKicks }}
+            opponent={m.opponent}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // 一覧ビュー
   return (
-    <div className="space-y-6">
-      {/* 試合選択タブ */}
-      <div className="flex flex-wrap gap-2">
-        {matches.map((m, i) => (
+    <div className="space-y-2">
+      {matches.map((m, i) => {
+        const result = m.goalsFor > m.goalsAgainst ? "win" : m.goalsFor < m.goalsAgainst ? "lose" : "draw"
+        return (
           <button
             key={i}
             onClick={() => setSelected(i)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              selected === i
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-            }`}
+            className="w-full flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-secondary/50 transition-colors text-left group"
           >
-            {m.date} vs {m.opponent}
+            {/* 日付・大会名 */}
+            <div className="flex-shrink-0 w-20">
+              <div className="text-xs text-muted-foreground">{m.date}</div>
+              <div className="text-xs font-medium text-muted-foreground mt-0.5">{m.tournament || "TRM"}</div>
+            </div>
+
+            {/* スコア */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="text-lg font-bold text-primary tabular-nums">{m.goalsFor}</span>
+              <span className="text-sm text-muted-foreground">-</span>
+              <span className="text-lg font-bold text-muted-foreground tabular-nums">{m.goalsAgainst}</span>
+            </div>
+
+            {/* 勝敗バッジ */}
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
+              result === 'win' ? 'bg-primary/15 text-primary' :
+              result === 'lose' ? 'bg-destructive/15 text-destructive' :
+              'bg-secondary text-muted-foreground'
+            }`}>
+              {result === 'win' ? '勝' : result === 'lose' ? '負' : '分'}
+            </span>
+
+            {/* 対戦相手 */}
+            <div className="flex-1 text-sm font-medium text-card-foreground">vs {m.opponent}</div>
+
+            {/* 矢印 */}
+            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
           </button>
-        ))}
-      </div>
-
-      {/* 選択中の試合詳細 */}
-      {current && (
-        <div className="space-y-4">
-          {/* スコア */}
-          <div className="flex items-center justify-center gap-4 py-4 rounded-xl bg-secondary/50">
-            <div className="text-center">
-              <div className="text-xs text-primary font-semibold mb-1">VONDS市原</div>
-              <div className="text-4xl font-bold text-primary">{current.goalsFor}</div>
-            </div>
-            <div className="text-center px-4">
-              <div className="text-xs text-muted-foreground mb-1">{current.tournament || "TRM"}</div>
-              <div className="text-lg font-bold text-muted-foreground">-</div>
-              <div className="text-xs text-muted-foreground mt-1">{current.date}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xs text-muted-foreground font-semibold mb-1">{current.opponent}</div>
-              <div className="text-4xl font-bold text-muted-foreground">{current.goalsAgainst}</div>
-            </div>
-          </div>
-
-          {/* スタッツ比較グラフ */}
-          <div className="rounded-xl border border-border bg-card p-5">
-            <h3 className="text-sm font-semibold text-foreground mb-4">スタッツ比較</h3>
-            <StatsComparisonChart
-              vonds={{
-                packingRate: current.packingRate,
-                impact: current.impact,
-                boxEntries: current.boxEntries,
-                goalAreaEntries: current.goalAreaEntries,
-                lineBreak: current.lineBreak,
-                lineBreakAC: current.lineBreakAC,
-                crosses: current.crosses,
-                shots: current.shots,
-                corners: current.corners,
-                freeKicks: current.freeKicks,
-              }}
-              opp={{
-                packingRate: current.opp_packingRate,
-                impact: current.opp_impact,
-                boxEntries: current.opp_boxEntries,
-                goalAreaEntries: current.opp_goalAreaEntries,
-                lineBreak: current.opp_lineBreak,
-                lineBreakAC: current.opp_lineBreakAC,
-                crosses: current.opp_crosses,
-                shots: current.opp_shots,
-                corners: current.opp_corners,
-                freeKicks: current.opp_freeKicks,
-              }}
-              opponent={current.opponent}
-            />
-          </div>
-        </div>
-      )}
+        )
+      })}
     </div>
   )
 }
 
-// 後方互換用（matches/[id]/page.tsxから参照）
+// 後方互換用
 export const trainingMatches = [
   { id: "tm-1", date: "2026/02/14", opponent: "栃木シティU-25", score: "4-2", result: "win" as const, type: "TM", duration: 120 },
   { id: "tm-2", date: "2026/02/22", opponent: "東京23FC", score: "1-1", result: "draw" as const, type: "TM", duration: 90 },
