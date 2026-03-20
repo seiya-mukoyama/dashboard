@@ -6,8 +6,8 @@ import { StatsComparisonChart } from "@/components/dashboard/stats-comparison-ch
 import { PackingTimelineChart, type TimelineData } from "@/components/dashboard/packing-timeline-chart"
 import { PlayerStatsTable } from "@/components/dashboard/player-stats-table"
 
-type Match = {
-  date: string; tournament: string; opponent: string
+type StatsHalf = {
+  half: string
   goalsFor: number; goalsAgainst: number
   packingRate: number; impact: number; boxEntries: number; goalAreaEntries: number
   lineBreak: number; lineBreakAC: number; crosses: number; shots: number
@@ -15,6 +15,11 @@ type Match = {
   opp_packingRate: number; opp_impact: number; opp_boxEntries: number; opp_goalAreaEntries: number
   opp_lineBreak: number; opp_lineBreakAC: number; opp_crosses: number; opp_shots: number
   opp_corners: number; opp_freeKicks: number
+}
+
+type Match = StatsHalf & {
+  date: string; tournament: string; opponent: string
+  halves: StatsHalf[]
 }
 
 function getMonth(date: string): string {
@@ -52,7 +57,7 @@ export function TrainingMatches() {
     try {
       const r = await fetch(`/api/timeline?date=${encodeURIComponent(match.date)}`)
       const d = await r.json()
-      setTimelineData((d.halves?.length || d.labels?.length) ? d : null)
+      setTimelineData(d.halves?.length ? d : null)
     } catch {
       setTimelineData(null)
     } finally {
@@ -68,6 +73,23 @@ export function TrainingMatches() {
   if (selected !== null) {
     const m = matches[selected]
     const result = m.goalsFor > m.goalsAgainst ? "win" : m.goalsFor < m.goalsAgainst ? "lose" : "draw"
+
+    // halves から VONDS/相手それぞれのStatsHalfを分離
+    const halvesVonds = m.halves.map(h => ({
+      half: h.half,
+      packingRate: h.packingRate, impact: h.impact,
+      boxEntries: h.boxEntries, goalAreaEntries: h.goalAreaEntries,
+      lineBreak: h.lineBreak, lineBreakAC: h.lineBreakAC,
+      crosses: h.crosses, shots: h.shots, corners: h.corners, freeKicks: h.freeKicks,
+    }))
+    const halvesOpp = m.halves.map(h => ({
+      half: h.half,
+      packingRate: h.opp_packingRate, impact: h.opp_impact,
+      boxEntries: h.opp_boxEntries, goalAreaEntries: h.opp_goalAreaEntries,
+      lineBreak: h.opp_lineBreak, lineBreakAC: h.opp_lineBreakAC,
+      crosses: h.opp_crosses, shots: h.opp_shots, corners: h.opp_corners, freeKicks: h.opp_freeKicks,
+    }))
+
     return (
       <div className="space-y-4">
         <button onClick={() => setSelected(null)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -100,6 +122,8 @@ export function TrainingMatches() {
             vonds={{ packingRate:m.packingRate, impact:m.impact, boxEntries:m.boxEntries, goalAreaEntries:m.goalAreaEntries, lineBreak:m.lineBreak, lineBreakAC:m.lineBreakAC, crosses:m.crosses, shots:m.shots, corners:m.corners, freeKicks:m.freeKicks }}
             opp={{ packingRate:m.opp_packingRate, impact:m.opp_impact, boxEntries:m.opp_boxEntries, goalAreaEntries:m.opp_goalAreaEntries, lineBreak:m.opp_lineBreak, lineBreakAC:m.opp_lineBreakAC, crosses:m.opp_crosses, shots:m.opp_shots, corners:m.opp_corners, freeKicks:m.opp_freeKicks }}
             opponent={m.opponent}
+            halvesVonds={halvesVonds}
+            halvesOpp={halvesOpp}
           />
         </div>
 
