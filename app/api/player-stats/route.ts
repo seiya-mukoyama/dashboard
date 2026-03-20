@@ -162,7 +162,7 @@ export async function GET(request: Request) {
               if (idxDist >= 0) matched.distance = Math.round(parseFloat(cols[idxDist]) || 0) || null
               if (idxSpeed >= 0) matched.maxSpeed = parseFloat(cols[idxSpeed]) || null
               if (idxHI >= 0) matched.hi = parseFloat(cols[idxHI]) || null
-              if (idxSprint >= 0) matched.sprint = parseInt(cols[idxSprint]) || null
+              if (idxSprint >= 0) { const sv = cols[idxSprint]?.trim(); matched.sprint = sv !== "" && sv != null ? (parseInt(sv) ?? null) : null }
             })
           }
         }
