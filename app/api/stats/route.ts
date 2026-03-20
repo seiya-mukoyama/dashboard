@@ -28,36 +28,47 @@ export async function GET() {
     const csv = await res.text()
     const rows = csv.split("\n").map(parseCSVLine)
 
+    // 行インデックスを特定
+    // 構造:
+    //   行2 = 日付, 行4 = 大会名, 行5 = 前半/後半/3本目, 行6 = 対戦相手
+    //   行7 = 得点, 行8 = 失点
+    //   行13〜22 = VONDS市原スタッツ (B列ラベル: パッキングレート〜FK数)
+    //   行24 = "相手チーム" セクションヘッダ
+    //   行25〜34 = 相手チームスタッツ (同じ順番)
+    
+    // B列ラベルでrow indexを検索
+    // 「相手チーム」の後ろに来る同ラベルを相手スタッツとして扱う
+    const STAT_KEYS = ['packingRate','impact','boxEntries','goalAreaEntries',
+                       'lineBreak','lineBreakAC','crosses','shots','corners','freeKicks']
+    const STAT_LABELS = ['パッキングレート','インペクト','ボックス侵入回数','ゴールエリア侵入回数',
+                         'ラインブレイク','ラインブレイクAC','クロス','シュート','CK数','FK数']
+
     const rowIdx: Record<string, number> = {}
+    let oppSection = false  // 「相手チーム」行を超えたか
+
     rows.forEach((row, i) => {
       const label = row[1]?.trim()
       if (!label) return
-      if (label === '対戦相手')               rowIdx['opponent'] = i
-      if (label === '得点')                   rowIdx['goalsFor'] = i
-      if (label === '失点')                   rowIdx['goalsAgainst'] = i
-      if (label === 'パッキングレート')         rowIdx['packingRate'] = i
-      if (label === 'インペクト')              rowIdx['impact'] = i
-      if (label === 'ボックス侵入回数')         rowIdx['boxEntries'] = i
-      if (label === 'ゴールエリア侵入回数')     rowIdx['goalAreaEntries'] = i
-      if (label === 'ラインブレイク')           rowIdx['lineBreak'] = i
-      if (label === 'ラインブレイクAC')         rowIdx['lineBreakAC'] = i
-      if (label === 'クロス')                 rowIdx['crosses'] = i
-      if (label === 'シュート')               rowIdx['shots'] = i
-      if (label === 'CK数')                  rowIdx['corners'] = i
-      if (label === 'FK数')                  rowIdx['freeKicks'] = i
-      if (label === '相手パッキングレート')      rowIdx['opp_packingRate'] = i
-      if (label === '相手インペクト')           rowIdx['opp_impact'] = i
-      if (label === '相手ボックス侵入回数')      rowIdx['opp_boxEntries'] = i
-      if (label === '相手ゴールエリア侵入回数')  rowIdx['opp_goalAreaEntries'] = i
-      if (label === '相手ラインブレイク')        rowIdx['opp_lineBreak'] = i
-      if (label === '相手ラインブレイクAC')      rowIdx['opp_lineBreakAC'] = i
-      if (label === '相手クロス')              rowIdx['opp_crosses'] = i
-      if (label === '相手シュート')            rowIdx['opp_shots'] = i
-      if (label === '相手CK数')               rowIdx['opp_corners'] = i
-      if (label === '相手FK数')               rowIdx['opp_freeKicks'] = i
+
+      if (label === '対戦相手') rowIdx['opponent'] = i
+      if (label === '得点')     rowIdx['goalsFor'] = i
+      if (label === '失点')     rowIdx['goalsAgainst'] = i
+
+      // 「相手チーム」セクション区切り
+      if (label === '相手チーム') { oppSection = true; return }
+
+      const statIdx = STAT_LABELS.indexOf(label)
+      if (statIdx >= 0) {
+        const key = STAT_KEYS[statIdx]
+        if (!oppSection) {
+          rowIdx[key] = i          // VONDS側（最初に出てくるもの）
+        } else {
+          rowIdx['opp_' + key] = i // 相手側（相手チーム以降に出てくるもの）
+        }
+      }
     })
 
-    const dateRow = rows[1] ?? []
+    const dateRow  = rows[1] ?? []
     const tournRow = rows[3] ?? []
     const halfRow  = rows[4] ?? []
     const oppRow   = rows[rowIdx['opponent'] ?? 5] ?? []
@@ -79,21 +90,20 @@ export async function GET() {
       shots:            g('shots', col),
       corners:          g('corners', col),
       freeKicks:        g('freeKicks', col),
-      opp_packingRate:       g('opp_packingRate', col),
-      opp_impact:            g('opp_impact', col),
-      opp_boxEntries:        g('opp_boxEntries', col),
-      opp_goalAreaEntries:   g('opp_goalAreaEntries', col),
-      opp_lineBreak:         g('opp_lineBreak', col),
-      opp_lineBreakAC:       g('opp_lineBreakAC', col),
-      opp_crosses:           g('opp_crosses', col),
-      opp_shots:             g('opp_shots', col),
-      opp_corners:           g('opp_corners', col),
-      opp_freeKicks:         g('opp_freeKicks', col),
+      opp_packingRate:      g('opp_packingRate', col),
+      opp_impact:           g('opp_impact', col),
+      opp_boxEntries:       g('opp_boxEntries', col),
+      opp_goalAreaEntries:  g('opp_goalAreaEntries', col),
+      opp_lineBreak:        g('opp_lineBreak', col),
+      opp_lineBreakAC:      g('opp_lineBreakAC', col),
+      opp_crosses:          g('opp_crosses', col),
+      opp_shots:            g('opp_shots', col),
+      opp_corners:          g('opp_corners', col),
+      opp_freeKicks:        g('opp_freeKicks', col),
     })
 
-    // グループ化: 日付+対戦相手でまとめ、同一half重複はスキップ
-    // 前半/後半/3本目のみの試合と合計のみの試合を区別する
-    const VALID_HALVES = new Set(['前半', '後半', '3本目', '4本目'])
+    // グループ化: 同じhalf重複はスキップ
+    const HALF_ORDER = ['合計', '前半', '後半', '3本目', '4本目']
     const matchMap = new Map<string, {
       date: string; tournament: string; opponent: string
       halves: ReturnType<typeof buildStats>[]
@@ -107,9 +117,8 @@ export async function GET() {
       if (!date || !opponent || date === '平均') continue
 
       const tournament = tournRow[col]?.trim() || 'TM'
-      // 行5: 前半/後半/3本目 → 記載あり。空欄 → 合計
-      const halfLabel = halfRow[col]?.trim()
-      const half = halfLabel || '合計'
+      const halfLabel  = halfRow[col]?.trim()
+      const half       = halfLabel || '合計'
 
       const key = date + '|' + opponent
       if (!matchMap.has(key)) {
@@ -117,15 +126,11 @@ export async function GET() {
         matchOrder.push(key)
       }
       const group = matchMap.get(key)!
-
-      // 同じhalf（前半/後半/3本目/合計）が既に登録済みならスキップ（重複防止）
       if (group.seenHalves.has(half)) continue
       group.seenHalves.add(half)
       group.halves.push(buildStats(col, half))
     }
 
-    // 並び替え: 合計 → 前半 → 後半 → 3本目
-    const HALF_ORDER = ['合計', '前半', '後半', '3本目', '4本目']
     const matches = matchOrder.map(key => {
       const m = matchMap.get(key)!
       const sortedHalves = [...m.halves].sort((a, b) => {
@@ -136,7 +141,6 @@ export async function GET() {
       return {
         date: m.date, tournament: m.tournament, opponent: m.opponent,
         halves: sortedHalves,
-        // 後方互換フィールド (合計or前半のデータ)
         goalsFor: total.goalsFor, goalsAgainst: total.goalsAgainst,
         packingRate: total.packingRate, impact: total.impact,
         boxEntries: total.boxEntries, goalAreaEntries: total.goalAreaEntries,
