@@ -35,9 +35,9 @@ export function StatsComparisonChart({ vonds, opp, opponent }: Props) {
         {ITEMS.map(({ key, label }) => {
           const v = vonds[key] ?? 0
           const o = opp[key] ?? 0
-          const max = Math.max(v, o, 1)
-          const vPct = (v / max) * 100
-          const oPct = (o / max) * 100
+          const total = v + o
+          // VONDSの割合（0〜100%）、データなしは50%
+          const vPct = total > 0 ? (v / total) * 100 : 50
 
           return (
             <div key={key}>
@@ -45,41 +45,24 @@ export function StatsComparisonChart({ vonds, opp, opponent }: Props) {
               <div className="text-center text-xs text-muted-foreground mb-1">{label}</div>
               <div className="flex items-center gap-2">
                 {/* VONDS数値 */}
-                <span className="w-14 text-right text-sm font-bold tabular-nums flex-shrink-0"
-                  style={{ color: v >= o ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))' }}>
+                <span className="w-14 text-right text-sm font-bold tabular-nums flex-shrink-0 text-primary">
                   {fmt(v)}
                 </span>
 
-                {/* VONDS バー（左から右へ） */}
-                <div className="flex-1 flex items-center h-4 bg-secondary/30 rounded-l-sm overflow-hidden justify-start">
+                {/* 1本のバー: 左=VONDS(緑) 右=相手(グレー) */}
+                <div className="flex-1 flex h-5 rounded-full overflow-hidden bg-secondary/40">
                   <div
-                    className="h-full rounded-r-sm transition-all duration-500"
-                    style={{
-                      width: `${vPct}%`,
-                      background: v >= o ? 'hsl(var(--primary))' : 'hsl(var(--primary) / 0.3)',
-                      marginLeft: 'auto',
-                    }}
+                    className="h-full bg-primary transition-all duration-500"
+                    style={{ width: `${vPct}%` }}
                   />
-                </div>
-
-                {/* 仕切り線 */}
-                <div className="w-px h-5 bg-border flex-shrink-0" />
-
-                {/* 相手バー（右から左へ） */}
-                <div className="flex-1 flex items-center h-4 bg-secondary/30 rounded-r-sm overflow-hidden justify-end">
                   <div
-                    className="h-full rounded-l-sm transition-all duration-500"
-                    style={{
-                      width: `${oPct}%`,
-                      background: o > v ? 'hsl(var(--muted-foreground))' : 'hsl(var(--muted-foreground) / 0.3)',
-                      marginRight: 'auto',
-                    }}
+                    className="h-full bg-muted-foreground/50 transition-all duration-500"
+                    style={{ width: `${100 - vPct}%` }}
                   />
                 </div>
 
                 {/* 相手数値 */}
-                <span className="w-14 text-left text-sm font-bold tabular-nums flex-shrink-0"
-                  style={{ color: o > v ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))' }}>
+                <span className="w-14 text-left text-sm font-bold tabular-nums flex-shrink-0 text-muted-foreground">
                   {fmt(o)}
                 </span>
               </div>
