@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 
 // 1枚のシートに全日付データが入っている（gid=2040383334）
 const SHEET_ID = "15-qo-D-rrIn6J7hUA-A_qfL8sqozgf7d1gxs0BHmaWs"
-const GID = "1674216133" // 最新シート（3月20日）に更新
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -43,7 +42,7 @@ export async function GET(req: Request) {
   const normalizedTarget = normName(playerName)
 
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`
     const res = await fetch(url, { cache: "no-store" })
     if (!res.ok) throw new Error(`Sheet fetch failed: ${res.status}`)
 
