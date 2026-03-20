@@ -62,31 +62,31 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
 }
 
 export function StatsComparisonChart({ vonds, opp, opponent, halvesVonds, halvesOpp }: Props) {
-  const [activeTab, setActiveTab] = useState('合計')
-
-  // タブ構築: halvesVonds/halvesOppがあればタブを表示
   const hasHalves = halvesVonds && halvesVonds.length > 1
   const tabs = hasHalves ? halvesVonds!.map(h => h.half) : []
+  // デフォルトは最初のタブ（合計 or 前半）
+  const [activeTab, setActiveTab] = useState<string>(tabs[0] ?? '合計')
 
   const getStatsForHalf = (half: string): { v: StatsData; o: StatsData } => {
-    if (!hasHalves || half === '合計') return { v: vonds, o: opp }
+    if (!hasHalves) return { v: vonds, o: opp }
     const vi = halvesVonds!.findIndex(h => h.half === half)
-    const oi = halvesOpp!.findIndex(h => h.half === half)
+    const oi = halvesOpp ? halvesOpp.findIndex(h => h.half === half) : -1
     if (vi < 0) return { v: vonds, o: opp }
-    return { v: halvesVonds![vi], o: halvesOpp![oi] ?? opp }
+    return {
+      v: halvesVonds![vi],
+      o: oi >= 0 && halvesOpp ? halvesOpp[oi] : opp
+    }
   }
 
   const { v: curVonds, o: curOpp } = getStatsForHalf(activeTab)
 
   return (
     <div>
-      {/* 対戦チームラベル */}
       <div className="flex justify-between text-xs font-semibold mb-4">
         <span className="text-primary">VONDS市原</span>
         <span className="text-muted-foreground">{opponent}</span>
       </div>
 
-      {/* タブ（前半/後半/3本目がある場合のみ表示） */}
       {hasHalves && (
         <div className="flex gap-1.5 mb-4 flex-wrap">
           {tabs.map(tab => (
