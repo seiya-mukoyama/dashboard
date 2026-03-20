@@ -32,12 +32,12 @@ export function TrainingMatches() {
       .finally(() => setLoading(false))
   }, [])
 
-  const handleSelect = async (i: number) => {
+  const handleSelect = async (i: number, date: string) => {
     setSelected(i)
     setTimelineData(null)
     setTimelineLoading(true)
     try {
-      const r = await fetch("/api/timeline")
+      const r = await fetch(`/api/timeline?date=${encodeURIComponent(date)}`)
       const d = await r.json()
       setTimelineData(d.labels?.length ? d : null)
     } catch {
@@ -59,7 +59,6 @@ export function TrainingMatches() {
           <ArrowLeft className="h-4 w-4" />一覧に戻る
         </button>
 
-        {/* スコア */}
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="text-xs text-muted-foreground text-center mb-3">{m.tournament || "TRM"} · {m.date}</div>
           <div className="flex items-center justify-center gap-6">
@@ -80,7 +79,6 @@ export function TrainingMatches() {
           </div>
         </div>
 
-        {/* スタッツ比較 */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="text-sm font-semibold text-foreground mb-5">スタッツ比較</h3>
           <StatsComparisonChart
@@ -90,16 +88,16 @@ export function TrainingMatches() {
           />
         </div>
 
-        {/* タイムライン */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="text-sm font-semibold text-foreground mb-4">パッキング・インペクト 時系列</h3>
           {timelineLoading
             ? <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">読み込み中...</div>
-            : <PackingTimelineChart data={timelineData} opponent={m.opponent} />
+            : timelineData
+              ? <PackingTimelineChart data={timelineData} opponent={m.opponent} />
+              : <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">この試合のタイムラインデータはありません</div>
           }
         </div>
 
-        {/* 選手別スタッツ */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="text-sm font-semibold text-foreground mb-4">選手別スタッツ</h3>
           <PlayerStatsTable opponent={m.opponent} />
@@ -113,7 +111,7 @@ export function TrainingMatches() {
       {matches.map((m, i) => {
         const result = m.goalsFor > m.goalsAgainst ? "win" : m.goalsFor < m.goalsAgainst ? "lose" : "draw"
         return (
-          <button key={i} onClick={() => handleSelect(i)} className="w-full flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-secondary/50 transition-colors text-left group">
+          <button key={i} onClick={() => handleSelect(i, m.date)} className="w-full flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-secondary/50 transition-colors text-left group">
             <div className="flex-shrink-0 w-20">
               <div className="text-xs text-muted-foreground">{m.date}</div>
               <div className="text-xs font-medium text-muted-foreground mt-0.5">{m.tournament || "TRM"}</div>
