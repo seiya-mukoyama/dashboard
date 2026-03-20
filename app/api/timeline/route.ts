@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     const csv = await res.text()
     const rows = csv.split("\n").slice(1).map(parseCSVLine)
 
-    const BUCKETS = 18 // 5分×18 = 90分
+    const BUCKETS = 9 // 5分×9 = 45分
     const vPacking = new Array(BUCKETS).fill(0)
     const vImpact  = new Array(BUCKETS).fill(0)
     const oPacking = new Array(BUCKETS).fill(0)
@@ -56,7 +56,6 @@ export async function GET(request: Request) {
 
       const isOpp = cat === "相手"
 
-      // G列以降(index6〜)のDesからポイント抽出
       for (let i = 6; i < cols.length; i++) {
         const d = cols[i]?.trim()
         if (!d) continue
@@ -73,7 +72,6 @@ export async function GET(request: Request) {
       }
     })
 
-    // 累積合計
     const cumSum = (arr: number[]) => {
       let acc = 0
       return arr.map(v => { acc += v; return Math.round(acc * 10) / 10 })
@@ -86,7 +84,7 @@ export async function GET(request: Request) {
     )
     const maxBucket = lastBucket >= 0 ? lastBucket + 2 : BUCKETS
 
-    const labels = Array.from({ length: maxBucket }, (_, i) => `${i * 5}-${(i + 1) * 5}`)
+    const labels = Array.from({ length: maxBucket }, (_, i) => i * 5)
 
     return NextResponse.json({
       labels,
