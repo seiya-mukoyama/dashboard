@@ -13,7 +13,6 @@ function parseCSVLine(line: string): string[] {
   return cols
 }
 
-// MM:SS または MM:SS:00 → 分（小数）
 function toMinutes(t: string): number | null {
   const s = t.replace(/"/g, '').trim()
   if (!s) return null
@@ -38,13 +37,12 @@ export async function GET(request: Request) {
     const csv = await res.text()
     const allRows = csv.split("\n").map(parseCSVLine)
 
-    // A1セルで前半/後半を判定
     const a1 = allRows[0]?.[0]?.trim() ?? ""
     const half = a1 === "後半" ? "後半" : "前半"
 
-    const rows = allRows.slice(1) // ヘッダー行を除く
+    const rows = allRows.slice(1)
 
-    const BUCKETS = 9 // 5分×9 = 45分
+    const BUCKETS = 9 // 5分×9 = 0〜45分
     const vPacking = new Array(BUCKETS).fill(0)
     const vImpact  = new Array(BUCKETS).fill(0)
     const oPacking = new Array(BUCKETS).fill(0)
@@ -83,28 +81,27 @@ export async function GET(request: Request) {
       return arr.map(v => { acc += v; return Math.round(acc * 10) / 10 })
     }
 
-    // データがある最後のバケットまで（+1してフラット部分を1つだけ含める）
     const lastBucket = Math.max(
       vPacking.findLastIndex(v => v > 0),
       oPacking.findLastIndex(v => v > 0)
     )
-    // データなしなら空返却
     if (lastBucket < 0) return NextResponse.json({ labels: [], vonds: { packing: [], impact: [] }, opp: { packing: [], impact: [] }, half })
 
-    const maxBucket = Math.min(lastBucket + 1, BUCKETS) // 0埋めの余分なバケットを含めない
+    const maxBucket = Math.min(lastBucket + 1, BUCKETS)
 
-    const labels = Array.from({ length: maxBucket + 1 }, (_, i) => i * 5)
+    // ラベルは各バケットの「終わり時刻」（バケット0=5分, バケット8=45分）
+    const labels = Array.from({ length: maxBucket }, (_, i) => (i + 1) * 5)
 
     return NextResponse.json({
       labels,
       half,
       vonds: {
-        packing: cumSum(vPacking).slice(0, maxBucket + 1),
-        impact:  cumSum(vImpact).slice(0, maxBucket + 1),
+        packing: cumSum(vPacking).slice(0, maxBucket),
+        impact:  cumSum(vImpact).slice(0, maxBucket),
       },
       opp: {
-        packing: cumSum(oPacking).slice(0, maxBucket + 1),
-        impact:  cumSum(oImpact).slice(0, maxBucket + 1),
+        packing: cumSum(oPacking).slice(0, maxBucket),
+        impact:  cumSum(oImpact).slice(0, maxBucket),
       }
     })
   } catch {
