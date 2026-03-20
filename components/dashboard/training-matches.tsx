@@ -17,7 +17,6 @@ type Match = {
   opp_corners: number; opp_freeKicks: number
 }
 
-// "2月14日" → "2月" を返す
 function getMonth(date: string): string {
   const m = date.match(/^(\d+)月/)
   return m ? m[1] + "月" : "不明"
@@ -37,7 +36,6 @@ export function TrainingMatches() {
       .then(data => {
         const ms = data.matches ?? []
         setMatches(ms)
-        // 最新月をデフォルト選択
         if (ms.length > 0) {
           const months = [...new Set(ms.map((m: Match) => getMonth(m.date)))]
           setActiveMonth(months[months.length - 1] as string)
@@ -65,10 +63,8 @@ export function TrainingMatches() {
   if (loading) return <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">読み込み中...</div>
   if (matches.length === 0) return <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">試合データがありません</div>
 
-  // 月リストを古い順に並べる
   const months = [...new Set(matches.map(m => getMonth(m.date)))]
 
-  // 詳細表示
   if (selected !== null) {
     const m = matches[selected]
     const result = m.goalsFor > m.goalsAgainst ? "win" : m.goalsFor < m.goalsAgainst ? "lose" : "draw"
@@ -78,7 +74,6 @@ export function TrainingMatches() {
           <ArrowLeft className="h-4 w-4" />一覧に戻る
         </button>
 
-        {/* スコア */}
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="text-xs text-muted-foreground text-center mb-3">{m.tournament || "TRM"} · {m.date}</div>
           <div className="flex items-center justify-center gap-6">
@@ -99,7 +94,6 @@ export function TrainingMatches() {
           </div>
         </div>
 
-        {/* スタッツ比較 */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="text-sm font-semibold text-foreground mb-5">スタッツ比較</h3>
           <StatsComparisonChart
@@ -109,7 +103,6 @@ export function TrainingMatches() {
           />
         </div>
 
-        {/* タイムライン */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="text-sm font-semibold text-foreground mb-4">パッキング・インペクト 時系列</h3>
           {timelineLoading
@@ -120,21 +113,18 @@ export function TrainingMatches() {
           }
         </div>
 
-        {/* 選手別スタッツ */}
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="text-sm font-semibold text-foreground mb-4">選手別スタッツ</h3>
-          <PlayerStatsTable opponent={m.opponent} />
+          <PlayerStatsTable opponent={m.opponent} date={m.date} />
         </div>
       </div>
     )
   }
 
-  // 一覧表示（月タブ付き）
   const filtered = matches.filter(m => getMonth(m.date) === activeMonth)
 
   return (
     <div className="space-y-3">
-      {/* 月タブ */}
       <div className="flex gap-2 flex-wrap">
         {months.map(month => (
           <button
@@ -150,8 +140,6 @@ export function TrainingMatches() {
           </button>
         ))}
       </div>
-
-      {/* 試合一覧 */}
       <div className="space-y-2">
         {filtered.map((m, i) => {
           const globalIdx = matches.indexOf(m)
