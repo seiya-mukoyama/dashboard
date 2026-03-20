@@ -26,14 +26,33 @@ function extractNum(s: string): number {
   return m ? parseFloat(m[0]) : 0
 }
 
-// シート名でCSVを取得（gid不要）
-async function fetchSheetByName(sheetName: string, offset: number,
-  vP: number[], vI: number[], oP: number[], oI: number[]): Promise<boolean> {
+// シート名でCSVを取得（gviz APIを使用）
+// 注意: gviz APIは存在しないシート名でも最初のシートを返すため、
+// シート名の存在確認はデフォルト(gidなし)のCSVと比較して行う
+async function getDefaultCsv(): Promise<string> {
+  const url = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/export?format=csv`
+  const res = await fetch(url, { cache: "no-store" })
+  return res.ok ? await res.text() : ""
+}
+
+async function fetchSheetByName(
+  sheetName: string,
+  offset: number,
+  defaultCsv: string,
+  vP: number[], vI: number[], oP: number[], oI: number[]
+): Promise<boolean> {
   const url = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
   const res = await fetch(url, { cache: "no-store" })
   if (!res.ok) return false
+
   const csv = await res.text()
-  if (!csv.trim() || csv.includes("error")) return false
+  if (!csv.trim()) return false
+
+  // gviz APIはシートが存在しない場合、デフォルトシート（最初のシート）のデータを返す
+  // → デフォルトCSVの先頭100文字と一致したら「シートが存在しない」と判定
+  const defaultHead = defaultCsv.substring(0, 100)
+  const csvHead = csv.substring(0, 100)
+  if (defaultHead && csvHead === defaultHead) return false
 
   const rows = csv.split("\n").slice(1).map(parseCSVLine)
   let hasData = false
@@ -83,17 +102,14 @@ export async function GET(request: Request) {
     const oPacking = new Array(BUCKETS).fill(0)
     const oImpact  = new Array(BUCKETS).fill(0)
 
-    // シート名は「{date}〇〇前半」「{date}〇〇後半」の形式
-    // gviz APIにシート名で問い合わせると、そのシートが存在すればデータが返る
-    // 存在しなければエラーが返る → hasData=false で判定
+    // デフォルトCSVを取得（シート存在確認のため）
+    const defaultCsv = await getDefaultCsv()
+
     const firstHalfName  = `${date}前半`
     const secondHalfName = `${date}後半`
 
-    // まず完全一致を試み、なければ部分一致でシート名を検索
-    // gviz APIはシート名の前方一致に対応しているので
-    // 「3月8日前半」で「3月8日水戸ホーリーホック前半」がヒットする
-    const hasFirst  = await fetchSheetByName(firstHalfName,  0, vPacking, vImpact, oPacking, oImpact)
-    const hasSecond = await fetchSheetByName(secondHalfName, 9, vPacking, vImpact, oPacking, oImpact)
+    const hasFirst  = await fetchSheetByName(firstHalfName,  0, defaultCsv, vPacking, vImpact, oPacking, oImpact)
+    const hasSecond = await fetchSheetByName(secondHalfName, 9, defaultCsv, vPacking, vImpact, oPacking, oImpact)
 
     if (!hasFirst && !hasSecond) {
       return NextResponse.json({ labels: [], vonds: { packing: [], impact: [] }, opp: { packing: [], impact: [] }, noData: true })
