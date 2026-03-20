@@ -26,15 +26,16 @@ function extractNum(s: string): number {
   return m ? parseFloat(m[0]) : 0
 }
 
-// シート名でCSVを取得（gviz APIを使用）
-// 注意: gviz APIは存在しないシート名でも最初のシートを返すため、
-// シート名の存在確認はデフォルト(gidなし)のCSVと比較して行う
+// デフォルトCSV（最初のシート）をgviz形式で取得
 async function getDefaultCsv(): Promise<string> {
-  const url = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/export?format=csv`
+  const url = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv`
   const res = await fetch(url, { cache: "no-store" })
   return res.ok ? await res.text() : ""
 }
 
+// シート名でCSVを取得
+// gvizはシートが存在しないとデフォルトシートのデータを返すため、
+// デフォルトCSVと完全一致した場合は「シートなし」と判定する
 async function fetchSheetByName(
   sheetName: string,
   offset: number,
@@ -48,11 +49,8 @@ async function fetchSheetByName(
   const csv = await res.text()
   if (!csv.trim()) return false
 
-  // gviz APIはシートが存在しない場合、デフォルトシート（最初のシート）のデータを返す
-  // → デフォルトCSVの先頭100文字と一致したら「シートが存在しない」と判定
-  const defaultHead = defaultCsv.substring(0, 100)
-  const csvHead = csv.substring(0, 100)
-  if (defaultHead && csvHead === defaultHead) return false
+  // デフォルトCSVと完全一致 → シートが存在しない
+  if (csv === defaultCsv) return false
 
   const rows = csv.split("\n").slice(1).map(parseCSVLine)
   let hasData = false
@@ -102,7 +100,7 @@ export async function GET(request: Request) {
     const oPacking = new Array(BUCKETS).fill(0)
     const oImpact  = new Array(BUCKETS).fill(0)
 
-    // デフォルトCSVを取得（シート存在確認のため）
+    // まずデフォルトCSVを取得（シート存在確認に使用）
     const defaultCsv = await getDefaultCsv()
 
     const firstHalfName  = `${date}前半`
