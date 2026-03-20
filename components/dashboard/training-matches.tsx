@@ -132,3 +132,14 @@ export function TrainingMatches() {
     </div>
   )
 }
+
+// 後方互換用（matches/[id]/page.tsxから参照）
+export const trainingMatches = [
+  { id: "tm-1", date: "2026/02/14", opponent: "栃木シティU-25", score: "4-2", result: "win" as const, type: "TM", duration: 120 },
+  { id: "tm-2", date: "2026/02/22", opponent: "東京23FC", score: "1-1", result: "draw" as const, type: "TM", duration: 90 },
+  { id: "tm-3", date: "2026/02/22", opponent: "横河武蔵野FC", score: "5-2", result: "win" as const, type: "TM", duration: 90 },
+  { id: "tm-4", date: "2026/03/01", opponent: "東京ユナイテッドFC", score: "3-3", result: "draw" as const, type: "TM", duration: 135 },
+  { id: "tm-5", date: "2026/03/07", opponent: "tonan前橋", score: "4-2", result: "win" as const, type: "TM", duration: 90 },
+  { id: "tm-6", date: "2026/03/08", opponent: "水戸ホーリーホック", score: "4-2", result: "win" as const, type: "TM", duration: 90 },
+  { id: "tm-7", date: "2026/03/15", opponent: "shibuya city fc", score: "4-0", result: "win" as const, type: "TM", duration: 120 },
+]
