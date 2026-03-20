@@ -90,6 +90,7 @@ export async function GET() {
       shots:            g('shots', col),
       corners:          g('corners', col),
       freeKicks:        g('freeKicks', col),
+      apt:              (rows[rowIdx['apt'] ?? -1] ?? [])[col]?.trim() || '',
       opp_packingRate:      g('opp_packingRate', col),
       opp_impact:           g('opp_impact', col),
       opp_boxEntries:       g('opp_boxEntries', col),
@@ -149,11 +150,11 @@ export async function GET() {
       const total = existingTotal ?? (() => {
         const sum: Record<string, number> = { goalsFor: 0, goalsAgainst: 0 }
         NUM_KEYS.forEach(k => {
-          // 得点・失点は前半だけカウント（重複を避けるため）
-          // 実際は各ハーフの値を合算
-          sum[k] = sortedHalves.reduce((acc, h) => acc + (h[k] ?? 0), 0)
+          sum[k] = sortedHalves.reduce((acc, h) => acc + ((h as Record<string, number>)[k] ?? 0), 0)
         })
-        return { half: '合計', ...sum } as ReturnType<typeof buildStats>
+        // APTは各ハーフを連結（例: "26:38 / 28:17 / 19:34"）
+        const aptParts = sortedHalves.map(h => (h as Record<string,string>)['apt']).filter(Boolean)
+        return { half: '合計', ...sum, apt: aptParts.join(' / ') } as ReturnType<typeof buildStats>
       })()
 
       // 合計をhalvesの先頭に追加（まだない場合）

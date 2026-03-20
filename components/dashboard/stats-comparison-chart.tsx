@@ -7,12 +7,14 @@ type StatsHalf = {
   packingRate: number; impact: number; boxEntries: number; goalAreaEntries: number
   lineBreak: number; lineBreakAC: number; crosses: number; shots: number
   corners: number; freeKicks: number
+  apt?: string
 }
 
 type StatsData = {
   packingRate: number; impact: number; boxEntries: number; goalAreaEntries: number
   lineBreak: number; lineBreakAC: number; crosses: number; shots: number
   corners: number; freeKicks: number
+  apt?: string
 }
 
 type Props = {
@@ -39,6 +41,13 @@ const ITEMS = [
 function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsData; opponent: string }) {
   return (
     <div className="space-y-3">
+      {/* APT */}
+      {vonds.apt && (
+        <div className="text-center py-1.5 mb-2 border-b border-border">
+          <span className="text-xs text-muted-foreground">APT（実質プレー時間）</span>
+          <div className="text-sm font-semibold text-foreground mt-0.5">{vonds.apt}</div>
+        </div>
+      )}
       {ITEMS.map(({ key, label }) => {
         const v = vonds[key] ?? 0
         const o = opp[key] ?? 0
@@ -64,7 +73,6 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
 export function StatsComparisonChart({ vonds, opp, opponent, halvesVonds, halvesOpp }: Props) {
   const hasHalves = halvesVonds && halvesVonds.length > 1
   const tabs = hasHalves ? halvesVonds!.map(h => h.half) : []
-  // デフォルトは最初のタブ（合計 or 前半）
   const [activeTab, setActiveTab] = useState<string>(tabs[0] ?? '合計')
 
   const getStatsForHalf = (half: string): { v: StatsData; o: StatsData } => {

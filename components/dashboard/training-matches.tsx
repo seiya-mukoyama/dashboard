@@ -12,6 +12,7 @@ type StatsHalf = {
   packingRate: number; impact: number; boxEntries: number; goalAreaEntries: number
   lineBreak: number; lineBreakAC: number; crosses: number; shots: number
   corners: number; freeKicks: number
+  apt?: string
   opp_packingRate: number; opp_impact: number; opp_boxEntries: number; opp_goalAreaEntries: number
   opp_lineBreak: number; opp_lineBreakAC: number; opp_crosses: number; opp_shots: number
   opp_corners: number; opp_freeKicks: number
@@ -32,6 +33,7 @@ export function TrainingMatches() {
   const [loading, setLoading] = useState(true)
   const [activeMonth, setActiveMonth] = useState<string | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
+  const [scoreTab, setScoreTab] = useState('合計')
   const [timelineData, setTimelineData] = useState<TimelineData | null>(null)
   const [timelineLoading, setTimelineLoading] = useState(false)
 
@@ -52,6 +54,7 @@ export function TrainingMatches() {
 
   const handleSelect = async (match: Match, idx: number) => {
     setSelected(idx)
+    setScoreTab(match.halves?.[0]?.half ?? '合計')
     setTimelineData(null)
     setTimelineLoading(true)
     try {
@@ -72,11 +75,15 @@ export function TrainingMatches() {
 
   if (selected !== null) {
     const m = matches[selected]
-    const result = m.goalsFor > m.goalsAgainst ? "win" : m.goalsFor < m.goalsAgainst ? "lose" : "draw"
 
-    // halves から VONDS/相手それぞれのStatsHalfを分離
+    // スコアタブ対応
+    const scoreTabs = m.halves?.map(h => h.half) ?? []
+    const activeHalf = m.halves?.find(h => h.half === scoreTab) ?? m.halves?.[0] ?? m
+    const result = activeHalf.goalsFor > activeHalf.goalsAgainst ? "win"
+      : activeHalf.goalsFor < activeHalf.goalsAgainst ? "lose" : "draw"
+
     const halvesVonds = m.halves.map(h => ({
-      half: h.half,
+      half: h.half, apt: h.apt,
       packingRate: h.packingRate, impact: h.impact,
       boxEntries: h.boxEntries, goalAreaEntries: h.goalAreaEntries,
       lineBreak: h.lineBreak, lineBreakAC: h.lineBreakAC,
@@ -96,12 +103,33 @@ export function TrainingMatches() {
           <ArrowLeft className="h-4 w-4" />一覧に戻る
         </button>
 
+        {/* スコアカード */}
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="text-xs text-muted-foreground text-center mb-3">{m.tournament || "TRM"} · {m.date}</div>
+
+          {/* スコアタブ（複数ハーフがある場合のみ） */}
+          {scoreTabs.length > 1 && (
+            <div className="flex justify-center gap-1.5 mb-4 flex-wrap">
+              {scoreTabs.map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setScoreTab(tab)}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                    scoreTab === tab
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="flex items-center justify-center gap-6">
             <div className="text-center flex-1">
               <div className="text-xs font-semibold text-primary mb-2">VONDS市原</div>
-              <div className="text-5xl font-bold text-primary">{m.goalsFor}</div>
+              <div className="text-5xl font-bold text-primary">{activeHalf.goalsFor}</div>
             </div>
             <div className="text-center">
               <span className={`text-xs font-semibold px-3 py-1 rounded-full ${result==='win'?'bg-primary/15 text-primary':result==='lose'?'bg-destructive/15 text-destructive':'bg-secondary text-muted-foreground'}`}>
@@ -111,7 +139,7 @@ export function TrainingMatches() {
             </div>
             <div className="text-center flex-1">
               <div className="text-xs font-semibold text-muted-foreground mb-2">{m.opponent}</div>
-              <div className="text-5xl font-bold text-muted-foreground">{m.goalsAgainst}</div>
+              <div className="text-5xl font-bold text-muted-foreground">{activeHalf.goalsAgainst}</div>
             </div>
           </div>
         </div>
@@ -119,7 +147,7 @@ export function TrainingMatches() {
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="text-sm font-semibold text-foreground mb-5">スタッツ比較</h3>
           <StatsComparisonChart
-            vonds={{ packingRate:m.packingRate, impact:m.impact, boxEntries:m.boxEntries, goalAreaEntries:m.goalAreaEntries, lineBreak:m.lineBreak, lineBreakAC:m.lineBreakAC, crosses:m.crosses, shots:m.shots, corners:m.corners, freeKicks:m.freeKicks }}
+            vonds={{ packingRate:m.packingRate, impact:m.impact, boxEntries:m.boxEntries, goalAreaEntries:m.goalAreaEntries, lineBreak:m.lineBreak, lineBreakAC:m.lineBreakAC, crosses:m.crosses, shots:m.shots, corners:m.corners, freeKicks:m.freeKicks, apt: m.halves?.[0]?.apt }}
             opp={{ packingRate:m.opp_packingRate, impact:m.opp_impact, boxEntries:m.opp_boxEntries, goalAreaEntries:m.opp_goalAreaEntries, lineBreak:m.opp_lineBreak, lineBreakAC:m.opp_lineBreakAC, crosses:m.opp_crosses, shots:m.opp_shots, corners:m.opp_corners, freeKicks:m.opp_freeKicks }}
             opponent={m.opponent}
             halvesVonds={halvesVonds}
