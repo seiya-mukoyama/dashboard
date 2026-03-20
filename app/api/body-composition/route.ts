@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 // 1枚のシートに全日付データが入っている（gid=2040383334）
 const SHEET_ID = "15-qo-D-rrIn6J7hUA-A_qfL8sqozgf7d1gxs0BHmaWs"
-const GID = "2040383334"
+const GID = "1674216133" // 最新シート（3月20日）に更新
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
