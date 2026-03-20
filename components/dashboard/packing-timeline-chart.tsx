@@ -10,7 +10,6 @@ import {
   CategoryScale,
   Legend,
   Tooltip,
-  type ChartConfiguration,
 } from "chart.js"
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Legend, Tooltip)
@@ -25,7 +24,6 @@ type HalfData = {
 export type TimelineData = {
   halves?: HalfData[]
   noData?: boolean
-  // 旧形式後方互換
   labels?: string[]
   vonds?: { packing: number[]; impact: number[] }
   opp?:   { packing: number[]; impact: number[] }
@@ -44,7 +42,7 @@ function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
     const GRAY      = 'rgb(148,163,184)'
     const GRAY_DIM  = 'rgba(148,163,184,0.4)'
 
-    const cfg: ChartConfiguration<'line'> = {
+    chartRef.current = new Chart(canvasRef.current, {
       type: 'line',
       data: {
         labels: half.labels,
@@ -80,9 +78,7 @@ function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
           }
         }
       }
-    }
-
-    chartRef.current = new Chart(canvasRef.current, cfg)
+    })
     return () => { chartRef.current?.destroy() }
   }, [half, opponent])
 
@@ -99,7 +95,6 @@ function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
 }
 
 export function PackingTimelineChart({ data, opponent }: { data: TimelineData; opponent: string }) {
-  // halves配列形式（新形式）
   if (data.halves && data.halves.length > 0) {
     return (
       <div className="space-y-6">
