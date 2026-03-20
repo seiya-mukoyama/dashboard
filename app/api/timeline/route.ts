@@ -38,8 +38,12 @@ async function getGvizSig(sheetName?: string): Promise<string> {
   } catch { return '' }
 }
 
-type BucketData = { vP: number[]; vI: number[]; oP: number[]; oI: number[] }
+type BucketData = {
+  vP: number[]; vI: number[]; oP: number[]; oI: number[]
+  bucketOffset: number  // このデータが何分スタートか（前半=0, 後半=9, 3本目=18...）
+}
 
+// csvUrlからデータを取得し、時刻はそのまま（0分スタート）でバケットに入れる
 async function fetchHalfData(csvUrl: string): Promise<BucketData | null> {
   const res = await fetch(csvUrl, { cache: "no-store" })
   if (!res.ok) return null
@@ -68,10 +72,11 @@ async function fetchHalfData(csvUrl: string): Promise<BucketData | null> {
     }
   })
   if (!hasData) return null
-  return { vP, vI, oP, oI }
+  return { vP, vI, oP, oI, bucketOffset: 0 }
 }
 
-function buildResult(data: BucketData, label: string) {
+// 個別ハーフ用（ラベルはその本のデータ範囲で0スタート）
+function buildHalfResult(data: BucketData, label: string) {
   const cumSum = (arr: number[]) => { let acc = 0; return arr.map(v => { acc += v; return Math.round(acc * 10) / 10 }) }
   const lastBucket = Math.max(data.vP.findLastIndex(v => v > 0), data.oP.findLastIndex(v => v > 0))
   if (lastBucket < 0) return null
@@ -87,9 +92,41 @@ function buildResult(data: BucketData, label: string) {
   return { label, labels, vonds: { packing: cumV, impact: cumVI }, opp: { packing: cumO, impact: cumOI } }
 }
 
-function mergeBuckets(a: BucketData, b: BucketData): BucketData {
-  const merge = (x: number[], y: number[]) => x.map((v, i) => v + (y[i] ?? 0))
-  return { vP: merge(a.vP, b.vP), vI: merge(a.vI, b.vI), oP: merge(a.oP, b.oP), oI: merge(a.oI, b.oI) }
+// 合計用：各ハーフをoffsetつきで合算（前半=+0, 後半=+9バケット, 3本目=+18...）
+function buildTotalResult(halvesBuckets: BucketData[]) {
+  const TOTAL_BUCKETS = 18 * (halvesBuckets.length > 0 ? halvesBuckets.length : 1)
+  const vP = new Array(TOTAL_BUCKETS).fill(0)
+  const vI = new Array(TOTAL_BUCKETS).fill(0)
+  const oP = new Array(TOTAL_BUCKETS).fill(0)
+  const oI = new Array(TOTAL_BUCKETS).fill(0)
+
+  halvesBuckets.forEach((data, halfIdx) => {
+    const offset = halfIdx * 9  // 前半0-8, 後半9-17, 3本目18-26...
+    for (let i = 0; i < 18; i++) {
+      vP[offset + i] += data.vP[i]
+      vI[offset + i] += data.vI[i]
+      oP[offset + i] += data.oP[i]
+      oI[offset + i] += data.oI[i]
+    }
+  })
+
+  const cumSum = (arr: number[]) => { let acc = 0; return arr.map(v => { acc += v; return Math.round(acc * 10) / 10 }) }
+  const lastBucket = Math.max(vP.findLastIndex(v => v > 0), oP.findLastIndex(v => v > 0))
+  if (lastBucket < 0) return null
+  const maxBucket = Math.min(lastBucket + 1, TOTAL_BUCKETS)
+
+  const cumV  = cumSum(vP).slice(0, maxBucket)
+  const cumVI = cumSum(vI).slice(0, maxBucket)
+  const cumO  = cumSum(oP).slice(0, maxBucket)
+  const cumOI = cumSum(oI).slice(0, maxBucket)
+
+  // ラベルは実際の経過時間（分）
+  const labels = Array.from({ length: maxBucket }, (_, i) => `${i * 5}-${(i + 1) * 5}`)
+  labels.push(`${maxBucket * 5}-EX`)
+  cumV.push(cumV[cumV.length-1] ?? 0); cumVI.push(cumVI[cumVI.length-1] ?? 0)
+  cumO.push(cumO[cumO.length-1] ?? 0); cumOI.push(cumOI[cumOI.length-1] ?? 0)
+
+  return { label: '合計', labels, vonds: { packing: cumV, impact: cumVI }, opp: { packing: cumO, impact: cumOI } }
 }
 
 export async function GET(request: Request) {
@@ -107,7 +144,7 @@ export async function GET(request: Request) {
     ]
     const sigs = await Promise.all(halfDefs.map(h => getGvizSig(h.name)))
 
-    const halves: ReturnType<typeof buildResult>[] = []
+    const halves: ReturnType<typeof buildHalfResult>[] = []
     const allBuckets: BucketData[] = []
 
     for (let i = 0; i < halfDefs.length; i++) {
@@ -123,15 +160,14 @@ export async function GET(request: Request) {
       if (!csvUrl) continue
       const data = await fetchHalfData(csvUrl)
       if (!data) continue
-      const result = buildResult(data, label)
+      const result = buildHalfResult(data, label)
       if (result) { halves.push(result); allBuckets.push(data) }
     }
 
     if (halves.length === 0) return NextResponse.json({ halves: [], noData: true })
 
-    // 合計 = 全ハーフを合算
-    const totalData = allBuckets.reduce((acc, cur) => mergeBuckets(acc, cur))
-    const total = buildResult(totalData, '合計')
+    // 合計: 各ハーフを45分ずつオフセットして結合
+    const total = buildTotalResult(allBuckets)
 
     return NextResponse.json({ total, halves })
   } catch {
