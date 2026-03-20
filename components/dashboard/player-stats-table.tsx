@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
 
 type PlayerStat = {
   name: string; pos: string
@@ -11,20 +12,25 @@ type PlayerStat = {
 }
 
 type NumericKey = 'packing' | 'packingR' | 'impact' | 'impactR' | 'distance' | 'maxSpeed' | 'hi' | 'sprint'
+type SortDir = 'desc' | 'asc'
 
 const NUMERIC_COLS: NumericKey[] = ['packing', 'packingR', 'impact', 'impactR', 'distance', 'maxSpeed', 'hi', 'sprint']
 
 const fmt = (v: number | null | undefined) =>
   v == null ? '-' : Number.isInteger(v) ? String(v) : v.toFixed(1)
 
-// 上位3位のハイライト色（1位が最も濃い）
-const RANK_COLORS: Record<number, string> = {
-  1: 'bg-primary/30 text-primary font-bold',
-  2: 'bg-primary/18 text-primary font-semibold',
-  3: 'bg-primary/9 text-primary/80 font-medium',
+// 上位3位ハイライト色
+const RANK_BG: Record<number, string> = {
+  1: 'bg-primary/25',
+  2: 'bg-primary/14',
+  3: 'bg-primary/7',
+}
+const RANK_TEXT: Record<number, string> = {
+  1: 'text-primary font-bold',
+  2: 'text-primary font-semibold',
+  3: 'text-primary/80 font-medium',
 }
 
-// 各列の上位3位インデックスを計算
 function buildRankMap(stats: PlayerStat[]): Map<string, number> {
   const rankMap = new Map<string, number>()
   for (const col of NUMERIC_COLS) {
@@ -41,6 +47,8 @@ function buildRankMap(stats: PlayerStat[]): Map<string, number> {
 export function PlayerStatsTable({ opponent, date }: { opponent: string; date?: string }) {
   const [stats, setStats] = useState<PlayerStat[]>([])
   const [loading, setLoading] = useState(true)
+  const [sortKey, setSortKey] = useState<keyof PlayerStat | null>(null)
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
 
   useEffect(() => {
     const url = date ? `/api/player-stats?date=${encodeURIComponent(date)}` : '/api/player-stats'
@@ -54,23 +62,53 @@ export function PlayerStatsTable({ opponent, date }: { opponent: string; date?: 
   if (loading) return <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">読み込み中...</div>
   if (stats.length === 0) return <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">データがありません</div>
 
-  const rankMap = buildRankMap(stats)
+  // ソート処理
+  const sorted = [...stats].sort((a, b) => {
+    if (!sortKey) return 0
+    const av = a[sortKey] as number | null | undefined
+    const bv = b[sortKey] as number | null | undefined
+    if (av == null && bv == null) return 0
+    if (av == null) return 1
+    if (bv == null) return -1
+    return sortDir === 'desc' ? bv - av : av - bv
+  })
 
-  const cols: { key: keyof PlayerStat; label: string }[] = [
-    { key: 'name',       label: '選手名' },
-    { key: 'pos',        label: 'POS' },
-    { key: 'minutes',    label: '時間' },
-    { key: 'goals',      label: '得点' },
-    { key: 'assists',    label: 'A' },
-    { key: 'preAssists', label: 'PA' },
-    { key: 'packing',    label: 'Pack' },
-    { key: 'packingR',   label: 'PackR' },
-    { key: 'impact',     label: 'Imp' },
-    { key: 'impactR',    label: 'ImpR' },
-    { key: 'distance',   label: '走行距離' },
-    { key: 'maxSpeed',   label: '最高速度' },
-    { key: 'hi',         label: 'HI' },
-    { key: 'sprint',     label: 'Sprint' },
+  // ランクマップはソート前のインデックスで計算（元データ基準）
+  const rankMap = buildRankMap(stats)
+  // sorted内でのインデックス → 元インデックスのマップ
+  const origIndexMap = sorted.map(s => stats.indexOf(s))
+
+  const handleSort = (key: keyof PlayerStat) => {
+    if (sortKey === key) {
+      if (sortDir === 'desc') setSortDir('asc')
+      else { setSortKey(null); setSortDir('desc') } // 3回目でリセット
+    } else {
+      setSortKey(key)
+      setSortDir('desc')
+    }
+  }
+
+  const SortIcon = ({ col }: { col: keyof PlayerStat }) => {
+    if (sortKey !== col) return <ChevronsUpDown className="h-3 w-3 text-muted-foreground/50 ml-0.5 inline" />
+    if (sortDir === 'desc') return <ChevronDown className="h-3 w-3 text-primary ml-0.5 inline" />
+    return <ChevronUp className="h-3 w-3 text-primary ml-0.5 inline" />
+  }
+
+  const cols: { key: keyof PlayerStat; label: string; sortable: boolean }[] = [
+    { key: 'name',       label: '選手名', sortable: false },
+    { key: 'pos',        label: 'POS',   sortable: false },
+    { key: 'minutes',    label: '時間',   sortable: true },
+    { key: 'goals',      label: '得点',   sortable: true },
+    { key: 'assists',    label: 'A',      sortable: true },
+    { key: 'preAssists', label: 'PA',     sortable: true },
+    { key: 'packing',    label: 'Pack',   sortable: true },
+    { key: 'packingR',   label: 'PackR',  sortable: true },
+    { key: 'impact',     label: 'Imp',    sortable: true },
+    { key: 'impactR',    label: 'ImpR',   sortable: true },
+    { key: 'distance',   label: '走行距離', sortable: true },
+    { key: 'maxSpeed',   label: '最高速度', sortable: true },
+    { key: 'hi',         label: 'HI',     sortable: true },
+    { key: 'sprint',     label: 'Sprint', sortable: true },
   ]
 
   return (
@@ -79,40 +117,54 @@ export function PlayerStatsTable({ opponent, date }: { opponent: string; date?: 
         <thead>
           <tr className="border-b border-border">
             {cols.map(c => (
-              <th key={c.key} className={`py-2 px-2 text-left font-semibold text-muted-foreground whitespace-nowrap ${c.key === 'name' ? 'sticky left-0 bg-card z-10' : ''}`}>
+              <th
+                key={c.key}
+                onClick={c.sortable ? () => handleSort(c.key) : undefined}
+                className={`py-2 px-2 text-left font-semibold text-muted-foreground whitespace-nowrap select-none ${
+                  c.key === 'name' ? 'sticky left-0 bg-card z-10' : ''
+                } ${c.sortable ? 'cursor-pointer hover:text-foreground transition-colors' : ''} ${
+                  sortKey === c.key ? 'text-primary' : ''
+                }`}
+              >
                 {c.label}
+                {c.sortable && <SortIcon col={c.key} />}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {stats.map((s, i) => (
-            <tr key={i} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
-              {cols.map(c => {
-                const isNumeric = NUMERIC_COLS.includes(c.key as NumericKey)
-                const rank = isNumeric ? rankMap.get(`${i}-${c.key}`) : undefined
-                const rankClass = rank ? RANK_COLORS[rank] : ''
+          {sorted.map((s, sortedIdx) => {
+            const origIdx = origIndexMap[sortedIdx]
+            return (
+              <tr key={sortedIdx} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                {cols.map(c => {
+                  const isNumeric = NUMERIC_COLS.includes(c.key as NumericKey)
+                  const rank = isNumeric ? rankMap.get(`${origIdx}-${c.key}`) : undefined
+                  const bgClass = rank ? RANK_BG[rank] : ''
+                  const textClass = rank ? RANK_TEXT[rank] : 'text-foreground'
 
-                if (c.key === 'name') return (
-                  <td key={c.key} className="py-2 px-2 whitespace-nowrap font-semibold text-foreground sticky left-0 bg-card z-10">
-                    {s.name}
-                  </td>
-                )
-                if (c.key === 'pos') return (
-                  <td key={c.key} className="py-2 px-2 whitespace-nowrap text-muted-foreground">
-                    {s.pos}
-                  </td>
-                )
-                return (
-                  <td key={c.key} className={`py-2 px-2 whitespace-nowrap tabular-nums rounded ${rankClass || 'text-foreground'}`}>
-                    {fmt(s[c.key] as number | null | undefined)}
-                  </td>
-                )
-              })}
-            </tr>
-          ))}
+                  if (c.key === 'name') return (
+                    <td key={c.key} className={`py-1.5 px-2 whitespace-nowrap font-semibold text-foreground sticky left-0 z-10 ${bgClass || 'bg-card'}`}>
+                      {s.name}
+                    </td>
+                  )
+                  if (c.key === 'pos') return (
+                    <td key={c.key} className="py-1.5 px-2 whitespace-nowrap text-muted-foreground">
+                      {s.pos}
+                    </td>
+                  )
+                  return (
+                    <td key={c.key} className={`py-1.5 px-2 whitespace-nowrap tabular-nums rounded ${bgClass} ${textClass}`}>
+                      {fmt(s[c.key] as number | null | undefined)}
+                    </td>
+                  )
+                })}
+              </tr>
+            )
+          })}
         </tbody>
       </table>
+      <p className="text-xs text-muted-foreground mt-2 text-right">項目名をクリックでソート（↓高い順 / ↑低い順 / もう一度でリセット）</p>
     </div>
   )
 }
