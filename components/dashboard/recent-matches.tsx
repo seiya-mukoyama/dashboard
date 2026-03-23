@@ -35,15 +35,15 @@ export function RecentMatches() {
   }
 
   return (
-    <Card className="border-border/50">
+    <Card className="border-border/50 flex flex-col">
       <CardHeader className="pb-3">
         <CardTitle className="text-card-foreground">最近の5試合</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col justify-between">
         {loading ? (
           <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">読み込み中...</div>
         ) : (
-          <div className="space-y-1.5">
+          <div className="flex flex-col justify-between h-full gap-1.5">
             {matches.map((m, i) => {
               const { label, color } = resultInfo(m)
               const isHome = m.venue?.toUpperCase() === 'HOME'
