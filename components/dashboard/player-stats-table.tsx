@@ -109,6 +109,7 @@ export function PlayerStatsTable({ opponent, date }: { opponent: string; date?: 
     { key: 'maxSpeed',   label: '最高速度', sortable: true },
     { key: 'hi',         label: 'HI',     sortable: true },
     { key: 'sprint',     label: 'Sprint', sortable: true },
+    { key: 'time',      label: 'TIME',   sortable: false },
   ]
 
   return (
