@@ -423,7 +423,7 @@ export default function DashboardPage() {
                 <LeagueStandings />
                 <TargetProgress />
               </div>
-              <div className="grid gap-6 lg:grid-cols-2 items-stretch">
+              <div className="grid gap-6 lg:grid-cols-2 items-start">
                 <RecentMatches />
                 <UpcomingMatches />
               </div>
