@@ -3,16 +3,13 @@ import { NextResponse } from "next/server"
 const JFL_URL = "http://www.jfl.or.jp/jfl-pc/view/s.php?a=2513&f=2026A008_spc.html"
 const OUR_TEAM = "ボンズ市原"
 
-// 全角→半角変換
-function normalize(s: string) {
+function toHalf(s: string) {
   return s.replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).trim()
 }
 
-// "03月22日(日)" → "3月22日"
 function parseDate(s: string) {
   const m = s.match(/(\d+)月(\d+)日/)
-  if (!m) return s
-  return `${parseInt(m[1])}月${parseInt(m[2])}日`
+  return m ? `${parseInt(m[1])}月${parseInt(m[2])}日` : s
 }
 
 export async function GET() {
@@ -21,114 +18,102 @@ export async function GET() {
     if (!res.ok) return NextResponse.json({ past: [], upcoming: [] })
     const html = await res.text()
 
-    // テキストを行に分割して解析
-    const text = html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ')
-    
     type Match = {
-      date: string; time: string; round: string; competition: string
-      home: string; away: string; score: string | null
+      date: string; time: string; round: string
+      opponent: string; score: string | null
+      goalsFor: number | null; goalsAgainst: number | null
       isHome: boolean; venue: string; hasResult: boolean
     }
-    
+
     const matches: Match[] = []
     let currentRound = ''
 
-    // 節を正規表現で抽出
-    const roundPattern = /第(\d+)節節詳細/g
-    const rounds: { round: string; index: number }[] = []
-    let rm: RegExpExecArray | null
-    while ((rm = roundPattern.exec(text)) !== null) {
-      rounds.push({ round: `第${rm[1]}節`, index: rm.index })
-    }
+    // tableの各trを抽出して解析
+    const trPattern = /<tr[^>]*>([\s\S]*?)<\/tr>/gi
+    let trMatch: RegExpExecArray | null
 
-    // 各試合行を抽出: "MM月DD日(曜) HH:MM チーム名 スコア チーム名 スタジアム"
-    const matchPattern = /(\d{2}月\d{2}日\([月火水木金土日]\))\s+(\d{2}:\d{2})\s+([^\d]+?)\s+(\d+-\d+(?:\s*\(PK\s*\d+-\d+\))?|-)\s+([^\d]+?)\s+([^\d月]+?)(?=\s+\d{2}月|\s*$)/g
+    while ((trMatch = trPattern.exec(html)) !== null) {
+      const row = trMatch[1]
+      // tdの中身を取得（タグを除去）
+      const cells = (row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi) ?? [])
+        .map(td => td.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim())
 
-    // シンプルなアプローチ: 行ごとに処理
-    const lines = text.split(/(?=\d{2}月\d{2}日)/)
-    
-    for (const line of lines) {
-      // 節を更新
-      const roundMatch = line.match(/第(\d+)節節詳細/)
-      if (roundMatch) { currentRound = `第${roundMatch[1]}節`; continue }
+      if (cells.length === 0) continue
 
-      // 日付・時刻を含む試合行
-      const dateMatch = line.match(/(\d{2}月\d{2}日)\([月火水木金土日]\)/)
-      if (!dateMatch) continue
+      // 節ヘッダー行: "第N節節詳細" を含む
+      const roundLine = cells.join(' ')
+      const roundMatch = roundLine.match(/第(\d+)節/)
+      if (roundMatch && roundLine.includes('節詳細')) {
+        currentRound = `第${roundMatch[1]}節`
+        continue
+      }
 
-      const timeMatch = line.match(/(\d{2}:\d{2})/)
-      if (!timeMatch) continue
+      // 試合行: 日付(MM月DD日)を含む列がある
+      const dateCell = cells.find(c => /\d+月\d+日/.test(c))
+      if (!dateCell) continue
 
-      const parts = line.trim().split(/\s+/)
-      // ボンズ市原が含まれる行だけ処理
-      if (!line.includes(OUR_TEAM)) continue
+      // ボンズ市原が含まれる行のみ
+      const rowText = cells.join(' ')
+      if (!rowText.includes(OUR_TEAM)) continue
 
-      // スコアパターン: "X-Y" or "X-X (PK X-X)" or "-"（未定）
-      const scoreMatch = line.match(/(\d+)-(\d+)(?:\s*\(PK\s*\d+-\d+\))?/)
-      const hasResult = !!scoreMatch
+      const dateStr = parseDate(dateCell)
+      const timeCell = cells.find(c => /^\d{2}:\d{2}$/.test(c)) ?? ''
 
-      // チーム名とスコアを抽出
-      // "03月22日(日) 13:00 いわてグルージャ盛岡 0-0 (PK 3-5) ボンズ市原 いわｽﾀＡ"
-      // または "03月28日(土) 13:00 ボンズ市原 - Ｙ.Ｓ.Ｃ.Ｃ.横浜 ＺＡ市原"
-      const dateStr = parseDate(dateMatch[1])
-      const timeStr = timeMatch[1]
+      // スコア列を探す: "X-Y" or "X-X (PK X-X)"
+      const scoreCell = cells.find(c => /^\d+-\d+/.test(c) || /^\d+.*PK/.test(c))
+      const dashCell = cells.find(c => c === '-')
+      const hasResult = !!scoreCell
 
-      // ホーム/アウェイ判定: ボンズ市原が前に来ていればホーム
-      const vonds_idx = line.indexOf(OUR_TEAM)
-      const score_idx = line.search(/(\d+-\d+|\s+-\s+)/)
-      const isHome = score_idx < 0 ? vonds_idx < line.length / 2 : vonds_idx < score_idx
+      let goalsFor: number | null = null
+      let goalsAgainst: number | null = null
+      let score: string | null = null
 
-      // 対戦相手を抽出（ボンズ市原以外のチーム名）
-      // 試合行の構造からスタジアムを最後のトークンとして取得
-      const withoutDate = line.replace(dateMatch[0] + '(' + ['月','火','水','木','金','土','日'].find(d => line.includes(dateMatch[0]+'('+d)) + ')', '').replace(timeStr, '').trim()
-      
-      // スコアかダッシュで分割
-      let opponent = ''
-      let venue = ''
-      if (hasResult && scoreMatch) {
-        const scoreStr = scoreMatch[0]
-        const [before, after] = withoutDate.split(scoreStr)
-        // PKスコアも除去
-        const afterClean = after?.replace(/\s*\(PK\s*\d+-\d+\)/, '').trim() ?? ''
-        const tokens = afterClean.split(/\s+/).filter(Boolean)
-        if (isHome) {
-          // ボンズ市原 スコア 相手 スタジアム
-          const beforeTokens = before?.trim().split(/\s+/).filter(Boolean) ?? []
-          opponent = beforeTokens.filter(t => !t.includes(OUR_TEAM)).join('') || tokens[0] || ''
-          venue = tokens[tokens.length - 1] || ''
-        } else {
-          opponent = before?.trim().replace(OUR_TEAM, '').trim().split(/\s+/).filter(Boolean).pop() ?? ''
-          const venueTokens = tokens.filter(t => !t.includes(OUR_TEAM))
-          venue = venueTokens[venueTokens.length - 1] || ''
-        }
-      } else {
-        // 未来の試合: "ボンズ市原 - 相手 スタジアム" or "相手 - ボンズ市原 スタジアム"
-        const dashIdx = withoutDate.indexOf(' - ')
-        if (dashIdx >= 0) {
-          const beforeDash = withoutDate.substring(0, dashIdx).trim()
-          const afterDash = withoutDate.substring(dashIdx + 3).trim()
-          const afterTokens = afterDash.split(/\s+/).filter(Boolean)
-          if (isHome) {
-            opponent = afterTokens.slice(0, -1).join(' ') || afterTokens[0] || ''
-            venue = afterTokens[afterTokens.length - 1] || ''
-          } else {
-            const beforeTokens = beforeDash.split(/\s+/).filter(Boolean)
-            opponent = beforeTokens.filter(t => !t.includes(OUR_TEAM)).join(' ') || beforeTokens[0] || ''
-            venue = afterTokens[afterTokens.length - 1] || ''
-          }
+      // チーム名列を特定（日付・時刻・スコア・会場以外）
+      const teamCells = cells.filter(c =>
+        !/\d+月\d+日/.test(c) &&
+        !/^\d{2}:\d{2}$/.test(c) &&
+        !/^\d+-\d+/.test(c) &&
+        c !== '-' &&
+        !c.includes('詳細') &&
+        !c.includes('公式記録') &&
+        !c.includes('節詳細') &&
+        c.length > 0
+      )
+
+      // ボンズ市原のインデックスで HOME/AWAY を判定
+      // teamCells の中でボンズ市原が最初に来ればホーム
+      const vondsIdx = teamCells.findIndex(c => c.includes(OUR_TEAM))
+      const isHome = vondsIdx === 0
+
+      // 対戦相手（ボンズ市原でない最初のチーム名らしき文字列）
+      const opponent = teamCells.find(c => !c.includes(OUR_TEAM) && c.length > 1 && !/^[\(\)0-9]/.test(c)) ?? ''
+
+      // スタジアム（最後のチーム名でない短めの文字列）
+      const venue = toHalf(teamCells[teamCells.length - 1] === opponent || teamCells[teamCells.length - 1]?.includes(OUR_TEAM) ? '' : teamCells[teamCells.length - 1] ?? '')
+
+      if (hasResult && scoreCell) {
+        const sm = scoreCell.match(/(\d+)-(\d+)/)
+        if (sm) {
+          const home = parseInt(sm[1])
+          const away = parseInt(sm[2])
+          goalsFor = isHome ? home : away
+          goalsAgainst = isHome ? away : home
+          score = `${goalsFor}-${goalsAgainst}`
         }
       }
 
+      if (!opponent) continue
+
       matches.push({
         date: dateStr,
-        time: timeStr,
+        time: timeCell,
         round: currentRound,
-        competition: 'JFL CUP',
-        home: isHome ? OUR_TEAM : opponent,
-        away: isHome ? opponent : OUR_TEAM,
-        score: hasResult && scoreMatch ? `${scoreMatch[1]}-${scoreMatch[2]}` : null,
+        opponent: opponent.replace(/\s+/g, ''),
+        score,
+        goalsFor,
+        goalsAgainst,
         isHome,
-        venue: normalize(venue),
+        venue,
         hasResult,
       })
     }
