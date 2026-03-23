@@ -39,7 +39,7 @@ export function RecentMatches() {
       <CardHeader className="pb-3">
         <CardTitle className="text-card-foreground">最近の5試合</CardTitle>
       </CardHeader>
-      <CardContent className="pb-0">
+      <CardContent className="!pb-0">
         {loading ? (
           <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">読み込み中...</div>
         ) : (
