@@ -46,7 +46,6 @@ export function TrainingMatches() {
         if (ms.length > 0) {
           const months = [...new Set(ms.map((m: Match) => getMonth(m.date)))]
           setActiveMonth(months[months.length - 1] as string)
-
         }
       })
       .catch(() => {})
