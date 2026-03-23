@@ -108,12 +108,7 @@ export function MatchInfoCard() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  <span>{prev.date}</span>
-                </div>
-              </div>
+
             </>
           )}
         </CardContent>
