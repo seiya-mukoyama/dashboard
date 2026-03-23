@@ -321,12 +321,18 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
 
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState("overview")
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true) // モバイルはデフォルト閉じる
+  // PC（768px以上）では開いた状態にする
+  useEffect(() => {
+    if (window.innerWidth >= 768) setCollapsed(false)
+  }, [])
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
 
   const handleViewChange = (view: string) => {
     setActiveView(view)
     setSelectedPlayer(null)
+    // モバイルの場合はメニュー選択後にサイドバーを閉じる
+    if (window.innerWidth < 768) setCollapsed(true)
   }
 
   const headerTitle = selectedPlayer
