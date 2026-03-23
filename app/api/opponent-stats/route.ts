@@ -46,7 +46,7 @@ export async function GET(request: Request) {
     }
 
     // チームフィルタ（空白・全角半角を無視して比較）
-    const normalize = (s: string) => s.replace(/[\s　.．・]/g, '').toLowerCase()
+    const normalize = (s: string) => s.replace(/[\s\u3000.\u30fb\uff65]/g, '').toLowerCase()
     const targetNorm = normalize(team)
 
     const teamMatches = matches.filter(m => {
