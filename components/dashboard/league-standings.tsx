@@ -61,20 +61,11 @@ export function LeagueStandings() {
                     team.isOurTeam ? 'bg-primary/10 hover:bg-primary/20' : 'hover:bg-secondary/30'
                   }`}>
                     <td className="py-1.5 px-2 font-medium">
-                      {team.rank <= 3 ? (
-                        <Badge variant={team.rank === 1 ? "default" : "outline"}
-                          className={team.rank === 1 ? "bg-chart-3 text-background" : team.rank === 2 ? "border-chart-2 text-chart-2" : "border-chart-4 text-chart-4"}>
-                          {team.rank}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground">{team.rank}</span>
-                      )}
+                      <span className={team.isOurTeam ? "text-primary font-bold" : "text-muted-foreground"}>{team.rank}</span>
                     </td>
                     <td className={`py-1.5 px-2 font-medium ${team.isOurTeam ? 'text-primary' : 'text-card-foreground'}`}>
                       {team.team}
-                      {team.isOurTeam && (
-                        <Badge variant="outline" className="ml-2 text-xs border-primary text-primary">自チーム</Badge>
-                      )}
+
                     </td>
                     <td className="py-1.5 px-1 text-center text-muted-foreground">{team.played}</td>
                     <td className="py-1.5 px-1 text-center text-card-foreground">{team.won}</td>
