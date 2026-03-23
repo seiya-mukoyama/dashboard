@@ -10,6 +10,17 @@ type Standing = {
   gd: string; gf: number; ga: number; isOurTeam: boolean
 }
 
+const SHORT_NAMES: Record<string, string> = {
+  'アスルクラロ沼津': '沼津',
+  'ラインメール青森': '青森',
+  '横河武蔵野ＦＣ': '横河武蔵野',
+  'ボンズ市原': '市原',
+  'ブリオベッカ浦安･市川': '浦安・市川',
+  'いわてグルージャ盛岡': '盛岡',
+  'クリアソン新宿': '新宿',
+  'Ｙ.Ｓ.Ｃ.Ｃ.横浜': '横浜',
+}
+
 export function LeagueStandings() {
   const [standings, setStandings] = useState<Standing[]>([])
   const [loading, setLoading] = useState(true)
@@ -64,7 +75,7 @@ export function LeagueStandings() {
                       <span className={team.isOurTeam ? "text-primary font-bold" : "text-muted-foreground"}>{team.rank}</span>
                     </td>
                     <td className={`py-1.5 px-2 font-medium ${team.isOurTeam ? 'text-primary' : 'text-card-foreground'}`}>
-                      {team.team}
+                      <span className="hidden sm:inline">{team.team}</span><span className="sm:hidden">{SHORT_NAMES[team.team] ?? team.team}</span>
 
                     </td>
                     <td className="py-1.5 px-1 text-center text-muted-foreground">{team.played}</td>
