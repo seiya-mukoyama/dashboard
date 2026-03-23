@@ -154,6 +154,11 @@ export function PlayerStatsTable({ opponent, date }: { opponent: string; date?: 
                       {s.pos}
                     </td>
                   )
+                  if (c.key === 'time') return (
+                    <td key={c.key} className="py-1.5 px-2 whitespace-nowrap tabular-nums text-foreground">
+                      {s.time ?? '-'}
+                    </td>
+                  )
                   return (
                     <td key={c.key} className={`py-1.5 px-2 whitespace-nowrap tabular-nums rounded ${bgClass} ${textClass}`}>
                       {fmt(s[c.key] as number | null | undefined)}
