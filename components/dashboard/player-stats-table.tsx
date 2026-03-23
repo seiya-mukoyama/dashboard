@@ -7,14 +7,14 @@ type PlayerStat = {
   name: string; pos: string
   packing: number; packingR: number
   impact: number; impactR: number
-  distance: number | null; maxSpeed: number | null; hi: number | null; sprint: number | null; time?: string | null
+  distance: number | null; maxSpeed: number | null; hi: number | null; sprint: number | null; time?: string | null; lineBreak?: number | null
   minutes?: number; goals?: number; assists?: number; preAssists?: number
 }
 
-type NumericKey = 'packing' | 'packingR' | 'impact' | 'impactR' | 'distance' | 'maxSpeed' | 'hi' | 'sprint'
+type NumericKey = 'packing' | 'packingR' | 'impact' | 'impactR' | 'lineBreak' | 'distance' | 'maxSpeed' | 'hi' | 'sprint'
 type SortDir = 'desc' | 'asc'
 
-const NUMERIC_COLS: NumericKey[] = ['packing', 'packingR', 'impact', 'impactR', 'distance', 'maxSpeed', 'hi', 'sprint']
+const NUMERIC_COLS: NumericKey[] = ['packing', 'packingR', 'impact', 'impactR', 'lineBreak', 'distance', 'maxSpeed', 'hi', 'sprint']
 
 const fmt = (v: number | null | undefined) =>
   v == null ? '-' : Number.isInteger(v) ? String(v) : v.toFixed(1)
@@ -105,6 +105,7 @@ export function PlayerStatsTable({ opponent, date }: { opponent: string; date?: 
     { key: 'packingR',   label: 'PackR',  sortable: true },
     { key: 'impact',     label: 'Imp',    sortable: true },
     { key: 'impactR',    label: 'ImpR',   sortable: true },
+    { key: 'lineBreak',  label: 'LB',     sortable: true },
     { key: 'distance',   label: '走行距離', sortable: true },
     { key: 'maxSpeed',   label: '最高速度', sortable: true },
     { key: 'hi',         label: 'HI',     sortable: true },
