@@ -157,9 +157,26 @@ export async function GET(request: Request) {
         NUM_KEYS.forEach(k => {
           sum[k] = sortedHalves.reduce((acc, h) => acc + (((h as unknown) as Record<string, number>)[k] ?? 0), 0)
         })
-        // APTは各ハーフを連結（例: "26:38 / 28:17 / 19:34"）
-        const aptParts = sortedHalves.map(h => ((h as unknown) as Record<string,string>)['apt']).filter(Boolean)
-        return { half: '合計', ...sum, apt: aptParts.join(' / ') } as ReturnType<typeof buildStats>
+        // APTは各ハーフを秒数で合算して MM:SS 形式に変換
+        const aptRaws = sortedHalves.map(h => ((h as unknown) as Record<string,string>)['apt']).filter(Boolean)
+        let aptTotal = ''
+        if (aptRaws.length > 0) {
+          const totalSec = aptRaws.reduce((acc, raw) => {
+            const s = raw.replace(/^:/, '')
+            const parts = s.split(':')
+            if (parts.length === 3) {
+              return acc + (parseInt(parts[0]) || 0) * 3600 + (parseInt(parts[1]) || 0) * 60 + (parseInt(parts[2]) || 0)
+            }
+            if (parts.length === 2) {
+              return acc + (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0)
+            }
+            return acc
+          }, 0)
+          const totalMin = Math.floor(totalSec / 60)
+          const remSec = String(totalSec % 60).padStart(2, '0')
+          aptTotal = totalMin + ':' + remSec
+        }
+        return { half: '合計', ...sum, apt: aptTotal } as ReturnType<typeof buildStats>
       })()
 
       // 合計をhalvesの先頭に追加（まだない場合）
