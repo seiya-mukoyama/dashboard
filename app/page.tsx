@@ -321,10 +321,17 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
 
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState("overview")
-  const [collapsed, setCollapsed] = useState(true) // モバイルはデフォルト閉じる
-  // PC（768px以上）では開いた状態にする
+  const [isMobile, setIsMobile] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   useEffect(() => {
-    if (window.innerWidth >= 768) setCollapsed(false)
+    const checkWidth = () => {
+      setIsMobile(window.innerWidth < 768)
+      if (window.innerWidth >= 768) setMobileOpen(false)
+    }
+    checkWidth()
+    window.addEventListener('resize', checkWidth)
+    return () => window.removeEventListener('resize', checkWidth)
   }, [])
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
 
