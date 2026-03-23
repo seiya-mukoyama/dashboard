@@ -321,18 +321,16 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
 }
 
 // URLパラメータを読んでビューを切り替える
-function SectionNavigator({ onSection }: { onSection: (v: string) => void }) {
+export default function DashboardPage() {
+  const [activeView, setActiveView] = useState("overview")
+  // URLパラメータでビューを切り替え
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const section = params.get("section")
-    if (section === "official") onSection("official-matches")
-    else if (section === "training") onSection("training-matches")
-  }, [onSection])
-  return null
-}
-
-export default function DashboardPage() {
-  const [activeView, setActiveView] = useState("overview")
+    if (section === "official") setActiveView("official-matches")
+    else if (section === "training") setActiveView("training-matches")
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [isMobile, setIsMobile] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
@@ -360,7 +358,6 @@ export default function DashboardPage() {
     : viewTitles[activeView] || "ダッシュボード"
 
   return (
-    <SectionNavigator onSection={setActiveView} />
     <div className="flex h-screen w-full overflow-hidden bg-background">
       {isMobile && mobileOpen && (
         <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setMobileOpen(false)} />
