@@ -40,7 +40,7 @@ const ITEMS = [
 
 function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsData; opponent: string }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {vonds.apt && (
         <div className="text-center py-2 mb-1 border-b border-border">
           <span className="text-xs text-muted-foreground">APT（実際プレーイングタイム）</span>
@@ -59,10 +59,15 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
         const oPct = 100 - vPct
         return (
           <div key={key}>
-            <div className="flex justify-between items-center mb-1.5">
+            <div className="mb-0.5">
               <span className="text-xs text-muted-foreground">{label}</span>
             </div>
             <div className="relative flex h-6 rounded-full overflow-hidden bg-secondary">
+              <div className="absolute inset-0 pointer-events-none" style={{zIndex:10}}>
+                <div className="absolute top-0 bottom-0 w-px" style={{left:"25%",background:"rgba(0,0,0,0.12)"}} />
+                <div className="absolute top-0 bottom-0 w-px" style={{left:"50%",background:"rgba(0,0,0,0.2)"}} />
+                <div className="absolute top-0 bottom-0 w-px" style={{left:"75%",background:"rgba(0,0,0,0.12)"}} />
+              </div>
               <div
                 className="bg-primary transition-all flex items-center justify-start pl-2"
                 style={{ width: `${vPct}%` }}
