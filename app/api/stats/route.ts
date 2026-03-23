@@ -20,7 +20,9 @@ function toNum(s: string | undefined): number {
   return isNaN(n) ? 0 : n
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const typeFilter = searchParams.get("type") // "TM" or "official" or null (all)
   try {
     const url = `https://docs.google.com/spreadsheets/d/${STATS_SHEET_ID}/export?format=csv&gid=${STATS_GID}`
     const res = await fetch(url, { cache: "no-store" })
@@ -179,7 +181,14 @@ export async function GET() {
       }
     }).filter(m => m.date && m.opponent)
 
-    return NextResponse.json({ matches })
+    // typeフィルタ: "TM"→TMのみ、"official"→TM以外(JFL/JFL CUP/天皇杯etc)
+  const filtered = typeFilter === 'TM'
+    ? matches.filter(m => m.tournament?.trim().toUpperCase() === 'TM')
+    : typeFilter === 'official'
+    ? matches.filter(m => m.tournament?.trim().toUpperCase() !== 'TM')
+    : matches
+
+  return NextResponse.json({ matches: filtered })
   } catch (e) {
     console.error(e)
     return NextResponse.json({ matches: [] })
