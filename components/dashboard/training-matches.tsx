@@ -46,6 +46,13 @@ export function TrainingMatches() {
         if (ms.length > 0) {
           const months = [...new Set(ms.map((m: Match) => getMonth(m.date)))]
           setActiveMonth(months[months.length - 1] as string)
+          // URLパラメータがなければ最新試合を自動選択
+          const dateParam = new URLSearchParams(window.location.search).get('date')
+          if (!dateParam) {
+            const lastIdx = ms.length - 1
+            setSelected(lastIdx)
+            setScoreTab(ms[lastIdx].halves?.[0]?.half ?? '合計')
+          }
         }
       })
       .catch(() => {})
