@@ -108,7 +108,7 @@ export async function GET(request: Request) {
     // グループ化: 同じhalf重複はスキップ
     const HALF_ORDER = ['合計', '前半', '後半', '3本目', '4本目']
     const matchMap = new Map<string, {
-      date: string; tournament: string; opponent: string
+      date: string; tournament: string; venue: string; opponent: string
       halves: ReturnType<typeof buildStats>[]
       seenHalves: Set<string>
     }>()
