@@ -71,6 +71,7 @@ export async function GET(request: Request) {
     })
 
     const dateRow  = rows[1] ?? []
+    const venueRow  = rows[2] ?? []  // 3行目: HOME/AWAY
     const tournRow = rows[3] ?? []
     const halfRow  = rows[4] ?? []
     const oppRow   = rows[rowIdx['opponent'] ?? 5] ?? []
@@ -166,7 +167,7 @@ export async function GET(request: Request) {
         : [total, ...sortedHalves]
 
       return {
-        date: m.date, tournament: m.tournament, opponent: m.opponent,
+        date: m.date, tournament: m.tournament, venue: m.venue, opponent: m.opponent,
         halves: halvesWithTotal,
         goalsFor: total.goalsFor, goalsAgainst: total.goalsAgainst,
         packingRate: total.packingRate, impact: total.impact,
