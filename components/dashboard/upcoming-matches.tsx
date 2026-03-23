@@ -36,7 +36,7 @@ export function UpcomingMatches() {
         ) : (
           <div className="space-y-3">
             {matches.map((match, index) => {
-              const opponent = match.isHome ? match.away : match.home
+              const opponent = (match as any).opponent ?? (match.isHome ? match.away : match.home) ?? ''
               return (
                 <div key={index}
                   className={`flex items-center justify-between rounded-lg border border-border/50 bg-secondary/30 p-3 ${index === 0 ? 'ring-2 ring-primary/30' : ''}`}>
