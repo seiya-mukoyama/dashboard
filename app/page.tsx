@@ -16,7 +16,7 @@ import { FeedbackHistory } from "@/components/dashboard/feedback-history"
 import { MatchPerformance } from "@/components/dashboard/match-performance"
 import {
   LayoutDashboard, Users, Medal, Dumbbell, Target, Calendar,
-  Settings, PanelLeftClose, PanelLeftOpen, Heart, Repeat2,
+  Settings, Heart, Repeat2, Menu,
   ArrowLeft, ExternalLink, Cake, Ruler, Weight,
 } from "lucide-react"
 import Image from "next/image"
@@ -339,7 +339,7 @@ export default function DashboardPage() {
     setActiveView(view)
     setSelectedPlayer(null)
     // モバイルの場合はメニュー選択後にサイドバーを閉じる
-    if (window.innerWidth < 768) setCollapsed(true)
+    setMobileOpen(false)
   }
 
   const headerTitle = selectedPlayer
@@ -348,7 +348,14 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
-      <div className={`flex flex-col h-full border-r border-border bg-[hsl(var(--sidebar-background))] transition-all duration-200 ${collapsed ? "w-[56px]" : "w-[200px]"}`}>
+      {isMobile && mobileOpen && (
+        <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setMobileOpen(false)} />
+      )}
+      <div className={`flex flex-col h-full border-r border-border bg-[hsl(var(--sidebar-background))] transition-all duration-300
+        ${isMobile
+          ? `fixed inset-y-0 left-0 z-50 w-[220px] shadow-xl ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`
+          : collapsed ? 'w-[56px]' : 'w-[200px]'
+        }`}>
         <div className={`flex items-center border-b border-border ${collapsed ? "justify-center px-2 py-3" : "gap-3 px-4 py-3"}`}>
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-white border border-border">
             <Image src="/vonds-logo.png" alt="VONDS市原" width={44} height={44} className="object-contain" />
@@ -385,9 +392,9 @@ export default function DashboardPage() {
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
-          <button onClick={() => setCollapsed(!collapsed)}
+          <button onClick={() => isMobile ? setMobileOpen(!mobileOpen) : setCollapsed(!collapsed)}
             className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
-            {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+            <Menu className="h-5 w-5" />
           </button>
           <h1 className="text-lg font-semibold">{headerTitle}</h1>
           <div className="ml-auto text-sm text-muted-foreground">2025-26</div>
