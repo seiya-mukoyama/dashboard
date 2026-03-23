@@ -323,13 +323,18 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
 // URLパラメータを読んでビューを切り替える
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState("overview")
-  // URLパラメータでビューを切り替え
+  // 最近の試合カードからのナビゲーションイベントを受け取る
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const section = params.get("section")
-    if (section === "official") setActiveView("official-matches")
-    else if (section === "training") setActiveView("training-matches")
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    const handler = (e: Event) => {
+      const { section, date } = (e as CustomEvent).detail
+      setActiveView(section)
+      // date パラメータを URL に反映（training/official コンポーネントが読む）
+      const url = new URL(window.location.href)
+      url.searchParams.set('date', date)
+      window.history.pushState({}, '', url.toString())
+    }
+    window.addEventListener('navigate-section', handler)
+    return () => window.removeEventListener('navigate-section', handler)
   }, [])
 
   const [isMobile, setIsMobile] = useState(false)
