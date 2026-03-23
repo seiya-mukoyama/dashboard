@@ -120,6 +120,7 @@ export async function GET(request: Request) {
       if (!date || !opponent || date === '平均') continue
 
       const tournament = tournRow[col]?.trim() || 'TM'
+      const venue = venueRow[col]?.trim() || ''
       const halfLabel  = halfRow[col]?.trim()
       const half       = halfLabel || '合計'
 
