@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { ChevronRight, ArrowLeft } from "lucide-react"
 import { StatsComparisonChart } from "@/components/dashboard/stats-comparison-chart"
 import { PackingTimelineChart, type TimelineData } from "@/components/dashboard/packing-timeline-chart"
@@ -51,6 +52,15 @@ export function TrainingMatches() {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  // URLパラメータで日付が指定されていれば自動選択
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    const dateParam = searchParams.get('date')
+    if (!dateParam || matches.length === 0) return
+    const idx = matches.findIndex(m => m.date === dateParam)
+    if (idx >= 0) handleSelect(matches[idx], idx)
+  }, [searchParams, matches])
 
   const handleSelect = async (match: Match, idx: number) => {
     setSelected(idx)
