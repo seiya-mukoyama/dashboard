@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { LeagueStandings } from "@/components/dashboard/league-standings"
 import { TargetProgress } from "@/components/dashboard/target-progress"
 import { RecentMatches } from "@/components/dashboard/recent-matches"
@@ -321,6 +322,12 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
 
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState("overview")
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    const section = searchParams.get("section")
+    if (section === "official") setActiveView("official-matches")
+    else if (section === "training") setActiveView("training-matches")
+  }, [searchParams])
   const [isMobile, setIsMobile] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
