@@ -24,17 +24,17 @@ export function UpcomingMatches() {
   }, [])
 
   return (
-    <Card className="border-border/50">
+    <Card className="border-border/50 flex flex-col h-full">
       <CardHeader>
         <CardTitle className="text-card-foreground">今後5試合の予定</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1">
         {loading ? (
           <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">読み込み中...</div>
         ) : matches.length === 0 ? (
           <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">予定データがありません</div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {matches.map((match, index) => {
               const opponent = (match as any).opponent ?? (match.isHome ? match.away : match.home) ?? ''
               return (
