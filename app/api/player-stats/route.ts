@@ -193,54 +193,60 @@ export async function GET(request: Request) {
     // トラッキングデータ（試合日が指定されている場合のみ）
     if (date) {
       try {
-        const [defaultSig, sheetSig] = await Promise.all([
-          getGvizSig(TRACKING_SHEET_ID),
-          getGvizSig(TRACKING_SHEET_ID, date)
-        ])
-        let csvUrl = ''
-        if (sheetSig && sheetSig !== defaultSig) {
-          csvUrl = `https://docs.google.com/spreadsheets/d/${TRACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(date)}`
-        } else if (sheetSig === defaultSig) {
-          const htmlRes = await fetch(
-            `https://docs.google.com/spreadsheets/d/${TRACKING_SHEET_ID}/gviz/tq?tqx=out:html&tq=SELECT+1+LIMIT+0&sheet=${encodeURIComponent(date)}`,
-            { cache: "no-store" }
-          )
-          const html = await htmlRes.text()
-          if (html.includes(date)) {
-            csvUrl = `https://docs.google.com/spreadsheets/d/${TRACKING_SHEET_ID}/export?format=csv&gid=0`
+        // シート名でgviz CSV取得を試みる
+        // 失敗したら gid で export CSV にフォールバック
+        const sheetCsvUrl = `https://docs.google.com/spreadsheets/d/${TRACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(date)}`
+        let csvText = ''
+        const r1 = await fetch(sheetCsvUrl, { cache: "no-store" })
+        if (r1.ok) {
+          const t = await r1.text()
+          // gvizが正しいシートを返しているか確認（ヘッダー行にNAMEが含まれる）
+          if (t.toLowerCase().includes('name')) {
+            csvText = t
           }
         }
-        if (csvUrl) {
-          const res = await fetch(csvUrl, { cache: "no-store" })
-          if (res.ok) {
-            const csv = await res.text()
-            const rows = csv.split("\n").map(parseCSVLine)
-            const header = rows[0].map(h => h.toLowerCase().replace(/[_\s]/g, ''))
-            const idxName   = header.findIndex(h => h === 'name')
-            const idxDist   = header.findIndex(h => h.includes('distance') || h === 'dist')
-            const idxSpeed  = header.findIndex(h => h.includes('spdmx'))
-            const idxHI     = header.findIndex(h => h.includes('hi') && h.includes('%'))
-            const idxSprint = header.findIndex(h => h === 'sprint')
-            const idxTime   = header.findIndex(h => h === 'time')
-
-            rows.slice(1).forEach(cols => {
-              const rawName = cols[idxName]?.trim(); if (!rawName) return
-              const normRaw = normName(rawName)
-              const matched = Object.values(stats).find(s => normName(s.fullName) === normRaw)
-              if (!matched) return
-              if (idxDist >= 0) matched.distance = Math.round(parseFloat(cols[idxDist]) || 0) || null
-              if (idxSpeed >= 0) matched.maxSpeed = parseFloat(cols[idxSpeed]) || null
-              if (idxHI >= 0) matched.hi = parseFloat(cols[idxHI]) || null
-              if (idxSprint >= 0) {
-                const sv = cols[idxSprint]?.trim()
-                matched.sprint = (sv !== "" && sv != null) ? (parseInt(sv) ?? null) : null
-              }
-              if (idxTime >= 0) {
-                const tv = cols[idxTime]?.trim()
-                matched.time = (tv && tv !== "") ? tv : null
-              }
-            })
+        if (!csvText) {
+          // フォールバック：export CSV でシートGIDを直接指定
+          // TRACKING_SHEET_IDに対して、gidをシート名から検索
+          // まずgviz jsonでシートのgidを取得
+          const gvizJsonUrl = `https://docs.google.com/spreadsheets/d/${TRACKING_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(date)}&tq=SELECT+1+LIMIT+0`
+          const jr = await fetch(gvizJsonUrl, { cache: "no-store" })
+          const jt = await jr.text()
+          const gidMatch = jt.match(/"gid":"?(d+)"?/)
+          const gid = gidMatch?.[1]
+          if (gid) {
+            const exportUrl = `https://docs.google.com/spreadsheets/d/${TRACKING_SHEET_ID}/export?format=csv&gid=${gid}`
+            const r2 = await fetch(exportUrl, { cache: "no-store" })
+            if (r2.ok) csvText = await r2.text()
           }
+        }
+        if (csvText) {
+          const rows = csvText.split("\n").map(parseCSVLine)
+          const header = rows[0].map(h => h.toLowerCase().replace(/[_\s]/g, ''))
+          const idxName    = header.findIndex(h => h === 'name')
+          const idxDist    = header.findIndex(h => h.includes('distance') || h === 'dist')
+          const idxSpeed   = header.findIndex(h => h.includes('spdmx'))
+          const idxHI      = header.findIndex(h => h.includes('hi') && h.includes('%'))
+          const idxSprint  = header.findIndex(h => h === 'sprint')
+          const idxTime    = header.findIndex(h => h === 'time')
+
+          rows.slice(1).forEach(cols => {
+            const rawName = cols[idxName]?.trim(); if (!rawName) return
+            const normRaw = normName(rawName)
+            const matched = Object.values(stats).find(s => normName(s.fullName) === normRaw)
+            if (!matched) return
+            if (idxDist >= 0) matched.distance = Math.round(parseFloat(cols[idxDist]) || 0) || null
+            if (idxSpeed >= 0) matched.maxSpeed = parseFloat(cols[idxSpeed]) || null
+            if (idxHI >= 0) matched.hi = parseFloat(cols[idxHI]) || null
+            if (idxSprint >= 0) {
+              const sv = cols[idxSprint]?.trim()
+              matched.sprint = (sv !== "" && sv != null) ? (parseInt(sv) ?? null) : null
+            }
+            if (idxTime >= 0) {
+              const tv = cols[idxTime]?.trim()
+              matched.time = (tv && tv !== "") ? tv : null
+            }
+          })
         }
       } catch { /* ignore */ }
     }
