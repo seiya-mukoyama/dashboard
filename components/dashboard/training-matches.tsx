@@ -38,7 +38,7 @@ export function TrainingMatches() {
   const [timelineLoading, setTimelineLoading] = useState(false)
 
   useEffect(() => {
-    fetch("/api/stats")
+    fetch("/api/stats?type=TM")
       .then(r => r.json())
       .then(data => {
         const ms = data.matches ?? []
