@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar } from "lucide-react"
 
@@ -29,29 +29,25 @@ export function RecentMatches() {
   }
 
   const handleClick = (m: any) => {
-    const isTM = m.tournament?.toUpperCase() === 'TM' || !m.tournament || m.tournament.trim() === ''
-    if (isTM) {
-      router.push('/?section=training')
-    } else {
-      router.push('/?section=official')
-    }
+    const isTM = !m.tournament || m.tournament.trim() === '' || m.tournament.toUpperCase() === 'TM'
+    const section = isTM ? 'training' : 'official'
+    router.push(`/?section=${section}&date=${encodeURIComponent(m.date)}`)
   }
 
   return (
-    <Card className="border-border/50">
-      <CardHeader>
-        <CardTitle className="text-card-foreground">最近の試合</CardTitle>
-        <CardDescription>直近の試合結果</CardDescription>
+    <Card className="border-border/50 flex flex-col h-full">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-card-foreground">最近の5試合</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1">
         {loading ? (
           <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">読み込み中...</div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {matches.map((m, i) => {
               const { label, color } = resultInfo(m)
               const isHome = m.venue?.toUpperCase() === 'HOME'
-              const isTM = m.tournament?.toUpperCase() === 'TM' || !m.tournament || m.tournament.trim() === ''
+              const isTM = !m.tournament || m.tournament.trim() === '' || m.tournament.toUpperCase() === 'TM'
               return (
                 <button key={i} onClick={() => handleClick(m)}
                   className={`w-full flex items-center justify-between rounded-lg border border-border/50 bg-secondary/30 p-3 hover:bg-secondary/60 transition-colors text-left ${i === 0 ? 'ring-2 ring-primary/30' : ''}`}>
@@ -61,12 +57,12 @@ export function RecentMatches() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold text-card-foreground">vs {m.opponent}</p>
+                        <p className="font-semibold text-card-foreground text-sm">vs {m.opponent}</p>
                         <Badge variant={isHome ? "default" : "outline"} className="text-xs">
                           {isHome ? "H" : "A"}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
                           <span>{m.date}</span>
