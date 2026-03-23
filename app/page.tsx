@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useState, useEffect } from "react"
 import { LeagueStandings } from "@/components/dashboard/league-standings"
 import { TargetProgress } from "@/components/dashboard/target-progress"
 import { RecentMatches } from "@/components/dashboard/recent-matches"
@@ -90,7 +89,7 @@ type PlayerStats = {
 function StatCard({ label, value, unit, color }: { label: string; value: number | null; unit: string; color: string }) {
   return (
     <>
-    <Suspense fallback={null}><SectionNavigator onSection={setActiveView} /></Suspense>
+    <SectionNavigator onSection={setActiveView} />
     <div className="rounded-xl bg-card border border-border p-3 space-y-0.5">
       <p className="text-xs text-muted-foreground leading-tight">{label}</p>
       <p className={`text-lg font-bold ${value !== null ? color : "text-muted-foreground"}`}>
@@ -321,6 +320,17 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
       </div>
     </div>
   )
+}
+
+// URLパラメータを読んでビューを切り替える
+function SectionNavigator({ onSection }: { onSection: (v: string) => void }) {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const section = params.get("section")
+    if (section === "official") onSection("official-matches")
+    else if (section === "training") onSection("training-matches")
+  }, [onSection])
+  return null
 }
 
 export default function DashboardPage() {
