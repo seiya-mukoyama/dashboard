@@ -57,7 +57,7 @@ export function MatchInfoCard() {
           isHome: n.isHome,
           venue: n.venue ?? '',
           round: n.round ?? '',
-          competition: n.competition ?? 'JFL CUP',
+          competition: n.competition || 'JFL',
         })
 
         // 相手の順位を検索
