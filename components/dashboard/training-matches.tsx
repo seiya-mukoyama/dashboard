@@ -6,6 +6,18 @@ import { StatsComparisonChart } from "@/components/dashboard/stats-comparison-ch
 import { PackingTimelineChart, type TimelineData } from "@/components/dashboard/packing-timeline-chart"
 import { PlayerStatsTable } from "@/components/dashboard/player-stats-table"
 
+// APT ":HH:MM:SS" → "61:20" 形式に変換 (例: ":01:20" = 61分20秒)
+function formatApt(raw: string | undefined): string {
+  if (!raw) return ''
+  const s = raw.replace(/^:/, '')
+  const parts = s.split(':')
+  if (parts.length === 3) {
+    const totalMin = (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0)
+    return totalMin + ':' + parts[2].padStart(2, '0')
+  }
+  return s
+}
+
 type StatsHalf = {
   half: string
   goalsFor: number; goalsAgainst: number
