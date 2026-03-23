@@ -125,7 +125,7 @@ export async function GET(request: Request) {
 
       const key = date + '|' + opponent
       if (!matchMap.has(key)) {
-        matchMap.set(key, { date, tournament, opponent, halves: [], seenHalves: new Set() })
+        matchMap.set(key, { date, tournament, venue, opponent, halves: [], seenHalves: new Set() })
         matchOrder.push(key)
       }
       const group = matchMap.get(key)!
