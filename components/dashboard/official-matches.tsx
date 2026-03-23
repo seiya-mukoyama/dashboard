@@ -19,7 +19,7 @@ type StatsHalf = {
 }
 
 type Match = StatsHalf & {
-  date: string; tournament: string; opponent: string
+  date: string; tournament: string; venue: string; opponent: string
   halves: StatsHalf[]
 }
 
@@ -105,7 +105,10 @@ export function OfficialMatches() {
 
         {/* スコアカード */}
         <div className="rounded-xl border border-border bg-card p-5">
-          <div className="text-xs text-muted-foreground text-center mb-3">{m.tournament} · {m.date}</div>
+          <div className="text-xs text-muted-foreground text-center mb-3 flex items-center justify-center gap-2">
+            <span>{m.tournament} · {m.date}</span>
+            {m.venue && <span className={`font-semibold px-1.5 py-0.5 rounded text-xs ${m.venue.toUpperCase()==='HOME'?'bg-primary/15 text-primary':'bg-orange-500/15 text-orange-500'}`}>{m.venue.toUpperCase()}</span>}
+          </div>
           {scoreTabs.length > 1 && (
             <div className="flex justify-center gap-1.5 mb-4 flex-wrap">
               {scoreTabs.map(tab => (
@@ -197,6 +200,7 @@ export function OfficialMatches() {
               <div className="flex-shrink-0 w-24">
                 <div className="text-xs text-muted-foreground">{m.date}</div>
                 <div className="text-xs font-medium text-primary mt-0.5">{m.tournament}</div>
+                {m.venue && <div className={`text-xs font-semibold mt-0.5 ${m.venue.toUpperCase()==='HOME'?'text-primary':'text-orange-500'}`}>{m.venue.toUpperCase()}</div>}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <span className="text-lg font-bold text-primary tabular-nums">{m.goalsFor}</span>
