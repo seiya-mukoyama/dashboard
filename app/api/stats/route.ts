@@ -150,10 +150,10 @@ export async function GET() {
       const total = existingTotal ?? (() => {
         const sum: Record<string, number> = { goalsFor: 0, goalsAgainst: 0 }
         NUM_KEYS.forEach(k => {
-          sum[k] = sortedHalves.reduce((acc, h) => acc + ((h as Record<string, number>)[k] ?? 0), 0)
+          sum[k] = sortedHalves.reduce((acc, h) => acc + (((h as unknown) as Record<string, number>)[k] ?? 0), 0)
         })
         // APTは各ハーフを連結（例: "26:38 / 28:17 / 19:34"）
-        const aptParts = sortedHalves.map(h => (h as Record<string,string>)['apt']).filter(Boolean)
+        const aptParts = sortedHalves.map(h => ((h as unknown) as Record<string,string>)['apt']).filter(Boolean)
         return { half: '合計', ...sum, apt: aptParts.join(' / ') } as ReturnType<typeof buildStats>
       })()
 
