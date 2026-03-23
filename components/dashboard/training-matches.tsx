@@ -122,6 +122,16 @@ export function TrainingMatches() {
             {m.venue && <span className={`font-semibold px-1.5 py-0.5 rounded text-xs ${m.venue.toUpperCase()==='HOME'?'bg-primary/15 text-primary':'bg-orange-500/15 text-orange-500'}`}>{m.venue.toUpperCase()}</span>}
           </div>
 
+          {/* APT表示 */}
+          {formatApt(activeHalf.apt) && (
+            <div className="text-xs text-center text-muted-foreground mb-2">
+              <span className="inline-flex items-center gap-1 bg-secondary px-2 py-0.5 rounded">
+                <span className="font-medium text-card-foreground">APT</span>
+                <span>{formatApt(activeHalf.apt)}</span>
+              </span>
+            </div>
+          )}
+
           {/* スコアタブ（複数ハーフがある場合のみ） */}
           {scoreTabs.length > 1 && (
             <div className="flex justify-center gap-1.5 mb-4 flex-wrap">
