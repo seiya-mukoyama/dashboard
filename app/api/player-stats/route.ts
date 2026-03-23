@@ -229,6 +229,7 @@ export async function GET(request: Request) {
           const idxHI      = header.findIndex(h => h.includes('hi') && h.includes('%'))
           const idxSprint  = header.findIndex(h => h === 'sprint')
           const idxTime    = header.findIndex(h => h === 'time')
+          const idxLineBreak = header.findIndex(h => h === 'linebreak' || h === 'lb')
 
           rows.slice(1).forEach(cols => {
             const rawName = cols[idxName]?.trim(); if (!rawName) return
@@ -246,6 +247,10 @@ export async function GET(request: Request) {
               const tv = cols[idxTime]?.trim()
               matched.time = (tv && tv !== "") ? tv : null
             }
+              if (idxLineBreak >= 0) {
+                const lv = cols[idxLineBreak]?.trim()
+                matched.lineBreak = (lv && lv !== "") ? (parseInt(lv) ?? null) : null
+              }
           })
         }
       } catch { /* ignore */ }
