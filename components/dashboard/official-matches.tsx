@@ -219,3 +219,6 @@ export function OfficialMatches() {
     </div>
   )
 }
+
+// 後方互換用エクスポート（app/matches/[id]/page.tsx が参照）
+export const officialMatches: { id: string; date: string; opponent: string; score: string; result: "win"|"draw"|"loss"; competition: string; venue: string; attendance: number }[] = []
