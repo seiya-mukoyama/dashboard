@@ -24,6 +24,7 @@ export function MatchInfoCard() {
   const [next, setNext] = useState<NextMatch | null>(null)
   const [opponentStanding, setOpponentStanding] = useState<StandingRow | null>(null)
   const [recentForm, setRecentForm] = useState<string[]>([])
+  const [opponentForm, setOpponentForm] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -31,7 +32,12 @@ export function MatchInfoCard() {
       fetch("/api/stats?type=official").then(r => r.json()).catch(() => ({ matches: [] })),
       fetch("/api/schedule").then(r => r.json()).catch(() => ({ past: [], upcoming: [] })),
       fetch("/api/league-standings").then(r => r.json()).catch(() => ({ standings: [] })),
-    ]).then(([statsData, scheduleData, standingsData]) => {
+      fetch("/api/schedule").then(r => r.json()).catch(() => ({ upcoming: [] })).then(d => {
+        const opp = d.upcoming?.[0]?.opponent
+        if (opp) return fetch(`/api/opponent-stats?team=${encodeURIComponent(opp)}&limit=5`).then(r => r.json()).catch(() => ({ form: [] }))
+        return { form: [] }
+      }),
+    ]).then(([statsData, scheduleData, standingsData, oppStatsData]) => {
       // 前節（公式戦最新）
       const officialMatches = statsData.matches ?? []
       if (officialMatches.length > 0) {
@@ -68,6 +74,8 @@ export function MatchInfoCard() {
           return sName.includes(opp?.slice(0, 4) ?? '') || opp?.includes(sName.slice(0, 4) ?? '')
         })
         if (found) setOpponentStanding(found)
+        // 相手の直近フォーム
+        if (oppStatsData?.form) setOpponentForm(oppStatsData.form)
       }
 
       // 直近5試合（JFL schedule の past から）
@@ -190,6 +198,18 @@ export function MatchInfoCard() {
                   <div className="rounded-md bg-secondary p-2">
                     <p className="text-xs text-muted-foreground">試合数</p>
                     <p className="text-lg font-bold text-card-foreground">{opponentStanding.played}</p>
+                  </div>
+                </div>
+              )}
+              {opponentForm.length > 0 && (
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-xs text-muted-foreground">直近5試合:</span>
+                  <div className="flex gap-1">
+                    {opponentForm.map((r, i) => (
+                      <span key={i} className={`w-6 h-6 rounded text-xs font-bold flex items-center justify-center text-white ${
+                        r === 'W' ? 'bg-primary' : r === 'D' ? 'bg-muted-foreground' : 'bg-destructive'
+                      }`}>{r}</span>
+                    ))}
                   </div>
                 </div>
               )}
