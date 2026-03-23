@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
 
-// JFL全試合スケジュールページからチーム別の直近試合を取得
-// GET /api/opponent-stats?team=Ｙ.Ｓ.Ｃ.Ｃ.横浜&limit=5
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const team = searchParams.get('team') ?? ''
@@ -12,74 +10,68 @@ export async function GET(request: Request) {
     const res = await fetch(url, { next: { revalidate: 3600 } })
     const html = await res.text()
 
-    // tableのtr行をパース
-    const rowRegex = /<tr[^>]*>([sS]*?)</tr>/gi
-    const tdRegex = /<td[^>]*>([sS]*?)</td>/gi
-    const tagRegex = /<[^>]+>/g
-
-    const clean = (s: string) => s.replace(tagRegex, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
-
-    const matches: { date: string; home: string; score: string | null; away: string; venue: string; hasResult: boolean }[] = []
-
-    let rowMatch
-    while ((rowMatch = rowRegex.exec(html)) !== null) {
+    // td タグの内容を抽出するヘルパー（正規表現なし）
+    const extractTds = (row: string): string[] => {
       const cells: string[] = []
-      let tdMatch
-      const tdReg = /<td[^>]*>([sS]*?)</td>/gi
-      tdReg.lastIndex = 0
-      while ((tdMatch = tdReg.exec(rowMatch[1])) !== null) {
-        cells.push(clean(tdMatch[1]))
+      let rest = row
+      while (rest.includes('<td')) {
+        const start = rest.indexOf('<td')
+        if (start === -1) break
+        const open = rest.indexOf('>', start)
+        if (open === -1) break
+        const close = rest.indexOf('</td>', open)
+        if (close === -1) break
+        const inner = rest.substring(open + 1, close)
+        // タグを除去して空白を正規化
+        const text = inner.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/[ \t\n\r]+/g, ' ').trim()
+        cells.push(text)
+        rest = rest.substring(close + 5)
       }
-      // 日付 | 時間 | ホーム | スコア | アウェイ | 会場 の形式
-      if (cells.length >= 6) {
+      return cells
+    }
+
+    // tr タグを分割して各行を処理
+    const rows = html.split('<tr')
+    const matches: { date: string; home: string; score: string | null; away: string; hasResult: boolean }[] = []
+
+    for (const row of rows) {
+      const cells = extractTds(row)
+      if (cells.length >= 5) {
         const score = cells[3]
-        const hasResult = /\d+-\d+/.test(score)
+        const hasResult = score.includes('-') && /[0-9]/.test(score)
         matches.push({
           date: cells[0],
           home: cells[2],
           score: hasResult ? score : null,
           away: cells[4],
-          venue: cells[5],
           hasResult,
         })
       }
     }
 
-    // チームフィルタ（空白・全角半角を無視して比較）
-    const normalize = (s: string) => s.replace(/[\s\u3000.\u30fb\uff65]/g, '').toLowerCase()
-    const targetNorm = normalize(team)
+    // チームフィルタ
+    const norm = (s: string) => s.replace(/\s/g, '').replace(/[\u3000\u30fb\uff65.]/g, '')
+    const t = norm(team).slice(0, 6)
 
-    const teamMatches = matches.filter(m => {
-      if (!targetNorm) return true
-      return normalize(m.home).includes(targetNorm.slice(0, 6)) ||
-             normalize(m.away).includes(targetNorm.slice(0, 6)) ||
-             targetNorm.includes(normalize(m.home).slice(0, 6)) ||
-             targetNorm.includes(normalize(m.away).slice(0, 6))
-    })
+    const teamMatches = team
+      ? matches.filter(m => norm(m.home).includes(t) || norm(m.away).includes(t) || t.includes(norm(m.home).slice(0, 4)) || t.includes(norm(m.away).slice(0, 4)))
+      : matches
 
-    // 結果がある試合のみ、最新limit件
-    const pastMatches = teamMatches.filter(m => m.hasResult)
-    const recent = pastMatches.slice(-limit)
+    const past = teamMatches.filter(m => m.hasResult)
+    const recent = past.slice(-limit)
 
-    // チーム視点でW/D/Lを計算
     const form = recent.map(m => {
       if (!m.score) return 'D'
-      const [hg, ag] = m.score.split('-').map(Number)
-      const isHome = normalize(m.home).includes(targetNorm.slice(0, 6)) || targetNorm.includes(normalize(m.home).slice(0, 6))
-      const goalsFor = isHome ? hg : ag
-      const goalsAgainst = isHome ? ag : hg
-      return goalsFor > goalsAgainst ? 'W' : goalsFor < goalsAgainst ? 'L' : 'D'
+      const parts = m.score.split('-')
+      const hg = parseInt(parts[0]) || 0
+      const ag = parseInt(parts[1]) || 0
+      const isHome = norm(m.home).includes(t) || t.includes(norm(m.home).slice(0, 4))
+      const gf = isHome ? hg : ag
+      const ga = isHome ? ag : hg
+      return gf > ga ? 'W' : gf < ga ? 'L' : 'D'
     })
 
-    // 全試合（過去+未来）
-    const upcoming = teamMatches.filter(m => !m.hasResult)
-
-    return NextResponse.json({
-      team,
-      recentMatches: recent,
-      form,
-      upcoming: upcoming.slice(0, 5),
-    })
+    return NextResponse.json({ team, recentMatches: recent, form })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
