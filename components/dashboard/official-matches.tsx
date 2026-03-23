@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
 import { ChevronRight, ArrowLeft } from "lucide-react"
 import { StatsComparisonChart } from "@/components/dashboard/stats-comparison-chart"
 import { PackingTimelineChart, type TimelineData } from "@/components/dashboard/packing-timeline-chart"
@@ -53,13 +52,12 @@ export function OfficialMatches() {
       .finally(() => setLoading(false))
   }, [])
 
-  const searchParams = useSearchParams()
   useEffect(() => {
-    const dateParam = searchParams.get('date')
+    const dateParam = new URLSearchParams(window.location.search).get('date')
     if (!dateParam || matches.length === 0) return
     const idx = matches.findIndex(m => m.date === dateParam)
     if (idx >= 0) handleSelect(matches[idx], idx)
-  }, [searchParams, matches])
+  }, [matches])
 
   const handleSelect = async (match: Match, idx: number) => {
     setSelected(idx)
