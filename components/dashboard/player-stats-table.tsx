@@ -109,7 +109,6 @@ export function PlayerStatsTable({ opponent, date }: { opponent: string; date?: 
     { key: 'maxSpeed',   label: '最高速度', sortable: true },
     { key: 'hi',         label: 'HI',     sortable: true },
     { key: 'sprint',     label: 'Sprint', sortable: true },
-    { key: 'time',      label: 'TIME',   sortable: false },
   ]
 
   return (
@@ -154,9 +153,9 @@ export function PlayerStatsTable({ opponent, date }: { opponent: string; date?: 
                       {s.pos}
                     </td>
                   )
-                  if (c.key === 'time') return (
+                  if (c.key === 'minutes') return (
                     <td key={c.key} className="py-1.5 px-2 whitespace-nowrap tabular-nums text-foreground">
-                      {s.time ?? '-'}
+                      {s.time ?? (s.minutes != null ? String(s.minutes) : '-')}
                     </td>
                   )
                   return (
