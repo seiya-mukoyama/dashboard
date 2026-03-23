@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar } from "lucide-react"
@@ -9,8 +8,6 @@ import { Calendar } from "lucide-react"
 export function RecentMatches() {
   const [matches, setMatches] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
-
   useEffect(() => {
     fetch('/api/stats')
       .then(r => r.json())
@@ -30,8 +27,11 @@ export function RecentMatches() {
 
   const handleClick = (m: any) => {
     const isTM = !m.tournament || m.tournament.trim() === '' || m.tournament.toUpperCase() === 'TM'
-    const section = isTM ? 'training' : 'official'
-    router.push(`/?section=${section}&date=${encodeURIComponent(m.date)}`)
+    const section = isTM ? 'training-matches' : 'official-matches'
+    // カスタムイベントでpage.tsxに通知
+    window.dispatchEvent(new CustomEvent('navigate-section', {
+      detail: { section, date: m.date }
+    }))
   }
 
   return (
