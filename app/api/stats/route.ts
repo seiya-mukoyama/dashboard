@@ -53,6 +53,7 @@ export async function GET(request: Request) {
       if (!label) return
 
       if (label === '対戦相手') rowIdx['opponent'] = i
+      if (label === 'APT(90分換算)') rowIdx['apt'] = i
       if (label === '得点')     rowIdx['goalsFor'] = i
       if (label === '失点')     rowIdx['goalsAgainst'] = i
 
