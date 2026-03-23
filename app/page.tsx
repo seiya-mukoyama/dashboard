@@ -88,15 +88,13 @@ type PlayerStats = {
 
 function StatCard({ label, value, unit, color }: { label: string; value: number | null; unit: string; color: string }) {
   return (
-    <>
-    <SectionNavigator onSection={setActiveView} />
+    
     <div className="rounded-xl bg-card border border-border p-3 space-y-0.5">
       <p className="text-xs text-muted-foreground leading-tight">{label}</p>
       <p className={`text-lg font-bold ${value !== null ? color : "text-muted-foreground"}`}>
         {value !== null ? `${value}${unit ? " " + unit : ""}` : "—"}
       </p>
     </div>
-  </>
   )
 }
 
@@ -362,6 +360,7 @@ export default function DashboardPage() {
     : viewTitles[activeView] || "ダッシュボード"
 
   return (
+    <SectionNavigator onSection={setActiveView} />
     <div className="flex h-screen w-full overflow-hidden bg-background">
       {isMobile && mobileOpen && (
         <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setMobileOpen(false)} />
