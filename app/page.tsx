@@ -94,13 +94,6 @@ function StatCard({ label, value, unit, color }: { label: string; value: number 
       <p className={`text-lg font-bold ${value !== null ? color : "text-muted-foreground"}`}>
         {value !== null ? `${value}${unit ? " " + unit : ""}` : "—"}
       </p>
-      <Script
-        src="https://platform.twitter.com/widgets.js"
-        strategy="afterInteractive"
-        onLoad={() => {
-          if ((window as any).twttr) (window as any).twttr.widgets.load()
-        }}
-      />
     </div>
   )
 }
