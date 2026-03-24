@@ -6,6 +6,18 @@ import { StatsComparisonChart } from "@/components/dashboard/stats-comparison-ch
 import { PackingTimelineChart, type TimelineData } from "@/components/dashboard/packing-timeline-chart"
 import { PlayerStatsTable } from "@/components/dashboard/player-stats-table"
 
+// APT ":HH:MM:SS" → "61:20" 形式に変換
+function formatApt(raw: string | undefined): string {
+  if (!raw) return ''
+  const s = raw.replace(/^:/, '')
+  const parts = s.split(':')
+  if (parts.length === 3) {
+    const totalMin = (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0)
+    return totalMin + ':' + parts[2].padStart(2, '0')
+  }
+  return s
+}
+
 type StatsHalf = {
   half: string
   goalsFor: number; goalsAgainst: number
@@ -116,6 +128,15 @@ export function OfficialMatches() {
             <span>{m.tournament} · {m.date}</span>
             {m.venue && <span className={`font-semibold px-1.5 py-0.5 rounded text-xs ${m.venue.toUpperCase()==='HOME'?'bg-primary/15 text-primary':'bg-orange-500/15 text-orange-500'}`}>{m.venue.toUpperCase()}</span>}
           </div>
+          {/* APT表示 */}
+          {formatApt(activeHalf.apt) && (
+            <div className="text-xs text-center text-muted-foreground mb-2">
+              <span className="inline-flex items-center gap-1 bg-secondary px-2 py-0.5 rounded">
+                <span className="font-medium text-card-foreground">APT</span>
+                <span>{formatApt(activeHalf.apt)}</span>
+              </span>
+            </div>
+          )}
           {scoreTabs.length > 1 && (
             <div className="flex justify-center gap-1.5 mb-4 flex-wrap">
               {scoreTabs.map(tab => (
