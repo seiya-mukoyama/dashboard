@@ -148,7 +148,7 @@ export function MatchInfoCard() {
               {/* 直近5試合 */}
               {recentForm.length > 0 && (
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-xs text-muted-foreground">直近5試合:</span>
+                  <span className="text-xs text-muted-foreground">直近5試合 ({opponentStanding?.played ?? '?'}試合):</span>
                   <div className="flex gap-1">
                     {recentForm.map((r, i) => (
                       <span key={i} className={`w-6 h-6 rounded text-xs font-bold flex items-center justify-center text-white ${
@@ -189,7 +189,7 @@ export function MatchInfoCard() {
               </div>
               {/* 相手の順位・勝ち点 */}
               {opponentStanding && (
-                <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="grid grid-cols-2 gap-2 text-center">
                   <div className="rounded-md bg-secondary p-2">
                     <p className="text-xs text-muted-foreground">現在順位</p>
                     <p className="text-lg font-bold text-card-foreground">{opponentStanding.rank}位</p>
@@ -198,10 +198,7 @@ export function MatchInfoCard() {
                     <p className="text-xs text-muted-foreground">勝ち点</p>
                     <p className="text-lg font-bold text-card-foreground">{opponentStanding.points}</p>
                   </div>
-                  <div className="rounded-md bg-secondary p-2">
-                    <p className="text-xs text-muted-foreground">試合数</p>
-                    <p className="text-lg font-bold text-card-foreground">{opponentStanding.played}</p>
-                  </div>
+
                 </div>
               )}
               {opponentForm.length > 0 && (
