@@ -1,4 +1,5 @@
 "use client"
+import Script from 'next/script'
 
 import { useState, useEffect } from "react"
 import { LeagueStandings } from "@/components/dashboard/league-standings"
@@ -16,7 +17,7 @@ import { FeedbackHistory } from "@/components/dashboard/feedback-history"
 import { MatchPerformance } from "@/components/dashboard/match-performance"
 import {
   LayoutDashboard, Users, Medal, Dumbbell, Target, Calendar,
-  Settings, Heart, Repeat2, Menu,
+  Settings, Menu,
   ArrowLeft, ExternalLink, Cake, Ruler, Weight,
 } from "lucide-react"
 import Image from "next/image"
@@ -94,6 +95,11 @@ function StatCard({ label, value, unit, color }: { label: string; value: number 
       <p className={`text-lg font-bold ${value !== null ? color : "text-muted-foreground"}`}>
         {value !== null ? `${value}${unit ? " " + unit : ""}` : "—"}
       </p>
+      <Script
+        src="https://platform.twitter.com/widgets.js"
+        strategy="lazyOnload"
+        async
+      />
     </div>
   )
 }
@@ -137,37 +143,15 @@ function SnsFooter() {
             <a href="https://x.com/VondsTeam" target="_blank" rel="noopener noreferrer"
               className="ml-auto text-xs text-muted-foreground hover:text-primary transition-colors">@VondsTeam →</a>
           </div>
-          <div className="rounded-lg border border-border overflow-y-auto divide-y divide-border" style={{ height: 500 }}>
-            {xPosts.map((post) => (
-              <a key={post.id} href="https://x.com/VondsTeam" target="_blank" rel="noopener noreferrer"
-                className="flex flex-col gap-2 p-4 bg-card hover:bg-accent transition-colors group block">
-                <div className="flex items-start gap-2">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black mt-0.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="white">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.632 5.905-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1 mb-1">
-                      <span className="text-xs font-semibold text-foreground">VONDS市原FC</span>
-                      <span className="text-xs text-muted-foreground">@VondsTeam · {post.date}</span>
-                    </div>
-                    <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">{post.text}</p>
-                    <div className="flex items-center gap-4 mt-2">
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-pink-500 transition-colors">
-                        <Heart className="h-3 w-3" />{post.likes}
-                      </span>
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-green-500 transition-colors">
-                        <Repeat2 className="h-3 w-3" />{post.retweets}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </a>
-            ))}
-            <a href="https://x.com/VondsTeam" target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 p-3 bg-card hover:bg-accent transition-colors text-xs text-muted-foreground hover:text-primary">
-              X でもっと見る →
+          <div className="rounded-lg border border-border overflow-hidden">
+            <a
+              className="twitter-timeline"
+              data-height="500"
+              data-theme="light"
+              data-chrome="noheader nofooter noborders"
+              href="https://twitter.com/VondsTeam"
+            >
+              Tweets by VondsTeam
             </a>
           </div>
         </div>
