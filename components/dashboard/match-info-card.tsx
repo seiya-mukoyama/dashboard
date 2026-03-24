@@ -180,9 +180,12 @@ export function MatchInfoCard() {
             <>
               <div className="text-center">
                 <p className="text-2xl font-bold text-card-foreground">vs {next.opponent}</p>
-                <Badge variant={next.isHome ? 'default' : 'outline'} className="mt-1">
-                  {next.isHome ? 'HOME' : 'AWAY'}
-                </Badge>
+                <div className="flex items-center justify-center gap-2 mt-1 flex-wrap">
+                  <Badge variant={next.isHome ? 'default' : 'outline'}>
+                    {next.isHome ? 'HOME' : 'AWAY'}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">{next.date} {next.time}{next.venue ? ' · ' + next.venue : ''}</span>
+                </div>
               </div>
               {/* 相手の順位・勝ち点 */}
               {opponentStanding && (
@@ -213,22 +216,7 @@ export function MatchInfoCard() {
                   </div>
                 </div>
               )}
-              <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground flex-wrap">
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  <span>{next.date}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  <span>{next.time}</span>
-                </div>
-                {next.venue && (
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    <span>{next.venue}</span>
-                  </div>
-                )}
-              </div>
+
             </>
           )}
         </CardContent>
