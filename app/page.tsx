@@ -97,8 +97,10 @@ function StatCard({ label, value, unit, color }: { label: string; value: number 
       </p>
       <Script
         src="https://platform.twitter.com/widgets.js"
-        strategy="lazyOnload"
-        async
+        strategy="afterInteractive"
+        onLoad={() => {
+          if (window.twttr) window.twttr.widgets.load()
+        }}
       />
     </div>
   )
