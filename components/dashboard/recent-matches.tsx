@@ -36,10 +36,10 @@ export function RecentMatches() {
 
   return (
     <Card className="border-border/50">
-      <CardHeader className="pb-0">
+      <CardHeader className="pb-3">
         <CardTitle className="text-card-foreground">最近の5試合</CardTitle>
       </CardHeader>
-      <CardContent className="!p-0 px-6">
+      <CardContent className="!pt-1 !pb-0">
         {loading ? (
           <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">読み込み中...</div>
         ) : (
