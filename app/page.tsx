@@ -97,4 +97,3 @@ function StatCard({ label, value, unit, color }: { label: string; value: number 
     </div>
   )
 }
-
