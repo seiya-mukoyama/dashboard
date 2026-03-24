@@ -88,11 +88,6 @@ function StatCard({ label, value, unit, color }: { label: string; value: number 
   )
 }
 
-function SnsFooter() {
-  return (
-  )
-}
-
 function calcAge(birthdate: string): number | null {
   if (!birthdate) return null
   const parts = birthdate.split("/")
@@ -344,7 +339,6 @@ export default function DashboardPage() {
                 <RecentMatches />
                 <UpcomingMatches />
               </div>
-              <SnsFooter />
             </div>
           )}
           {activeView === "players" && (
