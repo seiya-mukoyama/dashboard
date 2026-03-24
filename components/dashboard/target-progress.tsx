@@ -6,7 +6,8 @@ import { TrendingUp, TrendingDown, Minus } from "lucide-react"
 
 type Goal = {
   name: string
-  target: string
+  target: string | null       // 現時点ペース目標
+  seasonTarget: string | null // シーズン目標
   latest: string | null
   matchCount: number
   status: 'good' | 'bad' | 'neutral'
@@ -14,12 +15,16 @@ type Goal = {
 
 export function TargetProgress() {
   const [goals, setGoals] = useState<Goal[]>([])
+  const [matchCount, setMatchCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetch('/api/goals')
       .then(r => r.json())
-      .then(d => setGoals(d.goals ?? []))
+      .then(d => {
+        setGoals(d.goals ?? [])
+        setMatchCount(d.totalMatches ?? 0)
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
@@ -29,8 +34,6 @@ export function TargetProgress() {
       <CardContent className="flex items-center justify-center h-32 text-muted-foreground text-sm">読み込み中...</CardContent>
     </Card>
   )
-
-  const matchCount = goals[0]?.matchCount ?? 0
 
   return (
     <Card className="border-border/50">
@@ -52,8 +55,9 @@ export function TargetProgress() {
             }
             return parseFloat(s.replace(',', '')) || 0
           }
-          const pct = g.latest && g.target
-            ? Math.min(100, Math.round(toNum(g.latest) / toNum(g.target) * 100))
+          // プログレスバーはシーズン目標に対する割合
+          const pct = g.latest && g.seasonTarget
+            ? Math.min(100, Math.round(toNum(g.latest) / toNum(g.seasonTarget) * 100))
             : 0
           const color = g.status === 'good' ? 'bg-primary' : g.status === 'bad' ? 'bg-destructive' : 'bg-muted-foreground'
           const textColor = g.status === 'good' ? 'text-primary' : g.status === 'bad' ? 'text-destructive' : 'text-muted-foreground'
@@ -63,8 +67,16 @@ export function TargetProgress() {
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm text-muted-foreground">{g.name}</span>
                 <div className="flex items-center gap-1.5">
+                  {/* 実績 */}
                   <span className={`text-sm font-bold ${textColor}`}>{g.latest ?? '—'}</span>
-                  <span className="text-xs text-muted-foreground">/ {g.target}</span>
+                  {/* 現時点ペース目標 */}
+                  {g.target && (
+                    <span className="text-xs text-muted-foreground">/ {g.target}</span>
+                  )}
+                  {/* シーズン目標（ペース目標と異なる場合のみ表示） */}
+                  {g.seasonTarget && g.seasonTarget !== g.target && (
+                    <span className="text-xs text-muted-foreground/60">(目標{g.seasonTarget})</span>
+                  )}
                   {g.status === 'good' && <TrendingUp className="h-3.5 w-3.5 text-primary" />}
                   {g.status === 'bad' && <TrendingDown className="h-3.5 w-3.5 text-destructive" />}
                   {g.status === 'neutral' && <Minus className="h-3.5 w-3.5 text-muted-foreground" />}
