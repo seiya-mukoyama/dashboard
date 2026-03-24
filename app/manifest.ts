@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'VONDS市原FC チームダッシュボード',
     start_url: '/',
     display: 'standalone',
-    background_color: '#ffffff',
+    background_color: '#fefefe',
     theme_color: '#1a6b3c',
     orientation: 'portrait',
     icons: [
