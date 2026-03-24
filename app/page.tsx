@@ -146,15 +146,29 @@ function SnsFooter() {
               className="ml-auto text-xs text-muted-foreground hover:text-primary transition-colors">@VondsTeam →</a>
           </div>
           <div className="rounded-lg border border-border overflow-hidden">
-            <a
-              className="twitter-timeline"
-              data-height="500"
-              data-theme="light"
-              data-chrome="noheader nofooter noborders"
-              href="https://twitter.com/VondsTeam"
-            >
-              Tweets by VondsTeam
-            </a>
+            {typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches ? (
+              <a
+                href="https://x.com/VondsTeam"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-3 h-20 bg-black text-white text-sm font-semibold hover:bg-neutral-900 transition-colors"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.259 5.632 5.905-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+                Xで @VondsTeam を見る →
+              </a>
+            ) : (
+              <a
+                className="twitter-timeline"
+                data-height="500"
+                data-theme="light"
+                data-chrome="noheader nofooter noborders"
+                href="https://twitter.com/VondsTeam"
+              >
+                Tweets by VondsTeam
+              </a>
+            )}
           </div>
         </div>
       </div>
