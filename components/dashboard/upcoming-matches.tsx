@@ -25,10 +25,10 @@ export function UpcomingMatches() {
 
   return (
     <Card className="border-border/50">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <CardTitle className="text-card-foreground">今後5試合の予定</CardTitle>
       </CardHeader>
-      <CardContent className="!pb-0">
+      <CardContent className="!pb-0 pt-2">
         {loading ? (
           <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">読み込み中...</div>
         ) : matches.length === 0 ? (
