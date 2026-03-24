@@ -99,7 +99,7 @@ function StatCard({ label, value, unit, color }: { label: string; value: number 
         src="https://platform.twitter.com/widgets.js"
         strategy="afterInteractive"
         onLoad={() => {
-          if (window.twttr) window.twttr.widgets.load()
+          if ((window as any).twttr) (window as any).twttr.widgets.load()
         }}
       />
     </div>
