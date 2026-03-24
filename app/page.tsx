@@ -98,7 +98,3 @@ function StatCard({ label, value, unit, color }: { label: string; value: number 
   )
 }
 
-function SnsFooter() {
-  return (
-  )
-}
