@@ -189,7 +189,7 @@ export function MatchInfoCard() {
               </div>
               {/* 相手の順位・勝ち点 */}
               {opponentStanding && (
-                <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="rounded-md bg-secondary p-2">
                     <p className="text-xs text-muted-foreground">現在順位</p>
                     <p className="text-lg font-bold text-card-foreground">{opponentStanding.rank}位</p>
@@ -198,18 +198,16 @@ export function MatchInfoCard() {
                     <p className="text-xs text-muted-foreground">勝ち点</p>
                     <p className="text-lg font-bold text-card-foreground">{opponentStanding.points}</p>
                   </div>
-
-                </div>
-              )}
-              {opponentForm.length > 0 && (
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-xs text-muted-foreground">直近5試合:</span>
-                  <div className="flex gap-1">
-                    {opponentForm.map((r, i) => (
-                      <span key={i} className={`w-6 h-6 rounded text-xs font-bold flex items-center justify-center text-white ${
-                        r === 'W' ? 'bg-primary' : r === 'D' ? 'bg-muted-foreground' : 'bg-destructive'
-                      }`}>{r}</span>
-                    ))}
+                  <div className="rounded-md bg-secondary p-2">
+                    <p className="text-xs text-muted-foreground mb-1">直近5試合</p>
+                    <div className="flex gap-0.5 justify-center">
+                      {opponentForm.map((r, i) => (
+                        <span key={i} className={`w-5 h-5 rounded text-xs font-bold flex items-center justify-center text-white ${
+                          r === 'W' ? 'bg-primary' : r === 'D' ? 'bg-muted-foreground' : 'bg-destructive'
+                        }`}>{r}</span>
+                      ))}
+                      {opponentForm.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+                    </div>
                   </div>
                 </div>
               )}
