@@ -36,7 +36,7 @@ export async function GET(request: Request) {
 
   try {
     // 1) リーグ順位表から実績
-    const standingsRes = await fetch(baseUrl + '/api/league-standings', { next: { revalidate: 3600 } })
+    const standingsRes = await fetch(baseUrl + '/api/league-standings', { cache: 'no-store' })
     const standingsData = await standingsRes.json()
     const myTeam = (standingsData.standings ?? []).find((s: { isOurTeam: boolean }) => s.isOurTeam)
     const currentPoints = myTeam?.points ?? null
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
     const matchCount = myTeam?.played ?? 0
 
     // 2) 公式戦スタッツから平均APT
-    const statsRes = await fetch(baseUrl + '/api/stats?type=official', { next: { revalidate: 3600 } })
+    const statsRes = await fetch(baseUrl + '/api/stats?type=official', { cache: 'no-store' })
     const statsData = await statsRes.json()
     const officialMatches = (statsData.matches ?? []) as Array<{ halves?: Array<{ half: string; apt?: string }> }>
     const aptValues: number[] = []
@@ -64,7 +64,7 @@ export async function GET(request: Request) {
     // 構造: A=項目名, B=シーズン目標, C=1節ペース, D=2節ペース...（累積目標）
     // 観客動員数行は: B=シーズン目標, C以降=実数入場者数（ホーム戦のみ記載）
     const sheetUrl = `https://docs.google.com/spreadsheets/d/${GOALS_SHEET_ID}/export?format=csv&gid=${GOALS_GID}`
-    const sheetRes = await fetch(sheetUrl, { next: { revalidate: 3600 } })
+    const sheetRes = await fetch(sheetUrl, { cache: 'no-store' })
     const sheetText = await sheetRes.text()
     const rows = parseCSV(sheetText)
     if (rows.length < 2) return NextResponse.json({ goals: [] })
