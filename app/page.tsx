@@ -101,7 +101,7 @@ function StatCard({ label, value, unit, color }: { label: string; value: number 
 function SnsFooter() {
   return (
     <div className="mt-8 pt-6 border-t border-border">
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="flex flex-col">
           <div className="flex items-center gap-2 mb-3">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600">
