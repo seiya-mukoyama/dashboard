@@ -35,7 +35,7 @@ export async function GET() {
     while ((trMatch = trPattern.exec(html)) !== null) {
       const row = trMatch[1]
       // tdの中身を取得（タグを除去）
-      const cells = (row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi) ?? [])
+      const cells = (row.match(/<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi) ?? [])
         .map(td => td.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim())
 
       if (cells.length === 0) continue
