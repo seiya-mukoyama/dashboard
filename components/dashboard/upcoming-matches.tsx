@@ -39,7 +39,7 @@ export function UpcomingMatches() {
               const opponent = (match as any).opponent ?? (match.isHome ? match.away : match.home) ?? ''
               return (
                 <div key={index}
-                  className={`flex items-center justify-between rounded-lg border border-border/50 bg-secondary/30 p-3 ${index === 0 ? 'ring-2 ring-primary/30' : ''}`}>
+                  className={`flex items-center justify-between rounded-lg border border-border/50 bg-secondary/30 p-3 min-h-[72px] ${index === 0 ? 'ring-2 ring-primary/30' : ''}`}>
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-secondary">
                       <span className="text-xs font-bold text-muted-foreground leading-tight text-center">
