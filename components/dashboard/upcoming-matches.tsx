@@ -43,7 +43,7 @@ export function UpcomingMatches() {
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-secondary">
                       <span className="text-xs font-bold text-muted-foreground leading-tight text-center">
-                        {match.round.replace('第', '').replace('節', '')}節
+                        {match.round.replace('第', '').replace('節', '')}
                       </span>
                     </div>
                     <div>
