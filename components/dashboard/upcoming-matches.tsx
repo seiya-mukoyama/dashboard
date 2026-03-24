@@ -28,18 +28,18 @@ export function UpcomingMatches() {
       <CardHeader className="pb-3">
         <CardTitle className="text-card-foreground">今後5試合の予定</CardTitle>
       </CardHeader>
-      <CardContent className="pb-[34px]">
+      <CardContent className="!pb-0">
         {loading ? (
           <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">読み込み中...</div>
         ) : matches.length === 0 ? (
           <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">予定データがありません</div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {matches.map((match, index) => {
               const opponent = (match as any).opponent ?? (match.isHome ? match.away : match.home) ?? ''
               return (
                 <div key={index}
-                  className={`flex items-center justify-between rounded-lg border border-border/50 bg-secondary/30 p-2.5 ${index === 0 ? 'ring-2 ring-primary/30' : ''}`}>
+                  className={`flex items-center justify-between rounded-lg border border-border/50 bg-secondary/30 p-3 ${index === 0 ? 'ring-2 ring-primary/30' : ''}`}>
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-secondary">
                       <span className="text-xs font-bold text-muted-foreground leading-tight text-center">
