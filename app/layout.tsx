@@ -33,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon.png" />
         <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon.png" />
         <meta name="theme-color" content="#1a6b3c" />
+        <script async src="https://platform.twitter.com/widgets.js"></script>
       </head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
