@@ -46,16 +46,6 @@ const viewTitles: Record<string, string> = {
   events: "イベント",
 }
 
-const xPosts = [
-  { id: 1, text: "【試合結果】JFLカップ 第1節\nVONDS市原FC 2-1 いわてグルージャ盛岡\n\n初戦勝利！次節も応援よろしくお願いします⚽️🟡", date: "3月22日", likes: 142, retweets: 38 },
-  { id: 2, text: "【選手紹介】MF 山本 健選手\n今シーズンも精力的なプレーに期待！\n#VONDS市原 #JFL", date: "3月20日", likes: 89, retweets: 21 },
-  { id: 3, text: "本日のトレーニングの様子をお届け📸\n開幕に向けて仕上がってきています！\n#VONDS市原 #JFL2026", date: "3月19日", likes: 67, retweets: 15 },
-  { id: 4, text: "【お知らせ】ホームゲーム チケット発売開始！\n市原臨海競技場にぜひ来てください🏟️", date: "3月18日", likes: 203, retweets: 87 },
-  { id: 5, text: "【選手紹介】FW 田中 翔太選手\n昨シーズン12ゴールの得点王！\n今季も期待してください🔥\n#VONDS市原", date: "3月17日", likes: 312, retweets: 95 },
-  { id: 6, text: "本日は選手たちのオフ日🏖️\nリフレッシュして明日からまた練習頑張ります！\n#VONDS市原", date: "3月16日", likes: 54, retweets: 12 },
-  { id: 7, text: "【試合プレビュー】明日のJFLカップに向けて準備完了✅\nスタジアムで一緒に戦いましょう！\n#VONDS市原 #JFL", date: "3月15日", likes: 178, retweets: 63 },
-  { id: 8, text: "新体制発表！今シーズンも熱いサッカーをお届けします⚽\n監督・選手一同、全力で戦います！\n#VONDS市原 #2026シーズン", date: "3月10日", likes: 445, retweets: 132 },
-]
 
 // 最大速度はスタッツに含む（全11項目）
 const STATS_CONFIG = [
@@ -97,3 +87,277 @@ function StatCard({ label, value, unit, color }: { label: string; value: number 
     </div>
   )
 }
+
+function SnsFooter() {
+  return (
+  )
+}
+
+function calcAge(birthdate: string): number | null {
+  if (!birthdate) return null
+  const parts = birthdate.split("/")
+  if (parts.length !== 3) return null
+  const birth = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+  const today = new Date()
+  let age = today.getFullYear() - birth.getFullYear()
+  const m = today.getMonth() - birth.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
+  return age
+}
+
+function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }) {
+  const age = calcAge(player.birthdate)
+  const [maxSpeed, setMaxSpeed] = useState<number | null>(null)
+  const [stats] = useState<PlayerStats>({
+    maxSpeed: null, packingRate: null, pReceive: null, impect: null,
+    iReceive: null, hiDistance: null, playTime: null,
+    goals: null, assists: null, preAssists: null, lineBreaks: null,
+  })
+
+  useEffect(() => {
+    fetch(`/api/speed?name=${encodeURIComponent(player.name)}`)
+      .then(r => r.json())
+      .then(d => { if (d.maxSpeed) setMaxSpeed(d.maxSpeed) })
+      .catch(() => {})
+  }, [player.name])
+
+  const displayStats: PlayerStats = { ...stats, maxSpeed }
+
+  return (
+    <div className="space-y-6">
+      <button onClick={onBack}
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <ArrowLeft className="h-4 w-4" />
+        選手一覧に戻る
+      </button>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+
+        {/* 写真 */}
+        <div className="lg:col-span-1">
+          <div className="relative bg-gradient-to-b from-[hsl(142,72%,85%)] to-[hsl(142,72%,94%)] rounded-2xl overflow-hidden aspect-square shadow-sm">
+            <Image src={player.image} alt={player.name} fill
+              className="object-contain object-bottom" unoptimized />
+            <div className="absolute top-3 left-3">
+              <span className={`text-xs font-bold px-2 py-1 rounded-md border ${positionColors[player.position] || "bg-gray-100 text-gray-700 border-gray-300"}`}>
+                {player.position}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 右：名前 + 基本情報 + スタッツ */}
+        <div className="lg:col-span-2 space-y-4">
+
+          {/* 名前行：名前（小さめ）+ 公式サイトリンク（右寄せ） */}
+          <div className="flex items-start justify-between gap-3 border-b border-border pb-3">
+            <div>
+              <h2 className="text-xl font-bold text-foreground">{player.name}</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">{player.nameEn}</p>
+            </div>
+            {player.profileUrl && (
+              <a href={player.profileUrl} target="_blank" rel="noopener noreferrer"
+                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-xs text-foreground">
+                <ExternalLink className="h-3.5 w-3.5" />
+                公式サイトで詳細を見る
+              </a>
+            )}
+          </div>
+
+          {/* 生年月日・年齢・身長・体重 */}
+          <div className="grid grid-cols-4 gap-2">
+            <div className="rounded-xl bg-card border border-border p-3 space-y-0.5">
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Cake className="h-3 w-3" /><span className="text-xs">生年月日</span>
+              </div>
+              <p className="text-sm font-semibold text-foreground">{player.birthdate || "—"}</p>
+            </div>
+            <div className="rounded-xl bg-card border border-border p-3 space-y-0.5">
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Users className="h-3 w-3" /><span className="text-xs">年齢</span>
+              </div>
+              <p className="text-sm font-semibold text-foreground">{age !== null ? `${age}歳` : "—"}</p>
+            </div>
+            <div className="rounded-xl bg-card border border-border p-3 space-y-0.5">
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Ruler className="h-3 w-3" /><span className="text-xs">身長</span>
+              </div>
+              <p className="text-sm font-semibold text-foreground">{player.height ? `${player.height} cm` : "—"}</p>
+            </div>
+            <div className="rounded-xl bg-card border border-border p-3 space-y-0.5">
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Weight className="h-3 w-3" /><span className="text-xs">体重</span>
+              </div>
+              <p className="text-sm font-semibold text-foreground">{player.weight ? `${player.weight} kg` : "—"}</p>
+            </div>
+          </div>
+
+          {/* スタッツ 4カラム（最大速度含む全11項目） */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-2">スタッツ</p>
+            <div className="grid grid-cols-4 gap-2">
+              {STATS_CONFIG.map(({ key, label, unit, color }) => (
+                <StatCard
+                  key={key}
+                  label={label}
+                  value={displayStats[key as keyof PlayerStats]}
+                  unit={unit}
+                  color={color}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 体組成推移グラフ */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h3 className="text-sm font-semibold text-foreground mb-4">体組成推移</h3>
+        <BodyCompositionChart playerName={player.name} />
+      </div>
+
+      {/* 怪我履歴 */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h3 className="text-sm font-semibold text-foreground mb-4">🩹 怪我の履歴</h3>
+        <InjuryHistory playerName={player.name} />
+      </div>
+
+      {/* フィードバック履歴 */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h3 className="text-sm font-semibold text-foreground mb-4">💬 フィードバック履歴</h3>
+        <FeedbackHistory playerName={player.name} />
+      </div>
+
+      {/* 出場試合と成績 */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h3 className="text-sm font-semibold text-foreground mb-4">📋 出場試合と成績</h3>
+        <MatchPerformance playerName={player.name} />
+      </div>
+    </div>
+  )
+}
+
+// URLパラメータを読んでビューを切り替える
+export default function DashboardPage() {
+  const [activeView, setActiveView] = useState("overview")
+  // 最近の試合カードからのナビゲーションイベントを受け取る
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { section, date } = (e as CustomEvent).detail
+      setActiveView(section)
+      // date パラメータを URL に反映（training/official コンポーネントが読む）
+      const url = new URL(window.location.href)
+      url.searchParams.set('date', date)
+      window.history.pushState({}, '', url.toString())
+    }
+    window.addEventListener('navigate-section', handler)
+    return () => window.removeEventListener('navigate-section', handler)
+  }, [])
+
+  const [isMobile, setIsMobile] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  useEffect(() => {
+    const checkWidth = () => {
+      setIsMobile(window.innerWidth < 768)
+      if (window.innerWidth >= 768) setMobileOpen(false)
+    }
+    checkWidth()
+    window.addEventListener('resize', checkWidth)
+    return () => window.removeEventListener('resize', checkWidth)
+  }, [])
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
+
+  const handleViewChange = (view: string) => {
+    setActiveView(view)
+    setSelectedPlayer(null)
+    // モバイルの場合はメニュー選択後にサイドバーを閉じる
+    setMobileOpen(false)
+  }
+
+  const headerTitle = selectedPlayer
+    ? selectedPlayer.name
+    : viewTitles[activeView] || "ダッシュボード"
+
+  return (
+    <div className="flex h-screen w-full overflow-hidden bg-background">
+      {isMobile && mobileOpen && (
+        <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setMobileOpen(false)} />
+      )}
+      <div className={`flex flex-col h-full border-r border-border bg-[hsl(var(--sidebar-background))] transition-all duration-300
+        ${isMobile
+          ? `fixed inset-y-0 left-0 z-50 w-[220px] shadow-xl ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`
+          : collapsed ? 'w-[56px]' : 'w-[200px]'
+        }`}>
+        <div className={`flex items-center border-b border-border ${collapsed ? "justify-center px-2 py-3" : "gap-3 px-4 py-3"}`}>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-white border border-border">
+            <Image src="/vonds-logo.png" alt="VONDS市原" width={44} height={44} className="object-contain" />
+          </div>
+          {!collapsed && (
+            <div>
+              <p className="text-sm font-bold text-foreground leading-tight">VONDS市原</p>
+              <p className="text-xs text-muted-foreground">2025-26 シーズン</p>
+            </div>
+          )}
+        </div>
+        <div className="flex-1 overflow-y-auto py-3">
+          {!collapsed && <p className="px-4 py-1 text-xs font-medium text-muted-foreground">メインメニュー</p>}
+          <nav className="mt-1">
+            {mainMenuItems.map((item) => (
+              <button key={item.id} onClick={() => handleViewChange(item.id)} title={collapsed ? item.label : undefined}
+                className={`flex w-full items-center gap-3 py-2 text-sm transition-colors
+                  ${collapsed ? "justify-center px-0" : "px-4"}
+                  ${activeView === item.id ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-accent"}`}>
+                <item.icon className="h-4 w-4 shrink-0" />
+                {!collapsed && item.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+        <div className="border-t border-border py-2">
+          <button title={collapsed ? "設定" : undefined}
+            className={`flex w-full items-center gap-3 py-2 text-sm text-foreground hover:bg-accent ${collapsed ? "justify-center px-0" : "px-4"}`}>
+            <Settings className="h-4 w-4 shrink-0" />
+            {!collapsed && "設定"}
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
+          <button onClick={() => isMobile ? setMobileOpen(!mobileOpen) : setCollapsed(!collapsed)}
+            className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
+            <Menu className="h-5 w-5" />
+          </button>
+          <h1 className="text-lg font-semibold">{headerTitle}</h1>
+          <div className="ml-auto text-sm text-muted-foreground">2025-26</div>
+        </header>
+        <main className="flex-1 overflow-auto p-6">
+          {activeView === "overview" && (
+            <div className="space-y-6">
+              <MatchInfoCard />
+              <div className="grid gap-6 lg:grid-cols-2">
+                <LeagueStandings />
+                <TargetProgress />
+              </div>
+              <div className="grid gap-6 lg:grid-cols-2 items-start">
+                <RecentMatches />
+                <UpcomingMatches />
+              </div>
+              <SnsFooter />
+            </div>
+          )}
+          {activeView === "players" && (
+            selectedPlayer
+              ? <PlayerDetail player={selectedPlayer} onBack={() => setSelectedPlayer(null)} />
+              : <PlayerCardsGrid onSelectPlayer={setSelectedPlayer} />
+          )}
+          {activeView === "official-matches" && <OfficialMatches />}
+          {activeView === "training-matches" && <TrainingMatches />}
+          {activeView === "training" && <StatsCards />}
+          {activeView === "events" && <UpcomingMatches />}
+        </main>
+      </div>
+    </div>
+  )
+                }
