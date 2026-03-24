@@ -25,7 +25,7 @@ export function UpcomingMatches() {
 
   return (
     <Card className="border-border/50">
-      <CardHeader>
+      <CardHeader className="pb-3">
         <CardTitle className="text-card-foreground">今後5試合の予定</CardTitle>
       </CardHeader>
       <CardContent className="pb-[34px]">
