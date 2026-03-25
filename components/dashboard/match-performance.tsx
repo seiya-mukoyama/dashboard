@@ -68,7 +68,7 @@ export function MatchPerformance({ playerName }: Props) {
               <td className="py-2 px-2 text-center text-card-foreground text-xs">{m.packingReceive > 0 ? m.packingReceive.toFixed(1) : '-'}</td>
               <td className="py-2 px-2 text-center text-card-foreground text-xs">{m.impact > 0 ? m.impact.toFixed(1) : '-'}</td>
               <td className="py-2 px-2 text-center text-card-foreground text-xs">{m.impactReceive > 0 ? m.impactReceive.toFixed(1) : '-'}</td>
-              <td className="py-2 px-2 text-center text-muted-foreground text-xs">{m.hi > 0 ? m.hi.toFixed(0) : '-'}</td>
+              <td className="py-2 px-2 text-center text-muted-foreground text-xs">{m.hi > 0 ? m.hi.toFixed(1) : '-'}</td>
               <td className="py-2 px-2 text-center text-muted-foreground text-xs">{m.maxSpeed > 0 ? m.maxSpeed.toFixed(1) : '-'}</td>
               <td className="py-2 px-2 text-center text-muted-foreground text-xs">{m.distance > 0 ? m.distance.toFixed(0) : '-'}</td>
               <td className="py-2 px-2 text-center text-card-foreground text-xs">{m.lineBreak > 0 ? m.lineBreak : '-'}</td>
