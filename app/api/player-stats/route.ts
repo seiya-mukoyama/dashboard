@@ -1,4 +1,4 @@
-　import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 
 const PACKING_SHEET_ID = "1i1PmWTCT_x73GlDHTes9lN-e956gKPfapdY_P_nK11g"
 const PLAYERS_SHEET_ID = "1vnHF5iHJkirI6PhUzD3isKmdkz6Vani4aQfItMgL80k"
@@ -8,16 +8,13 @@ const POS_ORDER: Record<string, number> = { GK: 1, DF: 2, MF: 3, FW: 4 }
 function parseCSVLine(line: string): string[] {
   const cols: string[] = []; let cur = ""; let inQ = false
   for (const ch of line) {
-    if (ch === '"') { inQ = !inQ }
-    else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = "" }
-    else { cur += ch }
+    if (ch === '"') { inQ = !inQ } else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = "" } else { cur += ch }
   }
   cols.push(cur.trim())
   return cols
 }
 
-const SKIP_CATS = new Set(["相手","ボックス","被ボックス","クロス","被クロス",
-  "エリア","被エリア","CK","被CK","FK","被FK"])
+const SKIP_CATS = new Set(["相手","ボックス","被ボックス","クロス","被クロス","エリア","被エリア","CK","被CK","FK","被FK"])
 
 function extractNum(s: string): number {
   const m = s.match(/[\d.]+/)
@@ -28,7 +25,6 @@ function normName(s: string): string {
   return s.replace(/[\s\u3000]/g, "")
 }
 
-// gviz sigを取得（シート存在確認用）
 async function getGvizSig(sheetId: string, sheetName?: string): Promise<string> {
   try {
     const url = sheetName
@@ -41,56 +37,48 @@ async function getGvizSig(sheetId: string, sheetName?: string): Promise<string> 
   } catch { return '' }
 }
 
-// パッキングシートからデータ集計（gviz CSV方式、シート名指定）
 async function fetchPackingBySheetName(
   sheetName: string,
-  offset: number,
   defaultSig: string,
   stats: Record<string, PlayerStats>
-): Promise<boolean> {
+): Promise<void> {
   const sig = await getGvizSig(PACKING_SHEET_ID, sheetName)
-  if (!sig) return false
+  if (!sig) return
 
-  let csvUrl: string
+  let csvUrl = ''
   if (sig !== defaultSig) {
-    // 別シートが存在
     csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
   } else {
-    // sigが一致 → 最初のシートと同じ可能性
-    // 後半シートが存在するか確認して前半が最初のシートかどうか判断
-    // ここでは offset=0（前半）の場合のみデフォルトCSVを使う
-    if (offset === 0) {
-      // 後半シートの存在を確認してから判断（呼び出し元で確認済みのはず）
+    // sigがdefaultと同じ = 最初のシートの可能性
+    // 他のシートが存在するかチェック
+    const others = await Promise.all(
+      ["後半", "3本目"].map(s => getGvizSig(PACKING_SHEET_ID, sheetName.replace(/前半$|後半$|3本目$|4本目$/, s)))
+    )
+    if (others.some(s => s && s !== defaultSig)) {
       csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv`
     } else {
-      return false
+      return
     }
   }
 
   const res = await fetch(csvUrl, { cache: "no-store" })
-  if (!res.ok) return false
+  if (!res.ok) return
   const csv = await res.text()
-  if (!csv.trim()) return false
+  if (!csv.trim()) return
 
   const rows = csv.split("\n").slice(1).map(parseCSVLine)
-  let hasData = false
-
   rows.forEach(cols => {
     const cat = cols[1]?.trim()
     if (!cat || SKIP_CATS.has(cat)) return
     // 得点・失点行の処理
     if (cat === "得点" || cat === "失点") {
-      const isGoal = cat === "得点"
-      // G列: "佐々木" や "佐々木 Pass" → 選手名を抽出
-      const scorerRaw = cols[6]?.trim() ?? ""
-      const scorer = scorerRaw.split(/[\s　]/)[0]
-      // H列: "藤井 assist" → アシスト選手
-      const assistRaw = cols[7]?.trim() ?? ""
-      const assistName = assistRaw.includes("assist") ? assistRaw.split(/[\s　]/)[0] : ""
-      // I列: "藤井 preassist" → プレアシスト選手
-      const preAssistRaw = cols[8]?.trim() ?? ""
-      const preAssistName = preAssistRaw.includes("preassist") ? preAssistRaw.split(/[\s　]/)[0] : ""
-      if (isGoal) {
+      if (cat === "得点") {
+        const scorerRaw = cols[6]?.trim() ?? ""
+        const scorer = scorerRaw.split(/[\s\u3000]/)[0]
+        const assistRaw = cols[7]?.trim() ?? ""
+        const assistName = assistRaw.toLowerCase().includes("assist") ? assistRaw.split(/[\s\u3000]/)[0] : ""
+        const preAssistRaw = cols[8]?.trim() ?? ""
+        const preAssistName = preAssistRaw.toLowerCase().includes("preassist") ? preAssistRaw.split(/[\s\u3000]/)[0] : ""
         if (scorer) { const p = getOrCreate(scorer, stats); p.goals += 1 }
         if (assistName) { const p = getOrCreate(assistName, stats); p.assists += 1 }
         if (preAssistName) { const p = getOrCreate(preAssistName, stats); p.preAssists += 1 }
@@ -98,7 +86,6 @@ async function fetchPackingBySheetName(
       return
     }
     const p = getOrCreate(cat, stats)
-    hasData = true
     for (let i = 6; i < cols.length; i++) {
       const d = cols[i]?.trim(); if (!d) continue
       if (/^P [\d.]+/.test(d) || /^Packing [\d.]+/.test(d)) p.packing += extractNum(d)
@@ -114,13 +101,13 @@ async function fetchPackingBySheetName(
       }
     }
   })
-  return hasData
 }
 
 type PlayerStats = {
   lastName: string; fullName: string; pos: string
   packing: number; packingR: number; impact: number; impactR: number
-  distance: number | null; maxSpeed: number | null; hi: number | null; sprint: number | null; time: string | null; lineBreak: number | null
+  distance: number | null; maxSpeed: number | null; hi: number | null; sprint: number | null
+  time: string | null; lineBreak: number | null
   goals: number; assists: number; preAssists: number
 }
 
@@ -129,7 +116,12 @@ let lastNameMapCache: Record<string, { fullName: string; pos: string }> | null =
 function getOrCreate(lastName: string, stats: Record<string, PlayerStats>): PlayerStats {
   if (!stats[lastName]) {
     const info = lastNameMapCache?.[lastName] ?? { fullName: lastName, pos: "-" }
-    stats[lastName] = { lastName, fullName: info.fullName, pos: info.pos, packing: 0, packingR: 0, impact: 0, impactR: 0, distance: null, maxSpeed: null, hi: null, sprint: null, time: null, lineBreak: null, goals: 0, assists: 0, preAssists: 0 }
+    stats[lastName] = {
+      lastName, fullName: info.fullName, pos: info.pos,
+      packing: 0, packingR: 0, impact: 0, impactR: 0,
+      distance: null, maxSpeed: null, hi: null, sprint: null,
+      time: null, lineBreak: null, goals: 0, assists: 0, preAssists: 0
+    }
   }
   return stats[lastName]
 }
@@ -137,11 +129,14 @@ function getOrCreate(lastName: string, stats: Record<string, PlayerStats>): Play
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const date = searchParams.get("date") ?? ""
-    const session = searchParams.get("session") ?? "合計"
+  const session = searchParams.get("session") ?? "合計"
 
   try {
     // 選手一覧（姓→フルネーム・ポジション）
-    const playersRes = await fetch(`https://docs.google.com/spreadsheets/d/${PLAYERS_SHEET_ID}/export?format=csv&gid=0`, { cache: "no-store" })
+    const playersRes = await fetch(
+      `https://docs.google.com/spreadsheets/d/${PLAYERS_SHEET_ID}/export?format=csv&gid=0`,
+      { cache: "no-store" }
+    )
     const playersCsv = await playersRes.text()
     const lastNameMap: Record<string, { fullName: string; pos: string }> = {}
     playersCsv.split("\n").slice(1).forEach(line => {
@@ -156,47 +151,26 @@ export async function GET(request: Request) {
 
     const stats: Record<string, PlayerStats> = {}
 
-    // パッキングデータ集計
-    // session: "合計"=前半+後半合算, "前半"=前半のみ, "後半"=後半のみ, "3本目"=3本目のみ
+    // ===== パッキングデータ集計 =====
     if (date) {
       const defaultSig = await getGvizSig(PACKING_SHEET_ID)
 
-      // sessionに対応するハーフ名リストを決定
-      const halfSuffix = session === "合計"
-        ? ["前半", "後半", "3本目", "4本目"]  // 合計は全ハーフを合算
-        : [session]                             // 前半/後半/3本目は1つのみ
-
-      for (const suffix of halfSuffix) {
-        const sheetName = `${date}${suffix}`
-        const sig = await getGvizSig(PACKING_SHEET_ID, sheetName)
-        if (!sig) continue
-
-        let csvUrl = ''
-        if (sig !== defaultSig) {
-          csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
-        } else if (suffix === "前半") {
-          // sigがdefaultと同じ=最初のシートかもしれないので、他のハーフが存在するか確認
-          const otherExists = await Promise.any(
-            ["後半", "3本目"].map(async s => {
-              const sg = await getGvizSig(PACKING_SHEET_ID, `${date}${s}`)
-              if (sg && sg !== defaultSig) return true
-              throw new Error("not found")
-            })
-          ).catch(() => false)
-          if (otherExists) {
-            csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv`
-          }
+      if (session === "合計") {
+        // 合計: 前半 + 後半 + 3本目 + 4本目 を全て合算
+        for (const suffix of ["前半", "後半", "3本目", "4本目"]) {
+          await fetchPackingBySheetName(`${date}${suffix}`, defaultSig, stats)
         }
-        if (!csvUrl) continue
-        await fetchPackingBySheetName(sheetName, 0, defaultSig, stats)
+      } else {
+        // 前半/後半/3本目/4本目: 指定のシートのみ
+        await fetchPackingBySheetName(`${date}${session}`, defaultSig, stats)
       }
     } else {
-      // date未指定: デフォルトシートのみ集計
-      const defCsvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv`
-      const defRes = await fetch(defCsvUrl, { cache: "no-store" })
-      if (defRes.ok) {
-        const defCsv = await defRes.text()
-        defCsv.split("\n").slice(1).map(parseCSVLine).forEach(cols => {
+      // date未指定: デフォルトシート（全体集計）のみ
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv`
+      const res = await fetch(csvUrl, { cache: "no-store" })
+      if (res.ok) {
+        const csv = await res.text()
+        csv.split("\n").slice(1).map(parseCSVLine).forEach(cols => {
           const cat = cols[1]?.trim(); if (!cat || SKIP_CATS.has(cat)) return
           if (cat === "得点" || cat === "失点") return
           const p = getOrCreate(cat, stats)
@@ -217,29 +191,22 @@ export async function GET(request: Request) {
         })
       }
     }
-// トラッキングデータ（試合日が指定されている場合のみ）
+
+    // ===== トラッキングデータ =====
     if (date) {
       try {
-        // シート名でgviz CSV取得を試みる
-        // 失敗したら gid で export CSV にフォールバック
         const sheetCsvUrl = `https://docs.google.com/spreadsheets/d/${TRACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(date)}`
         let csvText = ''
         const r1 = await fetch(sheetCsvUrl, { cache: "no-store" })
         if (r1.ok) {
           const t = await r1.text()
-          // gvizが正しいシートを返しているか確認（ヘッダー行にNAMEが含まれる）
-          if (t.toLowerCase().includes('name')) {
-            csvText = t
-          }
+          if (t.toLowerCase().includes('name')) csvText = t
         }
         if (!csvText) {
-          // フォールバック：export CSV でシートGIDを直接指定
-          // TRACKING_SHEET_IDに対して、gidをシート名から検索
-          // まずgviz jsonでシートのgidを取得
           const gvizJsonUrl = `https://docs.google.com/spreadsheets/d/${TRACKING_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(date)}&tq=SELECT+1+LIMIT+0`
           const jr = await fetch(gvizJsonUrl, { cache: "no-store" })
           const jt = await jr.text()
-          const gidMatch = jt.match(/"gid":"?(d+)"?/)
+          const gidMatch = jt.match(/"gid":"?(\d+)"?/)
           const gid = gidMatch?.[1]
           if (gid) {
             const exportUrl = `https://docs.google.com/spreadsheets/d/${TRACKING_SHEET_ID}/export?format=csv&gid=${gid}`
@@ -250,24 +217,25 @@ export async function GET(request: Request) {
         if (csvText) {
           const rows = csvText.split("\n").map(parseCSVLine)
           const header = rows[0].map(h => h.toLowerCase().replace(/[_\s]/g, ''))
-          const idxName    = header.findIndex(h => h === 'name')
-          const idxDist    = header.findIndex(h => h.includes('distance') || h === 'dist')
-          const idxSpeed   = header.findIndex(h => h.includes('spdmx'))
-          const idxHI      = header.findIndex(h => h.includes('hi') && h.includes('%'))
-          const idxSprint  = header.findIndex(h => h === 'sprint')
-          const idxTime    = header.findIndex(h => h === 'time')
+          const idxName = header.findIndex(h => h === 'name')
+          const idxSession = 1 // session列は常に2列目
+          const idxDist = header.findIndex(h => h.includes('distance') || h === 'dist')
+          const idxSpeed = header.findIndex(h => h.includes('spdmx'))
+          const idxHI = header.findIndex(h => h.includes('hi') && h.includes('%'))
+          const idxSprint = header.findIndex(h => h === 'sprint')
+          const idxTime = header.findIndex(h => h === 'time')
           const idxLineBreak = header.findIndex(h => h === 'linebreak' || h === 'lb')
-
           rows.slice(1).forEach(cols => {
             const rawName = cols[idxName]?.trim(); if (!rawName) return
+            // session列でフィルタ
+            const rowSession = cols[idxSession]?.trim()
+            if (rowSession && rowSession !== 'session' && rowSession !== session) return
             const normRaw = normName(rawName)
-            // session列(インデックス1)でフィルタ（合計/前半/後半/3本目）
-              const rowSession = cols[1]?.trim()
-              if (rowSession && rowSession !== 'session' && rowSession !== session) return
-              let matched = Object.values(stats).find(s => normName(s.fullName) === normRaw)
+            let matched = Object.values(stats).find(s => normName(s.fullName) === normRaw)
             if (!matched) {
-              // パッキングデータがなくてもトラッキングデータから選手を追加
-              const info = lastNameMapCache ? Object.values(lastNameMapCache).find(v => normName(v.fullName) === normRaw) : null
+              const info = lastNameMapCache
+                ? Object.values(lastNameMapCache).find(v => normName(v.fullName) === normRaw)
+                : null
               if (!info) return
               const lastName = info.fullName.split(/[\s\u3000]/)[0]
               matched = getOrCreate(lastName, stats)
@@ -283,10 +251,10 @@ export async function GET(request: Request) {
               const tv = cols[idxTime]?.trim()
               matched.time = (tv && tv !== "") ? tv : null
             }
-              if (idxLineBreak >= 0) {
-                const lv = cols[idxLineBreak]?.trim()
-                matched.lineBreak = (lv && lv !== "") ? (parseInt(lv) ?? null) : null
-              }
+            if (idxLineBreak >= 0) {
+              const lv = cols[idxLineBreak]?.trim()
+              matched.lineBreak = (lv && lv !== "") ? (parseInt(lv) ?? null) : null
+            }
           })
         }
       } catch { /* ignore */ }
@@ -298,14 +266,14 @@ export async function GET(request: Request) {
         name: s.fullName, pos: s.pos,
         packing: round1(s.packing), packingR: round1(s.packingR),
         impact: round1(s.impact), impactR: round1(s.impactR),
-        distance: s.distance, maxSpeed: s.maxSpeed, hi: s.hi, sprint: s.sprint, time: s.time, lineBreak: s.lineBreak,
+        distance: s.distance, maxSpeed: s.maxSpeed, hi: s.hi,
+        sprint: s.sprint, time: s.time, lineBreak: s.lineBreak,
         goals: s.goals, assists: s.assists, preAssists: s.preAssists,
       }))
       .sort((a, b) => {
         const pa = POS_ORDER[a.pos] ?? 9, pb = POS_ORDER[b.pos] ?? 9
         return pa !== pb ? pa - pb : b.packing - a.packing
       })
-
     return NextResponse.json(result)
   } catch (e) {
     console.error(e)
