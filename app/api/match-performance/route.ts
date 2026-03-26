@@ -35,9 +35,9 @@ export async function GET(request: Request) {
             date: m.date,
             match: matchLabel,
             result: `${resultLabel} ${gf}-${ga}`,
-            goals: 0,
-            assists: 0,
-            preAssists: 0,
+            goals: player.goals ?? 0,
+            assists: player.assists ?? 0,
+            preAssists: player.preAssists ?? 0,
             minutes: player.time ? parseInt(player.time) : 0,
             packing: player.packing ?? 0,
             packingReceive: player.packingR ?? 0,
@@ -47,6 +47,7 @@ export async function GET(request: Request) {
             maxSpeed: player.maxSpeed ?? 0,
             distance: player.distance ?? 0,
             lineBreak: player.lineBreak ?? 0,
+            sprint: player.sprint ?? 0,
           }
         } catch {
           return null
