@@ -2,42 +2,16 @@ import { NextResponse } from "next/server"
 
 const PACKING_SHEET_ID = "1i1PmWTCT_x73GlDHTes9lN-e956gKPfapdY_P_nK11g"
 
-// PACKINGシートのsigを取得
 async function getPackingSig(sheetName?: string): Promise<string> {
   try {
     const url = sheetName
       ? `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`
       : `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:json`
     const res = await fetch(url, { cache: "no-store" })
-    const text = await res.text()
-    const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''))
+    const t = await res.text()
+    const json = JSON.parse(t.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''))
     return json.sig ?? ''
   } catch { return '' }
-}
-
-// PACKINGシートに存在する日付を全スキャン（前半シートの有無で判定）
-async function scanPackingDates(): Promise<string[]> {
-  const defaultSig = await getPackingSig()
-  // 今シーズン（1〜3月）＋今後の月を含む候補
-  const candidates: string[] = []
-  for (let m = 1; m <= 12; m++) {
-    const days = [31,29,31,30,31,30,31,31,30,31,30,31][m-1]
-    for (let d = 1; d <= days; d++) candidates.push(`${m}月${d}日`)
-  }
-  // バッチ20件ずつ並列チェック
-  const existing: string[] = []
-  const BATCH = 20
-  for (let i = 0; i < candidates.length; i += BATCH) {
-    const batch = candidates.slice(i, i + BATCH)
-    const results = await Promise.all(
-      batch.map(async date => {
-        const sig = await getPackingSig(`${date}前半`)
-        return { date, exists: !!sig && sig !== defaultSig }
-      })
-    )
-    results.forEach(r => { if (r.exists) existing.push(r.date) })
-  }
-  return existing
 }
 
 export async function GET(request: Request) {
@@ -54,16 +28,55 @@ export async function GET(request: Request) {
     const statsMatchMap = new Map<string, any>(
       (statsData.matches ?? []).map((m: any) => [m.date, m])
     )
+    const statsDates = [...statsMatchMap.keys()]
 
-    // 2. PACKINGシートに存在する日付をスキャン
-    const packingDates = await scanPackingDates()
+    // 2. PACKINGシートのdefaultSigを取得
+    const defaultSig = await getPackingSig()
 
-    // 3. stats日付とpacking日付を合算（重複除去）
-    const allDates = [...new Set([...statsMatchMap.keys(), ...packingDates])]
+    // 3. stats日付のうち前半シートが存在するものを確認（並列）
+    // + stats にない日付を見つけるため「stats日×2」程度の追加候補をスキャン
+    // 追加候補: stats日付の前後含む今シーズン全体
+    // → stats日付のみを並列チェックして「前半シートあり=パッキングデータあり」
+    //   さらに stats にない日付は PACKINGシートをスキャン
+    //   スキャン範囲は stats 日付の最小月〜最大月の全日付に限定
+    
+    // stats日付から月の範囲を求める
+    const months = new Set<number>()
+    statsDates.forEach(date => {
+      const m = date.match(/^(\d+)月/)
+      if (m) months.add(parseInt(m[1]))
+    })
+    // 月範囲をカバーする全日付候補（+前後1ヶ月）
+    const monthArr = [...months].sort((a, b) => a - b)
+    const minMonth = Math.max(1, (monthArr[0] ?? 1) - 1)
+    const maxMonth = Math.min(12, (monthArr[monthArr.length - 1] ?? 3) + 1)
+    const additionalCandidates: string[] = []
+    const monthDays = [31,29,31,30,31,30,31,31,30,31,30,31]
+    for (let m = minMonth; m <= maxMonth; m++) {
+      for (let d = 1; d <= monthDays[m-1]; d++) {
+        const date = `${m}月${d}日`
+        if (!statsMatchMap.has(date)) additionalCandidates.push(date)
+      }
+    }
 
-    // 4. 各日付の選手スタッツを並列取得
+    // 4. stats日付 + 追加候補を並列sigチェック（バッチ20件）
+    const allCandidates = [...statsDates, ...additionalCandidates]
+    const existingDates: string[] = []
+    const BATCH = 20
+    for (let i = 0; i < allCandidates.length; i += BATCH) {
+      const batch = allCandidates.slice(i, i + BATCH)
+      const results = await Promise.all(
+        batch.map(async date => {
+          const sig = await getPackingSig(`${date}前半`)
+          return { date, exists: !!sig && sig !== defaultSig }
+        })
+      )
+      results.forEach(r => { if (r.exists) existingDates.push(r.date) })
+    }
+
+    // 5. 各日付の選手スタッツを並列取得
     const results = await Promise.all(
-      allDates.map(async (date) => {
+      existingDates.map(async (date) => {
         try {
           const playerRes = await fetch(
             `${baseUrl}/api/player-stats?date=${encodeURIComponent(date)}`,
@@ -109,7 +122,6 @@ export async function GET(request: Request) {
       })
     )
 
-    // null除去・日付順ソート
     const filtered = (results.filter(Boolean) as any[])
       .sort((a, b) => {
         const p = (d: string) => { const m = d.match(/(\d+)月(\d+)日/); return m ? +m[1]*100 + +m[2] : 0 }
