@@ -191,6 +191,32 @@ export async function GET(request: Request) {
         await fetchPackingBySheetName(sheetName, 0, defaultSig, stats)
       }
     } else {
+      // date未指定: デフォルトシートのみ集計
+      const defCsvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv`
+      const defRes = await fetch(defCsvUrl, { cache: "no-store" })
+      if (defRes.ok) {
+        const defCsv = await defRes.text()
+        defCsv.split("\n").slice(1).map(parseCSVLine).forEach(cols => {
+          const cat = cols[1]?.trim(); if (!cat || SKIP_CATS.has(cat)) return
+          if (cat === "得点" || cat === "失点") return
+          const p = getOrCreate(cat, stats)
+          for (let i = 6; i < cols.length; i++) {
+            const d = cols[i]?.trim(); if (!d) continue
+            if (/^P [\d.]+/.test(d) || /^Packing [\d.]+/.test(d)) p.packing += extractNum(d)
+            if (/^I [\d.]+/.test(d) || /^Impect [\d.]+/.test(d)) p.impact += extractNum(d)
+            const resMatch = d.match(/^(.+?) Res$/)
+            if (resMatch) {
+              const rec = getOrCreate(resMatch[1].split(/[\s\u3000]/)[0], stats)
+              for (let j = i + 1; j < Math.min(i + 4, cols.length); j++) {
+                const next = cols[j]?.trim(); if (!next) continue
+                if (/^Packing [\d.]+/.test(next)) rec.packingR += extractNum(next)
+                if (/^Impect [\d.]+/.test(next)) rec.impactR += extractNum(next)
+              }
+            }
+          }
+        })
+      }
+    }
 // トラッキングデータ（試合日が指定されている場合のみ）
     if (date) {
       try {
