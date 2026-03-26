@@ -157,61 +157,41 @@ export async function GET(request: Request) {
     const stats: Record<string, PlayerStats> = {}
 
     // パッキングデータ集計
-    // dateが指定された場合: その試合日のシートを使う（timelineと同じgviz sig方式）
-    // dateが未指定の場合: 全シート（フォールバック）
+    // session: "合計"=前半+後半合算, "前半"=前半のみ, "後半"=後半のみ, "3本目"=3本目のみ
     if (date) {
       const defaultSig = await getGvizSig(PACKING_SHEET_ID)
-      const firstHalfName  = `${date}前半`
-      const secondHalfName = `${date}後半`
 
-      // 後半シートの存在確認
-      const secondSig = await getGvizSig(PACKING_SHEET_ID, secondHalfName)
-      const hasSecondSheet = secondSig && secondSig !== defaultSig
+      // sessionに対応するハーフ名リストを決定
+      const halfSuffix = session === "合計"
+        ? ["前半", "後半", "3本目", "4本目"]  // 合計は全ハーフを合算
+        : [session]                             // 前半/後半/3本目は1つのみ
 
-      // 前半シートの処理
-      const firstSig = await getGvizSig(PACKING_SHEET_ID, firstHalfName)
-      if (firstSig && firstSig !== defaultSig) {
-        // 別シートとして存在
-        await fetchPackingBySheetName(firstHalfName, 0, defaultSig, stats)
-      } else if (firstSig === defaultSig && hasSecondSheet) {
-        // 前半が最初のシート（デフォルトと一致するが後半が存在するので有効）
-        await fetchPackingBySheetName(firstHalfName, 0, defaultSig, stats)
-      }
+      for (const suffix of halfSuffix) {
+        const sheetName = `${date}${suffix}`
+        const sig = await getGvizSig(PACKING_SHEET_ID, sheetName)
+        if (!sig) continue
 
-      // 後半シートの処理
-      if (hasSecondSheet) {
-        await fetchPackingBySheetName(secondHalfName, 0, defaultSig, stats) // offset=0（累積しない）
+        let csvUrl = ''
+        if (sig !== defaultSig) {
+          csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
+        } else if (suffix === "前半") {
+          // sigがdefaultと同じ=最初のシートかもしれないので、他のハーフが存在するか確認
+          const otherExists = await Promise.any(
+            ["後半", "3本目"].map(async s => {
+              const sg = await getGvizSig(PACKING_SHEET_ID, `${date}${s}`)
+              if (sg && sg !== defaultSig) return true
+              throw new Error("not found")
+            })
+          ).catch(() => false)
+          if (otherExists) {
+            csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv`
+          }
+        }
+        if (!csvUrl) continue
+        await fetchPackingBySheetName(sheetName, 0, defaultSig, stats)
       }
     } else {
-      // date未指定: 全選手の累積（従来通り最初の2シート）
-      const defaultSig = await getGvizSig(PACKING_SHEET_ID)
-      // gvizデフォルト（最初のシート）
-      const csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv`
-      const res = await fetch(csvUrl, { cache: "no-store" })
-      if (res.ok) {
-        const csv = await res.text()
-        csv.split("\n").slice(1).map(parseCSVLine).forEach(cols => {
-          const cat = cols[1]?.trim(); if (!cat || SKIP_CATS.has(cat)) return
-          const p = getOrCreate(cat, stats)
-          for (let i = 6; i < cols.length; i++) {
-            const d = cols[i]?.trim(); if (!d) continue
-            if (/^P [\d.]+/.test(d) || /^Packing [\d.]+/.test(d)) p.packing += extractNum(d)
-            if (/^I [\d.]+/.test(d) || /^Impect [\d.]+/.test(d)) p.impact += extractNum(d)
-            const resMatch = d.match(/^(.+?) Res$/)
-            if (resMatch) {
-              const rec = getOrCreate(resMatch[1].split(/[\s\u3000]/)[0], stats)
-              for (let j = i + 1; j < Math.min(i + 4, cols.length); j++) {
-                const next = cols[j]?.trim(); if (!next) continue
-                if (/^Packing [\d.]+/.test(next)) rec.packingR += extractNum(next)
-                if (/^Impect [\d.]+/.test(next)) rec.impactR += extractNum(next)
-              }
-            }
-          }
-        })
-      }
-    }
-
-    // トラッキングデータ（試合日が指定されている場合のみ）
+// トラッキングデータ（試合日が指定されている場合のみ）
     if (date) {
       try {
         // シート名でgviz CSV取得を試みる
