@@ -254,8 +254,14 @@ export async function GET(request: Request) {
           rows.slice(1).forEach(cols => {
             const rawName = cols[idxName]?.trim(); if (!rawName) return
             const normRaw = normName(rawName)
-            const matched = Object.values(stats).find(s => normName(s.fullName) === normRaw)
-            if (!matched) return
+            let matched = Object.values(stats).find(s => normName(s.fullName) === normRaw)
+            if (!matched) {
+              // パッキングデータがなくてもトラッキングデータから選手を追加
+              const info = lastNameMapCache ? Object.values(lastNameMapCache).find(v => normName(v.fullName) === normRaw) : null
+              if (!info) return
+              const lastName = info.fullName.split(/[\s\u3000]/)[0]
+              matched = getOrCreate(lastName, stats)
+            }
             if (idxDist >= 0) matched.distance = Math.round(parseFloat(cols[idxDist]) || 0) || null
             if (idxSpeed >= 0) matched.maxSpeed = parseFloat(cols[idxSpeed]) || null
             if (idxHI >= 0) matched.hi = parseFloat(cols[idxHI]) || null
