@@ -129,7 +129,7 @@ let lastNameMapCache: Record<string, { fullName: string; pos: string }> | null =
 function getOrCreate(lastName: string, stats: Record<string, PlayerStats>): PlayerStats {
   if (!stats[lastName]) {
     const info = lastNameMapCache?.[lastName] ?? { fullName: lastName, pos: "-" }
-    stats[lastName] = { lastName, fullName: info.fullName, pos: info.pos, packing: 0, packingR: 0, impact: 0, impactR: 0, distance: null, maxSpeed: null, hi: null, sprint: null, time: null, lineBreak: null, goals: 0, assists: 0, preAssists: 0, goals: 0, assists: 0, preAssists: 0 }
+    stats[lastName] = { lastName, fullName: info.fullName, pos: info.pos, packing: 0, packingR: 0, impact: 0, impactR: 0, distance: null, maxSpeed: null, hi: null, sprint: null, time: null, lineBreak: null, goals: 0, assists: 0, preAssists: 0 }
   }
   return stats[lastName]
 }
