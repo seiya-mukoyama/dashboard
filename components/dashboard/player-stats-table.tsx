@@ -73,8 +73,8 @@ export function PlayerStatsTable({ opponent, date }: { opponent: string; date?: 
       const available: Session[] = []
       results.forEach(({ session: s, data }) => {
         // パッキングまたはトラッキングデータが実際にある場合のみ有効
-          const hasPacking = data.some((p: PlayerStat) => p.packing > 0 || p.packingR > 0)
-          const hasTracking = data.some((p: PlayerStat) => p.distance != null || (p.sprint != null && p.sprint > 0))
+          const hasPacking = (data ?? []).some((p: PlayerStat) => p.packing > 0 || p.packingR > 0)
+          const hasTracking = (data ?? []).some((p: PlayerStat) => p.distance != null || (p.sprint != null && p.sprint > 0))
           if (data && (hasPacking || hasTracking)) { map[s] = data; available.push(s) }
       })
       setStatsMap(map)
