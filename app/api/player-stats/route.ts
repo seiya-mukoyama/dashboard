@@ -137,6 +137,7 @@ function getOrCreate(lastName: string, stats: Record<string, PlayerStats>): Play
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const date = searchParams.get("date") ?? ""
+    const session = searchParams.get("session") ?? "合計"
 
   try {
     // 選手一覧（姓→フルネーム・ポジション）
@@ -254,7 +255,10 @@ export async function GET(request: Request) {
           rows.slice(1).forEach(cols => {
             const rawName = cols[idxName]?.trim(); if (!rawName) return
             const normRaw = normName(rawName)
-            let matched = Object.values(stats).find(s => normName(s.fullName) === normRaw)
+            // session列(インデックス1)でフィルタ（合計/前半/後半/3本目）
+              const rowSession = cols[1]?.trim()
+              if (rowSession && rowSession !== 'session' && rowSession !== session) return
+              let matched = Object.values(stats).find(s => normName(s.fullName) === normRaw)
             if (!matched) {
               // パッキングデータがなくてもトラッキングデータから選手を追加
               const info = lastNameMapCache ? Object.values(lastNameMapCache).find(v => normName(v.fullName) === normRaw) : null
