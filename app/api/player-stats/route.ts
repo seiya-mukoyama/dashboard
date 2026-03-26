@@ -43,10 +43,25 @@ async function fetchPackingBySheetName(
   stats: Record<string, PlayerStats>
 ): Promise<void> {
   const sig = await getGvizSig(PACKING_SHEET_ID, sheetName)
-  // sig がない、またはdefaultと同じ = シートが存在しない → スキップ
-  if (!sig || sig === defaultSig) return
+  if (!sig) return
 
-  const csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
+  let csvUrl: string
+  if (sig !== defaultSig) {
+    // 独立したシートとして存在
+    csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
+  } else {
+    // sigがdefaultと同じ = 最初のシートの可能性
+    // 前半シート名の場合のみ：後半/3本目が存在するならデフォルトCSVとして読む
+    const isFrontHalf = /前半$/.test(sheetName)
+    if (!isFrontHalf) return // 前半以外でdefaultと同じ = 存在しない
+    const date = sheetName.replace(/前半$/, '')
+    const otherSigs = await Promise.all(
+      ["後半", "3本目", "4本目"].map(s => getGvizSig(PACKING_SHEET_ID, `${date}${s}`))
+    )
+    const hasOther = otherSigs.some(s => s && s !== defaultSig)
+    if (!hasOther) return // 後半も存在しない = データなし
+    csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv`
+  }
 
   const res = await fetch(csvUrl, { cache: "no-store" })
   if (!res.ok) return
