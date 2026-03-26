@@ -5,9 +5,7 @@ const PACKING_SHEET_ID = "1i1PmWTCT_x73GlDHTes9lN-e956gKPfapdY_P_nK11g"
 function parseCSVLine(line: string): string[] {
   const cols: string[] = []; let cur = ""; let inQ = false
   for (const ch of line) {
-    if (ch === '"') { inQ = !inQ }
-    else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = "" }
-    else { cur += ch }
+    if (ch === '"') { inQ = !inQ } else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = "" } else { cur += ch }
   }
   cols.push(cur.trim())
   return cols
@@ -38,69 +36,97 @@ async function getGvizSig(sheetName?: string): Promise<string> {
   } catch { return '' }
 }
 
-type BucketData = {
-  vP: number[]; vI: number[]; oP: number[]; oI: number[]
-  bucketOffset: number  // このデータが何分スタートか（前半=0, 後半=9, 3本目=18...）
+export type GoalEvent = {
+  minute: number      // 経過分（小数あり）
+  team: "vonds" | "opp"
+  scorer: string
+  assist: string
+  preAssist: string
 }
 
-// csvUrlからデータを取得し、時刻はそのまま（0分スタート）でバケットに入れる
-async function fetchHalfData(csvUrl: string): Promise<BucketData | null> {
+type BucketData = {
+  vP: number[]; vI: number[]; oP: number[]; oI: number[]
+  bucketOffset: number
+  goals: GoalEvent[]  // 得点イベント
+}
+
+async function fetchHalfData(csvUrl: string, halfOffsetMin: number = 0): Promise<BucketData | null> {
   const res = await fetch(csvUrl, { cache: "no-store" })
   if (!res.ok) return null
   const csv = await res.text()
   if (!csv.trim()) return null
-
   const BUCKETS = 18
   const vP = new Array(BUCKETS).fill(0)
   const vI = new Array(BUCKETS).fill(0)
   const oP = new Array(BUCKETS).fill(0)
   const oI = new Array(BUCKETS).fill(0)
+  const goals: GoalEvent[] = []
   let hasData = false
-
   const rows = csv.split("\n").slice(1).map(parseCSVLine)
   rows.forEach(cols => {
-    const cat = cols[1]?.trim(); const click = cols[3]?.trim()
+    const cat = cols[1]?.trim()
+    const click = cols[3]?.trim()
     if (!cat || !click) return
-    const min = toMinutes(click); if (min === null) return
+    const min = toMinutes(click)
+    if (min === null) return
+
+    // 得点・失点イベントを抽出
+    if (cat === "得点" || cat === "失点") {
+      const scorer = cols[6]?.trim() ?? ""
+      const assist = cols[7]?.trim() ?? ""
+      const preAssist = cols[8]?.trim() ?? ""
+      goals.push({
+        minute: Math.round((min + halfOffsetMin) * 10) / 10,
+        team: cat === "得点" ? "vonds" : "opp",
+        scorer,
+        assist,
+        preAssist,
+      })
+      return
+    }
+
     const isOpp = cat === "相手"
-    const lb = Math.floor(min / 5); if (lb < 0 || lb >= BUCKETS) return
+    const lb = Math.floor(min / 5)
+    if (lb < 0 || lb >= BUCKETS) return
     hasData = true
     for (let i = 6; i < cols.length; i++) {
       const d = cols[i]?.trim(); if (!d) continue
-      if (/^P [\d.]+/.test(d) || /^Packing [\d.]+/.test(d)) { const pts = extractNum(d); if (isOpp) oP[lb] += pts; else vP[lb] += pts }
-      if (/^I [\d.]+/.test(d) || /^Impect [\d.]+/.test(d)) { const pts = extractNum(d); if (isOpp) oI[lb] += pts; else vI[lb] += pts }
+      if (/^P [\d.]+/.test(d) || /^Packing [\d.]+/.test(d)) {
+        const pts = extractNum(d); if (isOpp) oP[lb] += pts; else vP[lb] += pts
+      }
+      if (/^I [\d.]+/.test(d) || /^Impect [\d.]+/.test(d)) {
+        const pts = extractNum(d); if (isOpp) oI[lb] += pts; else vI[lb] += pts
+      }
     }
   })
-  if (!hasData) return null
-  return { vP, vI, oP, oI, bucketOffset: 0 }
+  if (!hasData && goals.length === 0) return null
+  return { vP, vI, oP, oI, bucketOffset: 0, goals }
 }
 
-// 個別ハーフ用（ラベルはその本のデータ範囲で0スタート）
 function buildHalfResult(data: BucketData, label: string) {
   const cumSum = (arr: number[]) => { let acc = 0; return arr.map(v => { acc += v; return Math.round(acc * 10) / 10 }) }
   const lastBucket = Math.max(data.vP.findLastIndex(v => v > 0), data.oP.findLastIndex(v => v > 0))
-  if (lastBucket < 0) return null
-  const maxBucket = Math.min(lastBucket + 1, 18)
-  const cumV  = cumSum(data.vP).slice(0, maxBucket)
+  if (lastBucket < 0 && data.goals.length === 0) return null
+  const maxBucket = Math.min(Math.max(lastBucket + 1, 1), 18)
+  const cumV = cumSum(data.vP).slice(0, maxBucket)
   const cumVI = cumSum(data.vI).slice(0, maxBucket)
-  const cumO  = cumSum(data.oP).slice(0, maxBucket)
+  const cumO = cumSum(data.oP).slice(0, maxBucket)
   const cumOI = cumSum(data.oI).slice(0, maxBucket)
   const labels = Array.from({ length: maxBucket }, (_, i) => `${i * 5}-${(i + 1) * 5}`)
   labels.push(`${maxBucket * 5}-EX`)
-  cumV.push(cumV[cumV.length-1] ?? 0); cumVI.push(cumVI[cumVI.length-1] ?? 0)
-  cumO.push(cumO[cumO.length-1] ?? 0); cumOI.push(cumOI[cumOI.length-1] ?? 0)
-  return { label, labels, vonds: { packing: cumV, impact: cumVI }, opp: { packing: cumO, impact: cumOI } }
+  cumV.push(cumV[cumV.length - 1] ?? 0); cumVI.push(cumVI[cumVI.length - 1] ?? 0)
+  cumO.push(cumO[cumO.length - 1] ?? 0); cumOI.push(cumOI[cumOI.length - 1] ?? 0)
+  return { label, labels, vonds: { packing: cumV, impact: cumVI }, opp: { packing: cumO, impact: cumOI }, goals: data.goals }
 }
 
-// 合計用: 各ハーフを45分オフセットで結合、合計は0〜(ハーフ数×45)分
 function buildTotalResult(halvesBuckets: BucketData[]) {
-  const HALF_BUCKETS = 9  // 各ハーフは最大9バケット(45分分)
+  const HALF_BUCKETS = 9
   const TOTAL_BUCKETS = HALF_BUCKETS * halvesBuckets.length
   const vP = new Array(TOTAL_BUCKETS).fill(0)
   const vI = new Array(TOTAL_BUCKETS).fill(0)
   const oP = new Array(TOTAL_BUCKETS).fill(0)
   const oI = new Array(TOTAL_BUCKETS).fill(0)
-
+  const allGoals: GoalEvent[] = []
   halvesBuckets.forEach((data, halfIdx) => {
     const offset = halfIdx * HALF_BUCKETS
     for (let i = 0; i < HALF_BUCKETS; i++) {
@@ -109,47 +135,40 @@ function buildTotalResult(halvesBuckets: BucketData[]) {
       oP[offset + i] += data.oP[i] ?? 0
       oI[offset + i] += data.oI[i] ?? 0
     }
+    allGoals.push(...data.goals)
   })
-
   const cumSum = (arr: number[]) => { let acc = 0; return arr.map(v => { acc += v; return Math.round(acc * 10) / 10 }) }
   const lastBucket = Math.max(vP.findLastIndex(v => v > 0), oP.findLastIndex(v => v > 0))
-  if (lastBucket < 0) return null
-  const maxBucket = Math.min(lastBucket + 1, TOTAL_BUCKETS)
-
-  const cumV  = cumSum(vP).slice(0, maxBucket)
+  if (lastBucket < 0 && allGoals.length === 0) return null
+  const maxBucket = Math.min(Math.max(lastBucket + 1, 1), TOTAL_BUCKETS)
+  const cumV = cumSum(vP).slice(0, maxBucket)
   const cumVI = cumSum(vI).slice(0, maxBucket)
-  const cumO  = cumSum(oP).slice(0, maxBucket)
+  const cumO = cumSum(oP).slice(0, maxBucket)
   const cumOI = cumSum(oI).slice(0, maxBucket)
-
   const labels = Array.from({ length: maxBucket }, (_, i) => `${i * 5}-${(i + 1) * 5}`)
   labels.push(`${maxBucket * 5}-EX`)
-  cumV.push(cumV[cumV.length-1] ?? 0); cumVI.push(cumVI[cumVI.length-1] ?? 0)
-  cumO.push(cumO[cumO.length-1] ?? 0); cumOI.push(cumOI[cumOI.length-1] ?? 0)
-
-  return { label: '合計', labels, vonds: { packing: cumV, impact: cumVI }, opp: { packing: cumO, impact: cumOI } }
+  cumV.push(cumV[cumV.length - 1] ?? 0); cumVI.push(cumVI[cumVI.length - 1] ?? 0)
+  cumO.push(cumO[cumO.length - 1] ?? 0); cumOI.push(cumOI[cumOI.length - 1] ?? 0)
+  return { label: '合計', labels, vonds: { packing: cumV, impact: cumVI }, opp: { packing: cumO, impact: cumOI }, goals: allGoals }
 }
-
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const date = searchParams.get("date") ?? ""
   if (!date) return NextResponse.json({ halves: [], noData: true })
-
   try {
     const defaultSig = await getGvizSig()
     const halfDefs = [
-      { name: `${date}前半`, label: '前半' },
-      { name: `${date}後半`, label: '後半' },
-      { name: `${date}3本目`, label: '3本目' },
-      { name: `${date}4本目`, label: '4本目' },
+      { name: `${date}前半`, label: '前半', offsetMin: 0 },
+      { name: `${date}後半`, label: '後半', offsetMin: 45 },
+      { name: `${date}3本目`, label: '3本目', offsetMin: 90 },
+      { name: `${date}4本目`, label: '4本目', offsetMin: 135 },
     ]
     const sigs = await Promise.all(halfDefs.map(h => getGvizSig(h.name)))
-
     const halves: ReturnType<typeof buildHalfResult>[] = []
     const allBuckets: BucketData[] = []
-
     for (let i = 0; i < halfDefs.length; i++) {
-      const { name, label } = halfDefs[i]
+      const { name, label, offsetMin } = halfDefs[i]
       const sig = sigs[i]
       let csvUrl = ''
       if (sig && sig !== defaultSig) {
@@ -159,17 +178,13 @@ export async function GET(request: Request) {
         if (hasOther) csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv`
       }
       if (!csvUrl) continue
-      const data = await fetchHalfData(csvUrl)
+      const data = await fetchHalfData(csvUrl, offsetMin)
       if (!data) continue
       const result = buildHalfResult(data, label)
       if (result) { halves.push(result); allBuckets.push(data) }
     }
-
     if (halves.length === 0) return NextResponse.json({ halves: [], noData: true })
-
-    // 合計: 各ハーフを45分ずつオフセットして結合
     const total = buildTotalResult(allBuckets)
-
     return NextResponse.json({ total, halves })
   } catch {
     return NextResponse.json({ error: "error" }, { status: 500 })
