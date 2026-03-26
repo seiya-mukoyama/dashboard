@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+　import { NextResponse } from "next/server"
 
 const PACKING_SHEET_ID = "1i1PmWTCT_x73GlDHTes9lN-e956gKPfapdY_P_nK11g"
 const PLAYERS_SHEET_ID = "1vnHF5iHJkirI6PhUzD3isKmdkz6Vani4aQfItMgL80k"
@@ -78,6 +78,25 @@ async function fetchPackingBySheetName(
   rows.forEach(cols => {
     const cat = cols[1]?.trim()
     if (!cat || SKIP_CATS.has(cat)) return
+    // 得点・失点行の処理
+    if (cat === "得点" || cat === "失点") {
+      const isGoal = cat === "得点"
+      // G列: "佐々木" や "佐々木 Pass" → 選手名を抽出
+      const scorerRaw = cols[6]?.trim() ?? ""
+      const scorer = scorerRaw.split(/[\s　]/)[0]
+      // H列: "藤井 assist" → アシスト選手
+      const assistRaw = cols[7]?.trim() ?? ""
+      const assistName = assistRaw.includes("assist") ? assistRaw.split(/[\s　]/)[0] : ""
+      // I列: "藤井 preassist" → プレアシスト選手
+      const preAssistRaw = cols[8]?.trim() ?? ""
+      const preAssistName = preAssistRaw.includes("preassist") ? preAssistRaw.split(/[\s　]/)[0] : ""
+      if (isGoal) {
+        if (scorer) { const p = getOrCreate(scorer, stats); p.goals += 1 }
+        if (assistName) { const p = getOrCreate(assistName, stats); p.assists += 1 }
+        if (preAssistName) { const p = getOrCreate(preAssistName, stats); p.preAssists += 1 }
+      }
+      return
+    }
     const p = getOrCreate(cat, stats)
     hasData = true
     for (let i = 6; i < cols.length; i++) {
@@ -102,6 +121,7 @@ type PlayerStats = {
   lastName: string; fullName: string; pos: string
   packing: number; packingR: number; impact: number; impactR: number
   distance: number | null; maxSpeed: number | null; hi: number | null; sprint: number | null; time: string | null; lineBreak: number | null
+  goals: number; assists: number; preAssists: number
   goals: number
   assists: number
   preAssists: number
@@ -112,7 +132,7 @@ let lastNameMapCache: Record<string, { fullName: string; pos: string }> | null =
 function getOrCreate(lastName: string, stats: Record<string, PlayerStats>): PlayerStats {
   if (!stats[lastName]) {
     const info = lastNameMapCache?.[lastName] ?? { fullName: lastName, pos: "-" }
-    stats[lastName] = { lastName, fullName: info.fullName, pos: info.pos, packing: 0, packingR: 0, impact: 0, impactR: 0, distance: null, maxSpeed: null, hi: null, sprint: null, time: null, lineBreak: null, goals: 0, assists: 0, preAssists: 0 }
+    stats[lastName] = { lastName, fullName: info.fullName, pos: info.pos, packing: 0, packingR: 0, impact: 0, impactR: 0, distance: null, maxSpeed: null, hi: null, sprint: null, time: null, lineBreak: null, goals: 0, assists: 0, preAssists: 0, goals: 0, assists: 0, preAssists: 0 }
   }
   return stats[lastName]
 }
