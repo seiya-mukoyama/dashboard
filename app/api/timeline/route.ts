@@ -103,7 +103,7 @@ async function fetchHalfData(csvUrl: string, halfOffsetMin: number = 0): Promise
   return { vP, vI, oP, oI, bucketOffset: 0, goals }
 }
 
-function buildHalfResult(data: BucketData, label: string) {
+function buildHalfResult(data: BucketData, label: string, halfOffsetMin: number = 0) {
   const cumSum = (arr: number[]) => { let acc = 0; return arr.map(v => { acc += v; return Math.round(acc * 10) / 10 }) }
   const lastBucket = Math.max(data.vP.findLastIndex(v => v > 0), data.oP.findLastIndex(v => v > 0))
   if (lastBucket < 0 && data.goals.length === 0) return null
@@ -116,7 +116,7 @@ function buildHalfResult(data: BucketData, label: string) {
   labels.push(`${maxBucket * 5}-EX`)
   cumV.push(cumV[cumV.length - 1] ?? 0); cumVI.push(cumVI[cumVI.length - 1] ?? 0)
   cumO.push(cumO[cumO.length - 1] ?? 0); cumOI.push(cumOI[cumOI.length - 1] ?? 0)
-  return { label, labels, vonds: { packing: cumV, impact: cumVI }, opp: { packing: cumO, impact: cumOI }, goals: data.goals }
+  return { label, labels, vonds: { packing: cumV, impact: cumVI }, opp: { packing: cumO, impact: cumOI }, goals: data.goals.map(g => ({ ...g, minute: Math.round((g.minute - halfOffsetMin) * 10) / 10 })) }
 }
 
 function buildTotalResult(halvesBuckets: BucketData[]) {
@@ -180,7 +180,7 @@ export async function GET(request: Request) {
       if (!csvUrl) continue
       const data = await fetchHalfData(csvUrl, offsetMin)
       if (!data) continue
-      const result = buildHalfResult(data, label)
+      const result = buildHalfResult(data, label, offsetMin)
       if (result) { halves.push(result); allBuckets.push(data) }
     }
     if (halves.length === 0) return NextResponse.json({ halves: [], noData: true })
