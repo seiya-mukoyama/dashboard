@@ -48,60 +48,50 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
         </div>
       )}
 
-      {/* 1つのtableで全行を管理 */}
-      {/* colgroup: 数値列=1%(最小)、中央列=auto(残り全部) → 数値が項目のすぐ横に */}
-      <table className="w-full border-collapse">
-        <colgroup>
-          <col style={{width:"1%"}} />
-          <col />
-          <col style={{width:"1%"}} />
-        </colgroup>
-        <thead>
-          <tr className="border-b border-border">
-            <th className="pb-1.5 w-px text-xs font-bold text-primary text-right whitespace-nowrap pr-1">VONDS市原</th>
-            <th className="pb-1.5 text-center" />
-            <th className="pb-1.5 w-px text-xs font-bold text-muted-foreground text-left whitespace-nowrap pl-1">{opponent}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ITEMS.map(({ key, label }) => {
-            const v = vonds[key] ?? 0
-            const o = opp[key] ?? 0
-            const total = v + o
-            const vPct = total > 0 ? (v / total) * 100 : 50
+      {/* ヘッダー */}
+      <div className="text-center mb-2 pb-1.5 border-b border-border">
+        <span className="text-xs font-bold text-primary whitespace-nowrap">VONDS市原</span>
+        <span className="text-xs text-muted-foreground mx-2">vs</span>
+        <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">{opponent}</span>
+      </div>
 
-            return (
-              <>
-                <tr key={`${key}-val`}>
-                  <td className="pt-2 w-px text-sm font-bold tabular-nums text-right whitespace-nowrap pr-1">
-                    <span className={v > o ? 'text-primary' : 'text-foreground'}>{fmt(v)}</span>
-                  </td>
-                  <td className="pt-2 text-xs text-muted-foreground text-center whitespace-nowrap px-2">{label}</td>
-                  <td className="pt-2 w-px text-sm font-bold tabular-nums text-left whitespace-nowrap pl-1">
-                    <span className={o > v ? 'text-foreground' : 'text-muted-foreground'}>{fmt(o)}</span>
-                  </td>
-                </tr>
-                <tr key={`${key}-bar`}>
-                  <td colSpan={3} className="pb-1">
-                    <div className="relative flex h-5 rounded-full overflow-hidden bg-secondary mt-0.5">
-                      <div className="absolute inset-0 pointer-events-none" style={{zIndex:10}}>
-                        <div className="absolute top-0 bottom-0 w-px" style={{left:"25%",background:"rgba(0,0,0,0.12)"}} />
-                        <div className="absolute top-0 bottom-0 w-px" style={{left:"50%",background:"rgba(0,0,0,0.2)"}} />
-                        <div className="absolute top-0 bottom-0 w-px" style={{left:"75%",background:"rgba(0,0,0,0.12)"}} />
-                      </div>
-                      <div className="bg-primary transition-all" style={{ width: `${vPct}%` }} />
-                      <div className="flex-1 bg-secondary" />
-                    </div>
-                  </td>
-                </tr>
-              </>
-            )
-          })}
-        </tbody>
-      </table>
+      {/* CSSグリッド3列: max-content | auto(棒グラフ) | max-content
+          → 左右列幅が全行で揃い、数値が項目名のすぐ横に来る */}
+      <div style={{display:'grid', gridTemplateColumns:'max-content 1fr max-content', columnGap:'6px'}}>
+        {ITEMS.map(({ key, label }) => {
+          const v = vonds[key] ?? 0
+          const o = opp[key] ?? 0
+          const total = v + o
+          const vPct = total > 0 ? (v / total) * 100 : 50
+
+          return (
+            <>
+              <div key={`${key}-v`} className="flex items-end justify-end pb-1 pt-2">
+                <span className={`text-sm font-bold tabular-nums whitespace-nowrap ${v > o ? 'text-primary' : 'text-foreground'}`}>{fmt(v)}</span>
+              </div>
+              <div key={`${key}-mid`} className="pt-2">
+                <div className="text-xs text-muted-foreground text-center whitespace-nowrap mb-0.5">{label}</div>
+                <div className="relative flex h-5 rounded-full overflow-hidden bg-secondary">
+                  <div className="absolute inset-0 pointer-events-none" style={{zIndex:10}}>
+                    <div className="absolute top-0 bottom-0 w-px" style={{left:"25%",background:"rgba(0,0,0,0.12)"}} />
+                    <div className="absolute top-0 bottom-0 w-px" style={{left:"50%",background:"rgba(0,0,0,0.2)"}} />
+                    <div className="absolute top-0 bottom-0 w-px" style={{left:"75%",background:"rgba(0,0,0,0.12)"}} />
+                  </div>
+                  <div className="bg-primary transition-all" style={{ width: `${vPct}%` }} />
+                  <div className="flex-1 bg-secondary" />
+                </div>
+              </div>
+              <div key={`${key}-o`} className="flex items-end justify-start pb-1 pt-2">
+                <span className={`text-sm font-bold tabular-nums whitespace-nowrap ${o > v ? 'text-foreground' : 'text-muted-foreground'}`}>{fmt(o)}</span>
+              </div>
+            </>
+          )
+        })}
+      </div>
     </div>
   )
 }
+
 
 export function StatsComparisonChart({ vonds, opp, opponent, halvesVonds, halvesOpp }: Props) {
   const hasHalves = halvesVonds && halvesVonds.length > 1
