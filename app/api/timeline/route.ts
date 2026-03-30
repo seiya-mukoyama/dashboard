@@ -122,37 +122,46 @@ function buildHalfResult(data: BucketData, label: string, halfOffsetMin: number 
   return { label, labels, vonds: { packing: cumV, impact: cumVI }, opp: { packing: cumO, impact: cumOI }, goals: data.goals.map(g => ({ ...g, minute: Math.round((g.minute - halfOffsetMin) * 10) / 10 })) }
 }
 
-function buildTotalResult(halvesBuckets: BucketData[]) {
-  const BUCKETS_PER_HALF = 18
-  const TOTAL_BUCKETS = BUCKETS_PER_HALF * halvesBuckets.length
-  const vP = new Array(TOTAL_BUCKETS).fill(0)
-  const vI = new Array(TOTAL_BUCKETS).fill(0)
-  const oP = new Array(TOTAL_BUCKETS).fill(0)
-  const oI = new Array(TOTAL_BUCKETS).fill(0)
+function buildTotalResult(halvesBuckets: BucketData[], halfOffsetMins: number[]) {
+  // 各ハーフの実際のデータ範囲のみを使い、試合時間ベースのラベルで連結する
   const allGoals: GoalEvent[] = []
-  halvesBuckets.forEach((data, halfIdx) => {
-    const offset = halfIdx * BUCKETS_PER_HALF
-    for (let i = 0; i < BUCKETS_PER_HALF; i++) {
-      vP[offset + i] += data.vP[i] ?? 0
-      vI[offset + i] += data.vI[i] ?? 0
-      oP[offset + i] += data.oP[i] ?? 0
-      oI[offset + i] += data.oI[i] ?? 0
+  const vPAll: number[] = []
+  const vIAll: number[] = []
+  const oPAll: number[] = []
+  const oIAll: number[] = []
+  const labels: string[] = []
+
+  halvesBuckets.forEach((data, i) => {
+    const startMin = halfOffsetMins[i] ?? i * 45
+    const lastB = Math.max(data.vP.findLastIndex(v => v > 0), data.oP.findLastIndex(v => v > 0))
+    const buckets = lastB >= 0 ? lastB + 1 : 0
+    for (let b = 0; b < buckets; b++) {
+      vPAll.push(data.vP[b] ?? 0)
+      vIAll.push(data.vI[b] ?? 0)
+      oPAll.push(data.oP[b] ?? 0)
+      oIAll.push(data.oI[b] ?? 0)
+      labels.push(`${startMin + b * 5}-${startMin + (b + 1) * 5}`)
     }
     allGoals.push(...data.goals)
   })
+
+  if (vPAll.length === 0 && allGoals.length === 0) return null
+
   const cumSum = (arr: number[]) => { let acc = 0; return arr.map(v => { acc += v; return Math.round(acc * 10) / 10 }) }
-  // 合計配列から実際にデータがある最後のバケットを直接検索
-  const lastBucket = Math.max(vP.findLastIndex(v => v > 0), oP.findLastIndex(v => v > 0))
-  if (lastBucket < 0 && allGoals.length === 0) return null
-  const maxBucket = Math.min(Math.max(lastBucket + 1, 1), TOTAL_BUCKETS)
-  const cumV = cumSum(vP).slice(0, maxBucket)
-  const cumVI = cumSum(vI).slice(0, maxBucket)
-  const cumO = cumSum(oP).slice(0, maxBucket)
-  const cumOI = cumSum(oI).slice(0, maxBucket)
-  const labels = Array.from({ length: maxBucket }, (_, i) => `${i * 5}-${(i + 1) * 5}`)
-  labels.push(`${maxBucket * 5}-EX`)
+  const cumV = cumSum(vPAll)
+  const cumVI = cumSum(vIAll)
+  const cumO = cumSum(oPAll)
+  const cumOI = cumSum(oIAll)
+
+  // EX ラベルと最終値を追加
+  const lastStartMin = halfOffsetMins[halfOffsetMins.length - 1] ?? 0
+  const lastData = halvesBuckets[halvesBuckets.length - 1]
+  const lastLastB = lastData ? Math.max(lastData.vP.findLastIndex(v => v > 0), lastData.oP.findLastIndex(v => v > 0)) : -1
+  const exMin = lastStartMin + (lastLastB + 1) * 5
+  labels.push(`${exMin}-EX`)
   cumV.push(cumV[cumV.length - 1] ?? 0); cumVI.push(cumVI[cumVI.length - 1] ?? 0)
   cumO.push(cumO[cumO.length - 1] ?? 0); cumOI.push(cumOI[cumOI.length - 1] ?? 0)
+
   return { label: '合計', labels, vonds: { packing: cumV, impact: cumVI }, opp: { packing: cumO, impact: cumOI }, goals: allGoals }
 }
 
@@ -171,6 +180,7 @@ export async function GET(request: Request) {
     const sigs = await Promise.all(halfDefs.map(h => getGvizSig(h.name)))
     const halves: ReturnType<typeof buildHalfResult>[] = []
     const allBuckets: BucketData[] = []
+    const allOffsetMins: number[] = []
     for (let i = 0; i < halfDefs.length; i++) {
       const { name, label, offsetMin } = halfDefs[i]
       const sig = sigs[i]
@@ -185,10 +195,10 @@ export async function GET(request: Request) {
       const data = await fetchHalfData(csvUrl, offsetMin)
       if (!data) continue
       const result = buildHalfResult(data, label, offsetMin)
-      if (result) { halves.push(result); allBuckets.push(data) }
+      if (result) { halves.push(result); allBuckets.push(data); allOffsetMins.push(offsetMin) }
     }
     if (halves.length === 0) return NextResponse.json({ halves: [], noData: true })
-    const total = buildTotalResult(allBuckets)
+    const total = buildTotalResult(allBuckets, allOffsetMins)
     return NextResponse.json({ total, halves })
   } catch {
     return NextResponse.json({ error: "error" }, { status: 500 })
