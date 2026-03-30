@@ -141,7 +141,7 @@ function buildTotalResult(halvesBuckets: BucketData[]) {
       oP[offset + i] += data.oP[i] ?? 0
       oI[offset + i] += data.oI[i] ?? 0
     }
-    if (data.halfMaxBucket > 0) totalLastBucket = offset + data.halfMaxBucket - 1
+    if ((data.halfMaxBucket ?? 0) > 0) totalLastBucket = offset + (data.halfMaxBucket ?? 0) - 1
     allGoals.push(...data.goals)
   })
   const actualLastBucket = totalLastBucket
