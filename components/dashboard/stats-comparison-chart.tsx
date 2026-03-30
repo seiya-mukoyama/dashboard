@@ -1,22 +1,17 @@
 "use client"
-
 import { useState } from "react"
 
 type StatsHalf = {
   half: string
   packingRate: number; impact: number; boxEntries: number; goalAreaEntries: number
   lineBreak: number; lineBreakAC: number; crosses: number; shots: number
-  corners: number; freeKicks: number
-  apt?: string
+  corners: number; freeKicks: number; apt?: string
 }
-
 type StatsData = {
   packingRate: number; impact: number; boxEntries: number; goalAreaEntries: number
   lineBreak: number; lineBreakAC: number; crosses: number; shots: number
-  corners: number; freeKicks: number
-  apt?: string
+  corners: number; freeKicks: number; apt?: string
 }
-
 type Props = {
   vonds: StatsData
   opp: StatsData
@@ -26,73 +21,78 @@ type Props = {
 }
 
 const ITEMS = [
-  { key: 'packingRate',      label: 'パッキングレート' },
-  { key: 'impact',           label: 'インペクト' },
-  { key: 'boxEntries',       label: 'ボックス侵入回数' },
-  { key: 'goalAreaEntries',  label: 'ゴールエリア侵入回数' },
-  { key: 'lineBreak',        label: 'ラインブレイク' },
-  { key: 'lineBreakAC',      label: 'ラインブレイクAC' },
-  { key: 'crosses',          label: 'クロス' },
-  { key: 'shots',            label: 'シュート' },
-  { key: 'corners',          label: 'CK回数' },
-  { key: 'freeKicks',        label: 'FK回数' },
+  { key: 'packingRate', label: 'パッキングレート' },
+  { key: 'impact',      label: 'インペクト' },
+  { key: 'boxEntries',       label: 'ボックス侵入' },
+  { key: 'goalAreaEntries',  label: 'ゴールエリア侵入' },
+  { key: 'lineBreak',    label: 'ラインブレイク' },
+  { key: 'lineBreakAC',  label: 'ラインブレイクAC' },
+  { key: 'crosses',  label: 'クロス' },
+  { key: 'shots',    label: 'シュート' },
+  { key: 'corners',    label: 'CK' },
+  { key: 'freeKicks',  label: 'FK' },
 ] as const
 
-const fmt = (n: number) => Number.isInteger(n) ? String(n) : (Math.round(n * 10) / 10).toFixed(1)
+const fmt = (n: number) => {
+  const r = Math.round(n * 10) / 10
+  return Number.isInteger(r) ? String(r) : r.toFixed(1)
+}
 
 function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsData; opponent: string }) {
   return (
-    <div className="space-y-2">
+    <div className="w-full">
       {vonds.apt && (
-        <div className="text-center py-2 mb-1 border-b border-border">
+        <div className="text-center py-2 mb-3 border-b border-border">
           <span className="text-xs text-muted-foreground">APT（実際プレーイングタイム）</span>
           <div className="text-sm font-semibold text-foreground mt-0.5">{vonds.apt}</div>
         </div>
       )}
-      <div className="flex justify-between text-xs font-semibold mb-1">
-        <span className="text-primary">VONDS市原</span>
-        <span className="text-muted-foreground">{opponent}</span>
+
+      {/* ヘッダー行 */}
+      <div className="grid grid-cols-[1fr_auto_1fr] gap-x-2 mb-2 pb-1.5 border-b border-border">
+        <div className="text-xs font-bold text-primary text-right">VONDS市原</div>
+        <div className="text-xs text-muted-foreground text-center w-32" />
+        <div className="text-xs font-bold text-muted-foreground text-left">{opponent}</div>
       </div>
-      {ITEMS.map(({ key, label }) => {
-        const v = vonds[key] ?? 0
-        const o = opp[key] ?? 0
-        const total = v + o
-        const vPct = total > 0 ? (v / total) * 100 : 50
-        const oPct = 100 - vPct
-        return (
-          <div key={key}>
-            <div className="mb-0.5">
-              <span className="text-xs text-muted-foreground">{label}</span>
+
+      {/* 各スタッツ行 */}
+      <div className="space-y-1.5">
+        {ITEMS.map(({ key, label }) => {
+          const v = vonds[key] ?? 0
+          const o = opp[key] ?? 0
+          const total = v + o
+          const vPct = total > 0 ? (v / total) * 100 : 50
+
+          return (
+            <div key={key} className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
+              {/* VONDS 数値（右寄せ） */}
+              <div className="text-right">
+                <span className={`text-sm font-bold tabular-nums ${v > o ? 'text-primary' : 'text-foreground'}`}>
+                  {fmt(v)}
+                </span>
+              </div>
+
+              {/* 項目名 + 棒グラフ（中央） */}
+              <div className="w-32 flex flex-col items-center gap-0.5">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">{label}</span>
+                <div className="relative flex h-1.5 w-full rounded-full overflow-hidden bg-secondary">
+                  <div
+                    className="bg-primary transition-all rounded-full"
+                    style={{ width: `${vPct}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* 相手 数値（左寄せ） */}
+              <div className="text-left">
+                <span className={`text-sm font-bold tabular-nums ${o > v ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  {fmt(o)}
+                </span>
+              </div>
             </div>
-            <div className="relative flex h-6 rounded-full overflow-hidden bg-secondary">
-              <div className="absolute inset-0 pointer-events-none" style={{zIndex:10}}>
-                <div className="absolute top-0 bottom-0 w-px" style={{left:"25%",background:"rgba(0,0,0,0.12)"}} />
-                <div className="absolute top-0 bottom-0 w-px" style={{left:"50%",background:"rgba(0,0,0,0.2)"}} />
-                <div className="absolute top-0 bottom-0 w-px" style={{left:"75%",background:"rgba(0,0,0,0.12)"}} />
-              </div>
-              <div
-                className="bg-primary transition-all flex items-center justify-start pl-2"
-                style={{ width: `${vPct}%` }}
-              >
-                {vPct >= 15 && (
-                  <span className="text-xs font-bold text-white leading-none tabular-nums">{fmt(v)}</span>
-                )}
-              </div>
-              <div className="flex-1 flex items-center justify-end pr-2">
-                {oPct >= 15 && (
-                  <span className="text-xs font-bold text-foreground/80 leading-none tabular-nums">{fmt(o)}</span>
-                )}
-              </div>
-              {vPct < 15 && (
-                <span className="absolute left-1 top-1/2 -translate-y-1/2 text-xs font-bold text-primary leading-none tabular-nums">{fmt(v)}</span>
-              )}
-              {oPct < 15 && (
-                <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs font-bold text-foreground/80 leading-none tabular-nums">{fmt(o)}</span>
-              )}
-            </div>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -107,10 +107,7 @@ export function StatsComparisonChart({ vonds, opp, opponent, halvesVonds, halves
     const vi = halvesVonds!.findIndex(h => h.half === half)
     const oi = halvesOpp ? halvesOpp.findIndex(h => h.half === half) : -1
     if (vi < 0) return { v: vonds, o: opp }
-    return {
-      v: halvesVonds![vi],
-      o: oi >= 0 && halvesOpp ? halvesOpp[oi] : opp
-    }
+    return { v: halvesVonds![vi], o: oi >= 0 && halvesOpp ? halvesOpp[oi] : opp }
   }
 
   const { v: curVonds, o: curOpp } = getStatsForHalf(activeTab)
