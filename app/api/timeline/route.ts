@@ -131,8 +131,11 @@ function buildTotalResult(halvesBuckets: BucketData[], halfOffsetMins: number[])
   const oIAll: number[] = []
   const labels: string[] = []
 
+  let currentMin = 0 // 実際の試合時間（累積）
   halvesBuckets.forEach((data, i) => {
-    const startMin = halfOffsetMins[i] ?? i * 45
+    // 各ハーフのstartMinは前ハーフの実データ末尾から継続する
+    // ただし最初のハーフは0から
+    if (i === 0) currentMin = 0
     const lastB = Math.max(data.vP.findLastIndex(v => v > 0), data.oP.findLastIndex(v => v > 0))
     const buckets = lastB >= 0 ? lastB + 1 : 0
     for (let b = 0; b < buckets; b++) {
@@ -140,8 +143,9 @@ function buildTotalResult(halvesBuckets: BucketData[], halfOffsetMins: number[])
       vIAll.push(data.vI[b] ?? 0)
       oPAll.push(data.oP[b] ?? 0)
       oIAll.push(data.oI[b] ?? 0)
-      labels.push(`${startMin + b * 5}-${startMin + (b + 1) * 5}`)
+      labels.push(`${currentMin + b * 5}-${currentMin + (b + 1) * 5}`)
     }
+    currentMin += buckets * 5 // 次のハーフの開始時間
     allGoals.push(...data.goals)
   })
 
@@ -154,11 +158,7 @@ function buildTotalResult(halvesBuckets: BucketData[], halfOffsetMins: number[])
   const cumOI = cumSum(oIAll)
 
   // EX ラベルと最終値を追加
-  const lastStartMin = halfOffsetMins[halfOffsetMins.length - 1] ?? 0
-  const lastData = halvesBuckets[halvesBuckets.length - 1]
-  const lastLastB = lastData ? Math.max(lastData.vP.findLastIndex(v => v > 0), lastData.oP.findLastIndex(v => v > 0)) : -1
-  const exMin = lastStartMin + (lastLastB + 1) * 5
-  labels.push(`${exMin}-EX`)
+  labels.push(`${currentMin}-EX`)
   cumV.push(cumV[cumV.length - 1] ?? 0); cumVI.push(cumVI[cumVI.length - 1] ?? 0)
   cumO.push(cumO[cumO.length - 1] ?? 0); cumOI.push(cumOI[cumOI.length - 1] ?? 0)
 
