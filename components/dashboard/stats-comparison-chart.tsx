@@ -68,11 +68,11 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
             <div key={key}>
               {/* 数値＋項目名（固定幅で縦ライン揃え） */}
               <div className="flex items-baseline mb-0.5">
-                <span className={`w-12 flex-shrink-0 text-sm font-bold tabular-nums text-right pr-2 ${v > o ? 'text-primary' : 'text-foreground'}`}>
+                <span className={`w-12 flex-shrink-0 text-sm font-bold tabular-nums text-right ${v > o ? 'text-primary' : 'text-foreground'}`}>
                   {fmt(v)}
                 </span>
                 <span className="flex-1 text-xs text-muted-foreground text-center whitespace-nowrap">{label}</span>
-                <span className={`w-12 flex-shrink-0 text-sm font-bold tabular-nums text-left pl-2 ${o > v ? 'text-foreground' : 'text-muted-foreground'}`}>
+                <span className={`w-12 flex-shrink-0 text-sm font-bold tabular-nums text-left pl-1 ${o > v ? 'text-foreground' : 'text-muted-foreground'}`}>
                   {fmt(o)}
                 </span>
               </div>
