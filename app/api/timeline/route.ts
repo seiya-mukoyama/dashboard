@@ -47,6 +47,7 @@ export type GoalEvent = {
 type BucketData = {
   vP: number[]; vI: number[]; oP: number[]; oI: number[]
   bucketOffset: number
+  halfMaxBucket?: number
   goals: GoalEvent[]  // 得点イベント
 }
 
