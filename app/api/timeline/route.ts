@@ -120,16 +120,17 @@ function buildHalfResult(data: BucketData, label: string, halfOffsetMin: number 
 }
 
 function buildTotalResult(halvesBuckets: BucketData[]) {
-  const HALF_BUCKETS = 9
-  const TOTAL_BUCKETS = HALF_BUCKETS * halvesBuckets.length
+  // 各ハーフのバケット数（18固定）を使って合計配列を組み立てる
+  const BUCKETS_PER_HALF = 18
+  const TOTAL_BUCKETS = BUCKETS_PER_HALF * halvesBuckets.length
   const vP = new Array(TOTAL_BUCKETS).fill(0)
   const vI = new Array(TOTAL_BUCKETS).fill(0)
   const oP = new Array(TOTAL_BUCKETS).fill(0)
   const oI = new Array(TOTAL_BUCKETS).fill(0)
   const allGoals: GoalEvent[] = []
   halvesBuckets.forEach((data, halfIdx) => {
-    const offset = halfIdx * HALF_BUCKETS
-    for (let i = 0; i < HALF_BUCKETS; i++) {
+    const offset = halfIdx * BUCKETS_PER_HALF
+    for (let i = 0; i < BUCKETS_PER_HALF; i++) {
       vP[offset + i] += data.vP[i] ?? 0
       vI[offset + i] += data.vI[i] ?? 0
       oP[offset + i] += data.oP[i] ?? 0
