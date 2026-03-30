@@ -48,54 +48,51 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
         </div>
       )}
 
-      {/* tableレイアウト: 数値列の幅が全行で揃う */}
-      <table className="border-collapse mx-auto">
-        <thead>
-          <tr className="border-b border-border">
-            {/* w-px + whitespace-nowrap でセル幅=コンテンツ幅（最小） */}
-            <td className="pb-1.5 w-px text-xs font-bold text-primary text-right whitespace-nowrap pr-2">VONDS市原</td>
-            <td className="pb-1.5" />
-            <td className="pb-1.5 w-px text-xs font-bold text-muted-foreground text-left whitespace-nowrap pl-2">{opponent}</td>
-          </tr>
-        </thead>
-        <tbody>
-          {ITEMS.map(({ key, label }) => {
-            const v = vonds[key] ?? 0
-            const o = opp[key] ?? 0
-            const total = v + o
-            const vPct = total > 0 ? (v / total) * 100 : 50
+      {/* ヘッダー: チーム名を中央に1行で */}
+      <div className="text-center mb-2 pb-1.5 border-b border-border">
+        <span className="text-xs font-bold text-primary whitespace-nowrap">VONDS市原</span>
+        <span className="text-xs text-muted-foreground mx-2">vs</span>
+        <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">{opponent}</span>
+      </div>
 
-            return (
-              <>
-                {/* 数値行 */}
-                <tr key={`${key}-label`} className="pt-2">
-                  <td className="pt-2 w-px text-sm font-bold tabular-nums text-right whitespace-nowrap pr-2">
-                    <span className={v > o ? 'text-primary' : 'text-foreground'}>{fmt(v)}</span>
-                  </td>
-                  <td className="pt-2 text-xs text-muted-foreground text-center whitespace-nowrap">{label}</td>
-                  <td className="pt-2 w-px text-sm font-bold tabular-nums text-left whitespace-nowrap pl-2">
-                    <span className={o > v ? 'text-foreground' : 'text-muted-foreground'}>{fmt(o)}</span>
-                  </td>
-                </tr>
-                {/* 棒グラフ行 */}
-                <tr key={`${key}-bar`}>
-                  <td colSpan={3} className="pb-1 min-w-64">
-                    <div className="relative flex h-5 rounded-full overflow-hidden bg-secondary mt-0.5">
-                      <div className="absolute inset-0 pointer-events-none" style={{zIndex:10}}>
-                        <div className="absolute top-0 bottom-0 w-px" style={{left:"25%",background:"rgba(0,0,0,0.12)"}} />
-                        <div className="absolute top-0 bottom-0 w-px" style={{left:"50%",background:"rgba(0,0,0,0.2)"}} />
-                        <div className="absolute top-0 bottom-0 w-px" style={{left:"75%",background:"rgba(0,0,0,0.12)"}} />
-                      </div>
-                      <div className="bg-primary transition-all" style={{ width: `${vPct}%` }} />
-                      <div className="flex-1 bg-secondary" />
-                    </div>
-                  </td>
-                </tr>
-              </>
-            )
-          })}
-        </tbody>
-      </table>
+      {/* 各スタッツ: 数値+項目名はtable(mx-auto)、棒グラフはw-full */}
+      <div className="space-y-2">
+        {ITEMS.map(({ key, label }) => {
+          const v = vonds[key] ?? 0
+          const o = opp[key] ?? 0
+          const total = v + o
+          const vPct = total > 0 ? (v / total) * 100 : 50
+
+          return (
+            <div key={key}>
+              {/* 数値+項目名: tableで縦ライン揃え、mx-autoで中央 */}
+              <table className="border-collapse mx-auto mb-0.5">
+                <tbody>
+                  <tr>
+                    <td className="w-px text-sm font-bold tabular-nums text-right whitespace-nowrap pr-2">
+                      <span className={v > o ? 'text-primary' : 'text-foreground'}>{fmt(v)}</span>
+                    </td>
+                    <td className="text-xs text-muted-foreground text-center whitespace-nowrap">{label}</td>
+                    <td className="w-px text-sm font-bold tabular-nums text-left whitespace-nowrap pl-2">
+                      <span className={o > v ? 'text-foreground' : 'text-muted-foreground'}>{fmt(o)}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              {/* 棒グラフ: w-full */}
+              <div className="relative flex h-5 rounded-full overflow-hidden bg-secondary">
+                <div className="absolute inset-0 pointer-events-none" style={{zIndex:10}}>
+                  <div className="absolute top-0 bottom-0 w-px" style={{left:"25%",background:"rgba(0,0,0,0.12)"}} />
+                  <div className="absolute top-0 bottom-0 w-px" style={{left:"50%",background:"rgba(0,0,0,0.2)"}} />
+                  <div className="absolute top-0 bottom-0 w-px" style={{left:"75%",background:"rgba(0,0,0,0.12)"}} />
+                </div>
+                <div className="bg-primary transition-all" style={{ width: `${vPct}%` }} />
+                <div className="flex-1 bg-secondary" />
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
