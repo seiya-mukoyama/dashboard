@@ -130,9 +130,6 @@ function buildTotalResult(halvesBuckets: BucketData[]) {
   const oP = new Array(TOTAL_BUCKETS).fill(0)
   const oI = new Array(TOTAL_BUCKETS).fill(0)
   const allGoals: GoalEvent[] = []
-  // 各ハーフの実際のデータ末尾インデックスを記録（合計グラフのtruncateに使う）
-  // 各ハーフのオフセットを追跡しながらデータを組み立て
-  let totalLastBucket = 0
   halvesBuckets.forEach((data, halfIdx) => {
     const offset = halfIdx * BUCKETS_PER_HALF
     for (let i = 0; i < BUCKETS_PER_HALF; i++) {
@@ -141,12 +138,11 @@ function buildTotalResult(halvesBuckets: BucketData[]) {
       oP[offset + i] += data.oP[i] ?? 0
       oI[offset + i] += data.oI[i] ?? 0
     }
-    if ((data.halfMaxBucket ?? 0) > 0) totalLastBucket = offset + (data.halfMaxBucket ?? 0) - 1
     allGoals.push(...data.goals)
   })
-  const actualLastBucket = totalLastBucket
   const cumSum = (arr: number[]) => { let acc = 0; return arr.map(v => { acc += v; return Math.round(acc * 10) / 10 }) }
-  const lastBucket = actualLastBucket
+  // 合計配列から実際にデータがある最後のバケットを直接検索
+  const lastBucket = Math.max(vP.findLastIndex(v => v > 0), oP.findLastIndex(v => v > 0))
   if (lastBucket < 0 && allGoals.length === 0) return null
   const maxBucket = Math.min(Math.max(lastBucket + 1, 1), TOTAL_BUCKETS)
   const cumV = cumSum(vP).slice(0, maxBucket)
