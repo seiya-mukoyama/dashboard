@@ -27,7 +27,7 @@ type Props = {
 
 const ITEMS = [
   { key: 'packingRate',      label: 'パッキングレート' },
-  { key: 'impact',           label: 'インパクト' },
+  { key: 'impact',           label: 'インペクト' },
   { key: 'boxEntries',       label: 'ボックス侵入回数' },
   { key: 'goalAreaEntries',  label: 'ゴールエリア侵入回数' },
   { key: 'lineBreak',        label: 'ラインブレイク' },
@@ -37,6 +37,8 @@ const ITEMS = [
   { key: 'corners',          label: 'CK回数' },
   { key: 'freeKicks',        label: 'FK回数' },
 ] as const
+
+const fmt = (n: number) => Number.isInteger(n) ? String(n) : (Math.round(n * 10) / 10).toFixed(1)
 
 function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsData; opponent: string }) {
   return (
@@ -73,19 +75,19 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
                 style={{ width: `${vPct}%` }}
               >
                 {vPct >= 15 && (
-                  <span className="text-xs font-bold text-white leading-none tabular-nums">{v}</span>
+                  <span className="text-xs font-bold text-white leading-none tabular-nums">{fmt(v)}</span>
                 )}
               </div>
               <div className="flex-1 flex items-center justify-end pr-2">
                 {oPct >= 15 && (
-                  <span className="text-xs font-bold text-foreground/80 leading-none tabular-nums">{o}</span>
+                  <span className="text-xs font-bold text-foreground/80 leading-none tabular-nums">{fmt(o)}</span>
                 )}
               </div>
               {vPct < 15 && (
-                <span className="absolute left-1 top-1/2 -translate-y-1/2 text-xs font-bold text-primary leading-none tabular-nums">{v}</span>
+                <span className="absolute left-1 top-1/2 -translate-y-1/2 text-xs font-bold text-primary leading-none tabular-nums">{fmt(v)}</span>
               )}
               {oPct < 15 && (
-                <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs font-bold text-foreground/80 leading-none tabular-nums">{o}</span>
+                <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs font-bold text-foreground/80 leading-none tabular-nums">{fmt(o)}</span>
               )}
             </div>
           </div>
