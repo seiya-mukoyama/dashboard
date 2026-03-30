@@ -49,7 +49,7 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
       )}
 
       {/* tableレイアウト: 数値列の幅が全行で揃う */}
-      <table className="w-full border-collapse">
+      <table className="border-collapse mx-auto">
         <thead>
           <tr className="border-b border-border">
             {/* w-px + whitespace-nowrap でセル幅=コンテンツ幅（最小） */}
@@ -79,7 +79,7 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
                 </tr>
                 {/* 棒グラフ行 */}
                 <tr key={`${key}-bar`}>
-                  <td colSpan={3} className="pb-1">
+                  <td colSpan={3} className="pb-1 min-w-64">
                     <div className="relative flex h-5 rounded-full overflow-hidden bg-secondary mt-0.5">
                       <div className="absolute inset-0 pointer-events-none" style={{zIndex:10}}>
                         <div className="absolute top-0 bottom-0 w-px" style={{left:"25%",background:"rgba(0,0,0,0.12)"}} />
