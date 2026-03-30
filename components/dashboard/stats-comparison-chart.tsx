@@ -35,12 +35,25 @@ const fmt = (n: number) => {
   return Number.isInteger(r) ? String(r) : r.toFixed(1)
 }
 
+function Bar({ vPct }: { vPct: number }) {
+  return (
+    <div className="relative flex h-5 rounded-full overflow-hidden bg-secondary w-full">
+      <div className="absolute inset-0 pointer-events-none" style={{zIndex:10}}>
+        <div className="absolute top-0 bottom-0 w-px" style={{left:"25%",background:"rgba(0,0,0,0.12)"}} />
+        <div className="absolute top-0 bottom-0 w-px" style={{left:"50%",background:"rgba(0,0,0,0.2)"}} />
+        <div className="absolute top-0 bottom-0 w-px" style={{left:"75%",background:"rgba(0,0,0,0.12)"}} />
+      </div>
+      <div className="bg-primary transition-all" style={{ width: `${vPct}%` }} />
+      <div className="flex-1 bg-secondary" />
+    </div>
+  )
+}
+
 function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsData; opponent: string }) {
   const rows = ITEMS.map(({ key, label }) => {
     const v = vonds[key] ?? 0
     const o = opp[key] ?? 0
-    const total = v + o
-    const vPct = total > 0 ? (v / total) * 100 : 50
+    const vPct = (v + o) > 0 ? (v / (v + o)) * 100 : 50
     return { key, label, v, o, vPct }
   })
 
@@ -53,52 +66,36 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
         </div>
       )}
 
-      {/* ヘッダー */}
       <div className="text-center mb-2 pb-1.5 border-b border-border">
         <span className="text-xs font-bold text-primary whitespace-nowrap">VONDS市原</span>
         <span className="text-xs text-muted-foreground mx-2">vs</span>
         <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">{opponent}</span>
       </div>
 
-      {/* 各アイテム: 数値+項目名 の直下に棒グラフをペアで並べる */}
-      {/* 数値列の縦ライン: テーブルレイアウトで全行の列幅を揃える */}
-      <table className="w-full border-collapse">
-        <colgroup>
-          <col style={{width:"1%"}} />
-          <col />
-          <col style={{width:"1%"}} />
-        </colgroup>
-        <tbody>
-          {rows.map(({ key, label, v, o, vPct }) => (
-            <>
-              {/* 数値+項目名行 */}
-              <tr key={`${key}-lbl`}>
-                <td className="pt-1.5 text-sm font-bold tabular-nums text-right whitespace-nowrap pr-1.5">
-                  <span className={v > o ? 'text-primary' : 'text-foreground'}>{fmt(v)}</span>
-                </td>
-                <td className="pt-1.5 text-xs text-muted-foreground text-center whitespace-nowrap">{label}</td>
-                <td className="pt-1.5 text-sm font-bold tabular-nums text-left whitespace-nowrap pl-1.5">
-                  <span className={o > v ? 'text-foreground' : 'text-muted-foreground'}>{fmt(o)}</span>
-                </td>
-              </tr>
-              {/* 棒グラフ行（直下） */}
-              <tr key={`${key}-bar`}>
-                <td colSpan={3} className="pb-1.5 pt-0.5">
-                  <div className="relative flex h-5 rounded-full overflow-hidden bg-secondary">
-                    <div className="absolute inset-0 pointer-events-none" style={{zIndex:10}}>
-                      <div className="absolute top-0 bottom-0 w-px" style={{left:"25%",background:"rgba(0,0,0,0.12)"}} />
-                      <div className="absolute top-0 bottom-0 w-px" style={{left:"50%",background:"rgba(0,0,0,0.2)"}} />
-                      <div className="absolute top-0 bottom-0 w-px" style={{left:"75%",background:"rgba(0,0,0,0.12)"}} />
-                    </div>
-                    <div className="bg-primary transition-all" style={{ width: `${vPct}%` }} />
-                    <div className="flex-1 bg-secondary" />
-                  </div>
-                </td>
-              </tr>
-            </>
-          ))}
-        </tbody>
-      </table>
+      {/* 各アイテム: 数値+ラベル行（中央寄せ flex）＋棒グラフ（w-full） */}
+      {/* 数値の縦ライン: 全アイテムをgridで囲み display:contents でサブグリッド */}
+      <div style={{display:'grid', gridTemplateColumns:'auto auto auto', rowGap:0}}>
+        {rows.map(({ key, label, v, o, vPct }) => (
+          <div key={key} style={{display:'contents'}}>
+            {/* VONDS数値（右寄せ） */}
+            <div className="pt-1.5 pb-0 text-sm font-bold tabular-nums text-right whitespace-nowrap pr-1.5 self-end" style={{gridColumn:1}}>
+              <span className={v > o ? 'text-primary' : 'text-foreground'}>{fmt(v)}</span>
+            </div>
+            {/* 項目名（中央） */}
+            <div className="pt-1.5 pb-0 text-xs text-muted-foreground text-center whitespace-nowrap px-2 self-end" style={{gridColumn:2}}>
+              {label}
+            </div>
+            {/* 相手数値（左寄せ） */}
+            <div className="pt-1.5 pb-0 text-sm font-bold tabular-nums text-left whitespace-nowrap pl-1.5 self-end" style={{gridColumn:3}}>
+              <span className={o > v ? 'text-foreground' : 'text-muted-foreground'}>{fmt(o)}</span>
+            </div>
+            {/* 棒グラフ（3列全体） */}
+            <div className="pt-0.5 pb-1.5" style={{gridColumn:'1 / 4'}}>
+              <Bar vPct={vPct} />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
