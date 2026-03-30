@@ -78,15 +78,15 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
         {rows.map(({ key, label, v, o, vPct }) => (
           <div key={key} style={{display:'contents'}}>
             {/* VONDS数値（右寄せ） */}
-            <div className="pt-1.5 pb-0 text-sm font-bold tabular-nums text-right whitespace-nowrap pr-1 self-end" style={{gridColumn:1}}>
+            <div className="pt-1.5 pb-0 text-sm font-bold tabular-nums text-right whitespace-nowrap self-end" style={{gridColumn:1}}>
               <span className={v > o ? 'text-primary' : 'text-foreground'}>{fmt(v)}</span>
             </div>
             {/* 項目名（中央） */}
-            <div className="pt-1.5 pb-0 text-xs text-muted-foreground text-center whitespace-nowrap px-1 self-end" style={{gridColumn:2}}>
+            <div className="pt-1.5 pb-0 text-xs text-muted-foreground text-center whitespace-nowrap self-end" style={{gridColumn:2}}>
               {label}
             </div>
             {/* 相手数値（左寄せ） */}
-            <div className="pt-1.5 pb-0 text-sm font-bold tabular-nums text-left whitespace-nowrap pl-1 self-end" style={{gridColumn:3}}>
+            <div className="pt-1.5 pb-0 text-sm font-bold tabular-nums text-left whitespace-nowrap self-end" style={{gridColumn:3}}>
               <span className={o > v ? 'text-foreground' : 'text-muted-foreground'}>{fmt(o)}</span>
             </div>
             {/* 棒グラフ（3列全体） */}
