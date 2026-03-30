@@ -49,10 +49,10 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
       )}
 
       {/* ヘッダー行 */}
-      <div className="grid grid-cols-[1fr_auto_1fr] gap-x-2 mb-2 pb-1.5 border-b border-border">
-        <div className="text-xs font-bold text-primary text-right">VONDS市原</div>
-        <div className="text-xs text-muted-foreground text-center w-32" />
-        <div className="text-xs font-bold text-muted-foreground text-left">{opponent}</div>
+      <div className="flex items-center mb-2 pb-1.5 border-b border-border">
+        <div className="w-12 text-xs font-bold text-primary text-right">VONDS市原</div>
+        <div className="flex-1 text-center" />
+        <div className="w-12 text-xs font-bold text-muted-foreground text-left pl-1">{opponent}</div>
       </div>
 
       {/* 各スタッツ行 */}
@@ -66,13 +66,13 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
 
           return (
             <div key={key}>
-              {/* 項目名（中央）＋左右に数値 */}
-              <div className="grid grid-cols-[1fr_auto_1fr] items-baseline mb-0.5">
-                <span className={`text-sm font-bold tabular-nums text-right pr-2 ${v > o ? 'text-primary' : 'text-foreground'}`}>
+              {/* 数値＋項目名（固定幅で縦ライン揃え） */}
+              <div className="flex items-baseline mb-0.5">
+                <span className={`w-12 flex-shrink-0 text-sm font-bold tabular-nums text-right pr-2 ${v > o ? 'text-primary' : 'text-foreground'}`}>
                   {fmt(v)}
                 </span>
-                <span className="text-xs text-muted-foreground text-center whitespace-nowrap px-1">{label}</span>
-                <span className={`text-sm font-bold tabular-nums text-left pl-2 ${o > v ? 'text-foreground' : 'text-muted-foreground'}`}>
+                <span className="flex-1 text-xs text-muted-foreground text-center whitespace-nowrap">{label}</span>
+                <span className={`w-12 flex-shrink-0 text-sm font-bold tabular-nums text-left pl-2 ${o > v ? 'text-foreground' : 'text-muted-foreground'}`}>
                   {fmt(o)}
                 </span>
               </div>
