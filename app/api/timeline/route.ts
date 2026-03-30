@@ -100,7 +100,9 @@ async function fetchHalfData(csvUrl: string, halfOffsetMin: number = 0): Promise
     }
   })
   if (!hasData && goals.length === 0) return null
-  return { vP, vI, oP, oI, bucketOffset: 0, goals }
+  const dataLastBucket = Math.max(vP.findLastIndex(v => v > 0), oP.findLastIndex(v => v > 0))
+  const halfMaxBucket = dataLastBucket >= 0 ? dataLastBucket + 1 : 0
+  return { vP, vI, oP, oI, bucketOffset: 0, halfMaxBucket, goals }
 }
 
 function buildHalfResult(data: BucketData, label: string, halfOffsetMin: number = 0) {
@@ -138,8 +140,7 @@ function buildTotalResult(halvesBuckets: BucketData[]) {
       oP[offset + i] += data.oP[i] ?? 0
       oI[offset + i] += data.oI[i] ?? 0
     }
-    const halfLast = Math.max(data.vP.findLastIndex(v => v > 0), data.oP.findLastIndex(v => v > 0))
-    if (halfLast >= 0) totalLastBucket = offset + halfLast
+    if (data.halfMaxBucket > 0) totalLastBucket = offset + data.halfMaxBucket - 1
     allGoals.push(...data.goals)
   })
   const actualLastBucket = totalLastBucket
