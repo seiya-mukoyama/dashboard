@@ -48,13 +48,19 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
         </div>
       )}
 
-      {/* 1つのtableで全行を管理 → w-px列の幅が全行で自動統一されて縦ライン揃う */}
+      {/* 1つのtableで全行を管理 */}
+      {/* colgroup: 数値列=1%(最小)、中央列=auto(残り全部) → 数値が項目のすぐ横に */}
       <table className="w-full border-collapse">
+        <colgroup>
+          <col style={{width:"1%"}} />
+          <col />
+          <col style={{width:"1%"}} />
+        </colgroup>
         <thead>
           <tr className="border-b border-border">
-            <th className="pb-1.5 w-px text-xs font-bold text-primary text-right whitespace-nowrap pr-2">VONDS市原</th>
+            <th className="pb-1.5 w-px text-xs font-bold text-primary text-right whitespace-nowrap pr-1">VONDS市原</th>
             <th className="pb-1.5 text-center" />
-            <th className="pb-1.5 w-px text-xs font-bold text-muted-foreground text-left whitespace-nowrap pl-2">{opponent}</th>
+            <th className="pb-1.5 w-px text-xs font-bold text-muted-foreground text-left whitespace-nowrap pl-1">{opponent}</th>
           </tr>
         </thead>
         <tbody>
@@ -67,11 +73,11 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
             return (
               <>
                 <tr key={`${key}-val`}>
-                  <td className="pt-2 w-px text-sm font-bold tabular-nums text-right whitespace-nowrap pr-2">
+                  <td className="pt-2 w-px text-sm font-bold tabular-nums text-right whitespace-nowrap pr-1">
                     <span className={v > o ? 'text-primary' : 'text-foreground'}>{fmt(v)}</span>
                   </td>
-                  <td className="pt-2 text-xs text-muted-foreground text-center whitespace-nowrap">{label}</td>
-                  <td className="pt-2 w-px text-sm font-bold tabular-nums text-left whitespace-nowrap pl-2">
+                  <td className="pt-2 text-xs text-muted-foreground text-center whitespace-nowrap px-2">{label}</td>
+                  <td className="pt-2 w-px text-sm font-bold tabular-nums text-left whitespace-nowrap pl-1">
                     <span className={o > v ? 'text-foreground' : 'text-muted-foreground'}>{fmt(o)}</span>
                   </td>
                 </tr>
