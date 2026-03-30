@@ -74,25 +74,22 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
 
       {/* 各アイテム: 数値行(中央flex) + 棒グラフ(全幅) のペア */}
       {/* 縦ライン揃え: 全行をgridで囲み、数値行のみfit-contentで中央寄せ */}
-      <div style={{display:'grid', gridTemplateColumns:'auto auto auto', width:'fit-content', margin:'0 auto'}}>
-        {rows.map(({ key, label, v, o }) => (
-          <div key={key} style={{display:'contents'}}>
-            <div className="pt-1.5 text-sm font-bold tabular-nums text-right whitespace-nowrap self-end">
-              <span className={v > o ? 'text-primary' : 'text-foreground'}>{fmt(v)}</span>
+      <div className="space-y-0">
+        {rows.map(({ key, label, v, o, vPct }) => (
+          <div key={key} className="mb-1.5">
+            {/* 数値+項目名: fit-content で中央寄せ */}
+            <div style={{display:'flex', justifyContent:'center', gap:0}} className="mb-0.5">
+              <span className={`text-sm font-bold tabular-nums text-right whitespace-nowrap pt-1 ${v > o ? 'text-primary' : 'text-foreground'}`}>
+                {fmt(v)}
+              </span>
+              <span className="text-xs text-muted-foreground whitespace-nowrap px-1 pt-1">
+                {label}
+              </span>
+              <span className={`text-sm font-bold tabular-nums text-left whitespace-nowrap pt-1 ${o > v ? 'text-foreground' : 'text-muted-foreground'}`}>
+                {fmt(o)}
+              </span>
             </div>
-            <div className="pt-1.5 text-xs text-muted-foreground text-center whitespace-nowrap self-end px-1">
-              {label}
-            </div>
-            <div className="pt-1.5 text-sm font-bold tabular-nums text-left whitespace-nowrap self-end">
-              <span className={o > v ? 'text-foreground' : 'text-muted-foreground'}>{fmt(o)}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      {/* 棒グラフ: グリッドと独立してw-full */}
-      <div>
-        {rows.map(({ key, vPct }) => (
-          <div key={`bar-${key}`} className="pt-0.5 pb-1.5">
+            {/* 棒グラフ: w-full */}
             <Bar vPct={vPct} />
           </div>
         ))}
