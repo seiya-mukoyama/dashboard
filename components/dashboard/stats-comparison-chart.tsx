@@ -36,7 +36,6 @@ const fmt = (n: number) => {
 }
 
 function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsData; opponent: string }) {
-  // 各アイテムの vPct を計算
   const rows = ITEMS.map(({ key, label }) => {
     const v = vonds[key] ?? 0
     const o = opp[key] ?? 0
@@ -54,44 +53,47 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
         </div>
       )}
 
-      {/* テーブル(w-auto mx-auto): 数値が項目名のすぐ横で縦ライン揃い */}
-      <table className="w-auto mx-auto border-collapse mb-1">
-        <thead>
-          <tr className="border-b border-border">
-            <th className="pb-1.5 text-xs font-bold text-primary text-right whitespace-nowrap pr-2">VONDS市原</th>
-            <th className="pb-1.5 px-3" />
-            <th className="pb-1.5 text-xs font-bold text-muted-foreground text-left whitespace-nowrap pl-2">{opponent}</th>
-          </tr>
-        </thead>
+      {/* ヘッダー */}
+      <div className="text-center mb-2 pb-1.5 border-b border-border">
+        <span className="text-xs font-bold text-primary whitespace-nowrap">VONDS市原</span>
+        <span className="text-xs text-muted-foreground mx-2">vs</span>
+        <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">{opponent}</span>
+      </div>
+
+      {/* 各アイテム: 数値+項目名 の直下に棒グラフをペアで並べる */}
+      {/* 数値列の縦ライン: テーブルレイアウトで全行の列幅を揃える */}
+      <table className="w-auto mx-auto border-collapse" style={{minWidth: '60%'}}>
         <tbody>
-          {rows.map(({ key, label, v, o }) => (
-            <tr key={key}>
-              <td className="pt-1.5 text-sm font-bold tabular-nums text-right whitespace-nowrap pr-2">
-                <span className={v > o ? 'text-primary' : 'text-foreground'}>{fmt(v)}</span>
-              </td>
-              <td className="pt-1.5 text-xs text-muted-foreground text-center whitespace-nowrap px-3">{label}</td>
-              <td className="pt-1.5 text-sm font-bold tabular-nums text-left whitespace-nowrap pl-2">
-                <span className={o > v ? 'text-foreground' : 'text-muted-foreground'}>{fmt(o)}</span>
-              </td>
-            </tr>
+          {rows.map(({ key, label, v, o, vPct }) => (
+            <>
+              {/* 数値+項目名行 */}
+              <tr key={`${key}-lbl`}>
+                <td className="pt-1.5 text-sm font-bold tabular-nums text-right whitespace-nowrap pr-2">
+                  <span className={v > o ? 'text-primary' : 'text-foreground'}>{fmt(v)}</span>
+                </td>
+                <td className="pt-1.5 text-xs text-muted-foreground text-center whitespace-nowrap">{label}</td>
+                <td className="pt-1.5 text-sm font-bold tabular-nums text-left whitespace-nowrap pl-2">
+                  <span className={o > v ? 'text-foreground' : 'text-muted-foreground'}>{fmt(o)}</span>
+                </td>
+              </tr>
+              {/* 棒グラフ行（直下） */}
+              <tr key={`${key}-bar`}>
+                <td colSpan={3} className="pb-1.5 pt-0.5">
+                  <div className="relative flex h-5 rounded-full overflow-hidden bg-secondary">
+                    <div className="absolute inset-0 pointer-events-none" style={{zIndex:10}}>
+                      <div className="absolute top-0 bottom-0 w-px" style={{left:"25%",background:"rgba(0,0,0,0.12)"}} />
+                      <div className="absolute top-0 bottom-0 w-px" style={{left:"50%",background:"rgba(0,0,0,0.2)"}} />
+                      <div className="absolute top-0 bottom-0 w-px" style={{left:"75%",background:"rgba(0,0,0,0.12)"}} />
+                    </div>
+                    <div className="bg-primary transition-all" style={{ width: `${vPct}%` }} />
+                    <div className="flex-1 bg-secondary" />
+                  </div>
+                </td>
+              </tr>
+            </>
           ))}
         </tbody>
       </table>
-
-      {/* 棒グラフ: テーブルと独立してw-full */}
-      <div>
-        {rows.map(({ key, vPct }) => (
-          <div key={`bar-${key}`} className="relative flex h-5 rounded-full overflow-hidden bg-secondary mb-px" style={{marginTop:'2px'}}>
-            <div className="absolute inset-0 pointer-events-none" style={{zIndex:10}}>
-              <div className="absolute top-0 bottom-0 w-px" style={{left:"25%",background:"rgba(0,0,0,0.12)"}} />
-              <div className="absolute top-0 bottom-0 w-px" style={{left:"50%",background:"rgba(0,0,0,0.2)"}} />
-              <div className="absolute top-0 bottom-0 w-px" style={{left:"75%",background:"rgba(0,0,0,0.12)"}} />
-            </div>
-            <div className="bg-primary transition-all" style={{ width: `${vPct}%` }} />
-            <div className="flex-1 bg-secondary" />
-          </div>
-        ))}
-      </div>
     </div>
   )
 }
