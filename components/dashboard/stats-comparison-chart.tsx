@@ -56,38 +56,35 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
       </div>
 
       {/* 各スタッツ行 */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {ITEMS.map(({ key, label }) => {
           const v = vonds[key] ?? 0
           const o = opp[key] ?? 0
           const total = v + o
           const vPct = total > 0 ? (v / total) * 100 : 50
+          const oPct = 100 - vPct
 
           return (
-            <div key={key} className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
-              {/* VONDS 数値（右寄せ） */}
-              <div className="text-right">
-                <span className={`text-sm font-bold tabular-nums ${v > o ? 'text-primary' : 'text-foreground'}`}>
+            <div key={key}>
+              {/* 項目名（中央）＋左右に数値 */}
+              <div className="grid grid-cols-[1fr_auto_1fr] items-baseline mb-0.5">
+                <span className={`text-sm font-bold tabular-nums text-right pr-2 ${v > o ? 'text-primary' : 'text-foreground'}`}>
                   {fmt(v)}
                 </span>
-              </div>
-
-              {/* 項目名 + 棒グラフ（中央） */}
-              <div className="w-32 flex flex-col items-center gap-0.5">
-                <span className="text-xs text-muted-foreground whitespace-nowrap">{label}</span>
-                <div className="relative flex h-1.5 w-full rounded-full overflow-hidden bg-secondary">
-                  <div
-                    className="bg-primary transition-all rounded-full"
-                    style={{ width: `${vPct}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* 相手 数値（左寄せ） */}
-              <div className="text-left">
-                <span className={`text-sm font-bold tabular-nums ${o > v ? 'text-foreground' : 'text-muted-foreground'}`}>
+                <span className="text-xs text-muted-foreground text-center whitespace-nowrap px-1">{label}</span>
+                <span className={`text-sm font-bold tabular-nums text-left pl-2 ${o > v ? 'text-foreground' : 'text-muted-foreground'}`}>
                   {fmt(o)}
                 </span>
+              </div>
+              {/* 横長棒グラフ */}
+              <div className="relative flex h-5 rounded-full overflow-hidden bg-secondary">
+                <div className="absolute inset-0 pointer-events-none" style={{zIndex:10}}>
+                  <div className="absolute top-0 bottom-0 w-px" style={{left:"25%",background:"rgba(0,0,0,0.12)"}} />
+                  <div className="absolute top-0 bottom-0 w-px" style={{left:"50%",background:"rgba(0,0,0,0.2)"}} />
+                  <div className="absolute top-0 bottom-0 w-px" style={{left:"75%",background:"rgba(0,0,0,0.12)"}} />
+                </div>
+                <div className="bg-primary transition-all" style={{ width: `${vPct}%` }} />
+                <div className="flex-1 bg-secondary" />
               </div>
             </div>
           )
