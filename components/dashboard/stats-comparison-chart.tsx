@@ -62,17 +62,22 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
 
       {/* 各アイテム: 数値+項目名 の直下に棒グラフをペアで並べる */}
       {/* 数値列の縦ライン: テーブルレイアウトで全行の列幅を揃える */}
-      <table className="w-auto mx-auto border-collapse" style={{minWidth: '60%'}}>
+      <table className="w-full border-collapse">
+        <colgroup>
+          <col style={{width:"1%"}} />
+          <col />
+          <col style={{width:"1%"}} />
+        </colgroup>
         <tbody>
           {rows.map(({ key, label, v, o, vPct }) => (
             <>
               {/* 数値+項目名行 */}
               <tr key={`${key}-lbl`}>
-                <td className="pt-1.5 text-sm font-bold tabular-nums text-right whitespace-nowrap pr-2">
+                <td className="pt-1.5 text-sm font-bold tabular-nums text-right whitespace-nowrap pr-1.5">
                   <span className={v > o ? 'text-primary' : 'text-foreground'}>{fmt(v)}</span>
                 </td>
                 <td className="pt-1.5 text-xs text-muted-foreground text-center whitespace-nowrap">{label}</td>
-                <td className="pt-1.5 text-sm font-bold tabular-nums text-left whitespace-nowrap pl-2">
+                <td className="pt-1.5 text-sm font-bold tabular-nums text-left whitespace-nowrap pl-1.5">
                   <span className={o > v ? 'text-foreground' : 'text-muted-foreground'}>{fmt(o)}</span>
                 </td>
               </tr>
