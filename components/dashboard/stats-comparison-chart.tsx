@@ -72,27 +72,28 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
         <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">{opponent}</span>
       </div>
 
-      {/* 各アイテム: 数値+ラベル行（中央寄せ flex）＋棒グラフ（w-full） */}
-      {/* 数値の縦ライン: 全アイテムをgridで囲み display:contents でサブグリッド */}
-      <div style={{display:'grid', gridTemplateColumns:'auto auto auto', rowGap:0}}>
-        {rows.map(({ key, label, v, o, vPct }) => (
+      {/* 各アイテム: 数値行(中央flex) + 棒グラフ(全幅) のペア */}
+      {/* 縦ライン揃え: 全行をgridで囲み、数値行のみfit-contentで中央寄せ */}
+      <div style={{display:'grid', gridTemplateColumns:'auto auto auto', width:'fit-content', margin:'0 auto'}}>
+        {rows.map(({ key, label, v, o }) => (
           <div key={key} style={{display:'contents'}}>
-            {/* VONDS数値（右寄せ） */}
-            <div className="pt-1.5 pb-0 text-sm font-bold tabular-nums text-right whitespace-nowrap self-end" style={{gridColumn:1}}>
+            <div className="pt-1.5 text-sm font-bold tabular-nums text-right whitespace-nowrap self-end">
               <span className={v > o ? 'text-primary' : 'text-foreground'}>{fmt(v)}</span>
             </div>
-            {/* 項目名（中央） */}
-            <div className="pt-1.5 pb-0 text-xs text-muted-foreground text-center whitespace-nowrap self-end" style={{gridColumn:2}}>
+            <div className="pt-1.5 text-xs text-muted-foreground text-center whitespace-nowrap self-end px-1">
               {label}
             </div>
-            {/* 相手数値（左寄せ） */}
-            <div className="pt-1.5 pb-0 text-sm font-bold tabular-nums text-left whitespace-nowrap self-end" style={{gridColumn:3}}>
+            <div className="pt-1.5 text-sm font-bold tabular-nums text-left whitespace-nowrap self-end">
               <span className={o > v ? 'text-foreground' : 'text-muted-foreground'}>{fmt(o)}</span>
             </div>
-            {/* 棒グラフ（3列全体） */}
-            <div className="pt-0.5 pb-1.5" style={{gridColumn:'1 / 4'}}>
-              <Bar vPct={vPct} />
-            </div>
+          </div>
+        ))}
+      </div>
+      {/* 棒グラフ: グリッドと独立してw-full */}
+      <div>
+        {rows.map(({ key, vPct }) => (
+          <div key={`bar-${key}`} className="pt-0.5 pb-1.5">
+            <Bar vPct={vPct} />
           </div>
         ))}
       </div>
