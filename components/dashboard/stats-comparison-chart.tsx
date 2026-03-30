@@ -23,14 +23,14 @@ type Props = {
 const ITEMS = [
   { key: 'packingRate', label: 'パッキングレート' },
   { key: 'impact',      label: 'インペクト' },
-  { key: 'boxEntries',       label: 'ボックス侵入' },
-  { key: 'goalAreaEntries',  label: 'ゴールエリア侵入' },
-  { key: 'lineBreak',    label: 'ラインブレイク' },
-  { key: 'lineBreakAC',  label: 'ラインブレイクAC' },
+  { key: 'boxEntries',      label: 'ボックス侵入' },
+  { key: 'goalAreaEntries', label: 'ゴールエリア侵入' },
+  { key: 'lineBreak',   label: 'ラインブレイク' },
+  { key: 'lineBreakAC', label: 'ラインブレイクAC' },
   { key: 'crosses',  label: 'クロス' },
   { key: 'shots',    label: 'シュート' },
-  { key: 'corners',    label: 'CK' },
-  { key: 'freeKicks',  label: 'FK' },
+  { key: 'corners',  label: 'CK' },
+  { key: 'freeKicks', label: 'FK' },
 ] as const
 
 const fmt = (n: number) => {
@@ -48,51 +48,51 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
         </div>
       )}
 
-      {/* ヘッダー: チーム名を中央に1行で */}
-      <div className="text-center mb-2 pb-1.5 border-b border-border">
-        <span className="text-xs font-bold text-primary whitespace-nowrap">VONDS市原</span>
-        <span className="text-xs text-muted-foreground mx-2">vs</span>
-        <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">{opponent}</span>
-      </div>
+      {/* 1つのtableで全行を管理 → w-px列の幅が全行で自動統一されて縦ライン揃う */}
+      <table className="w-full border-collapse">
+        <thead>
+          <tr className="border-b border-border">
+            <th className="pb-1.5 w-px text-xs font-bold text-primary text-right whitespace-nowrap pr-2">VONDS市原</th>
+            <th className="pb-1.5 text-center" />
+            <th className="pb-1.5 w-px text-xs font-bold text-muted-foreground text-left whitespace-nowrap pl-2">{opponent}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ITEMS.map(({ key, label }) => {
+            const v = vonds[key] ?? 0
+            const o = opp[key] ?? 0
+            const total = v + o
+            const vPct = total > 0 ? (v / total) * 100 : 50
 
-      {/* 各スタッツ: 数値+項目名はtable(mx-auto)、棒グラフはw-full */}
-      <div className="space-y-2">
-        {ITEMS.map(({ key, label }) => {
-          const v = vonds[key] ?? 0
-          const o = opp[key] ?? 0
-          const total = v + o
-          const vPct = total > 0 ? (v / total) * 100 : 50
-
-          return (
-            <div key={key}>
-              {/* 数値+項目名: tableで縦ライン揃え、mx-autoで中央 */}
-              <table className="border-collapse mx-auto mb-0.5">
-                <tbody>
-                  <tr>
-                    <td className="w-px text-sm font-bold tabular-nums text-right whitespace-nowrap pr-2">
-                      <span className={v > o ? 'text-primary' : 'text-foreground'}>{fmt(v)}</span>
-                    </td>
-                    <td className="text-xs text-muted-foreground text-center whitespace-nowrap">{label}</td>
-                    <td className="w-px text-sm font-bold tabular-nums text-left whitespace-nowrap pl-2">
-                      <span className={o > v ? 'text-foreground' : 'text-muted-foreground'}>{fmt(o)}</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              {/* 棒グラフ: w-full */}
-              <div className="relative flex h-5 rounded-full overflow-hidden bg-secondary">
-                <div className="absolute inset-0 pointer-events-none" style={{zIndex:10}}>
-                  <div className="absolute top-0 bottom-0 w-px" style={{left:"25%",background:"rgba(0,0,0,0.12)"}} />
-                  <div className="absolute top-0 bottom-0 w-px" style={{left:"50%",background:"rgba(0,0,0,0.2)"}} />
-                  <div className="absolute top-0 bottom-0 w-px" style={{left:"75%",background:"rgba(0,0,0,0.12)"}} />
-                </div>
-                <div className="bg-primary transition-all" style={{ width: `${vPct}%` }} />
-                <div className="flex-1 bg-secondary" />
-              </div>
-            </div>
-          )
-        })}
-      </div>
+            return (
+              <>
+                <tr key={`${key}-val`}>
+                  <td className="pt-2 w-px text-sm font-bold tabular-nums text-right whitespace-nowrap pr-2">
+                    <span className={v > o ? 'text-primary' : 'text-foreground'}>{fmt(v)}</span>
+                  </td>
+                  <td className="pt-2 text-xs text-muted-foreground text-center whitespace-nowrap">{label}</td>
+                  <td className="pt-2 w-px text-sm font-bold tabular-nums text-left whitespace-nowrap pl-2">
+                    <span className={o > v ? 'text-foreground' : 'text-muted-foreground'}>{fmt(o)}</span>
+                  </td>
+                </tr>
+                <tr key={`${key}-bar`}>
+                  <td colSpan={3} className="pb-1">
+                    <div className="relative flex h-5 rounded-full overflow-hidden bg-secondary mt-0.5">
+                      <div className="absolute inset-0 pointer-events-none" style={{zIndex:10}}>
+                        <div className="absolute top-0 bottom-0 w-px" style={{left:"25%",background:"rgba(0,0,0,0.12)"}} />
+                        <div className="absolute top-0 bottom-0 w-px" style={{left:"50%",background:"rgba(0,0,0,0.2)"}} />
+                        <div className="absolute top-0 bottom-0 w-px" style={{left:"75%",background:"rgba(0,0,0,0.12)"}} />
+                      </div>
+                      <div className="bg-primary transition-all" style={{ width: `${vPct}%` }} />
+                      <div className="flex-1 bg-secondary" />
+                    </div>
+                  </td>
+                </tr>
+              </>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }
