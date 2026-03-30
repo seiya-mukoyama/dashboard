@@ -48,11 +48,11 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
         </div>
       )}
 
-      {/* ヘッダー行: チーム名を中央の項目名エリアの左右にくっつける */}
-      <div className="flex items-center justify-center gap-2 mb-2 pb-1.5 border-b border-border">
-        <span className="text-xs font-bold text-primary whitespace-nowrap">VONDS市原</span>
-        <span className="text-xs text-muted-foreground">vs</span>
-        <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">{opponent}</span>
+      {/* ヘッダー行: チーム名をグリッドで数値列と揃える */}
+      <div className="grid grid-cols-[auto_1fr_auto] items-center gap-x-2 mb-2 pb-1.5 border-b border-border">
+        <span className="text-xs font-bold text-primary whitespace-nowrap text-right">VONDS市原</span>
+        <div />
+        <span className="text-xs font-bold text-muted-foreground whitespace-nowrap text-left">{opponent}</span>
       </div>
 
       {/* 各スタッツ行 */}
@@ -66,13 +66,13 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
 
           return (
             <div key={key}>
-              {/* 数値＋項目名: 数値は項目名のすぐ隣・縦ライン揃え */}
-              <div className="flex items-baseline justify-center mb-0.5 gap-1.5">
-                <span className={`flex-none text-sm font-bold tabular-nums text-right ${v > o ? 'text-primary' : 'text-foreground'}`}>
+              {/* 数値＋項目名: グリッドで縦ライン揃え */}
+              <div className="grid grid-cols-[auto_1fr_auto] items-baseline gap-x-2 mb-0.5">
+                <span className={`text-sm font-bold tabular-nums text-right ${v > o ? 'text-primary' : 'text-foreground'}`}>
                   {fmt(v)}
                 </span>
-                <span className="flex-none text-xs text-muted-foreground whitespace-nowrap">{label}</span>
-                <span className={`flex-none text-sm font-bold tabular-nums text-left ${o > v ? 'text-foreground' : 'text-muted-foreground'}`}>
+                <span className="text-xs text-muted-foreground text-center whitespace-nowrap">{label}</span>
+                <span className={`text-sm font-bold tabular-nums text-left ${o > v ? 'text-foreground' : 'text-muted-foreground'}`}>
                   {fmt(o)}
                 </span>
               </div>
