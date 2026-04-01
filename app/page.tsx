@@ -154,7 +154,7 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
           </div>
 
           {/* 生年月日・年齢・身長・体重 */}
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             <div className="rounded-xl bg-card border border-border p-3 space-y-0.5">
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Cake className="h-3 w-3" /><span className="text-xs">生年月日</span>
