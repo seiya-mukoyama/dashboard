@@ -98,9 +98,11 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
   const age = calcAge(player.birthdate)
   const [maxSpeed, setMaxSpeed] = useState<number | null>(null)
   const [stats] = useState<PlayerStats>({
-    maxSpeed: null, packingRate: null, pReceive: null, impect: null,
-    iReceive: null, hiDistance: null, playTime: null,
-    goals: null, assists: null, preAssists: null, lineBreaks: null,
+    maxSpeed: null,
+    playTime: null,
+    goals: null,
+    assists: null,
+    preAssists: null,
   })
 
   useEffect(() => {
