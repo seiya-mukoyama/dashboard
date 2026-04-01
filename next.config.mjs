@@ -21,7 +21,7 @@ const nextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://platform.twitter.com https://cdn.syndication.twimg.com",
               "style-src 'self' 'unsafe-inline' https://platform.twitter.com",
-              "frame-src 'self' https://www.instagram.com https://platform.twitter.com https://syndication.twitter.com https://twitter.com",
+              "frame-src 'self' https://www.instagram.com https://platform.twitter.com https://syndication.twitter.com https://twitter.com https://www.youtube.com https://www.youtube-nocookie.com",
               "img-src 'self' data: https: blob:",
               "connect-src 'self' https: wss:",
               "font-src 'self' data: https:",
