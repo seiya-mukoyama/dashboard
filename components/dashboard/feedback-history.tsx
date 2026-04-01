@@ -12,15 +12,18 @@ type FeedbackItem = {
 
 type Props = { playerName: string }
 
-// YouTubeのURLからembedURLを生成
+// YouTubeのURLからembedURLを生成（?t= の秒数も引き継ぐ）
 function toEmbedUrl(url: string): string | null {
   if (!url) return null
+  // t= パラメータ（開始秒数）を抽出
+  const tMatch = url.match(/[?&]t=(\d+)/)
+  const startParam = tMatch ? `?start=${tMatch[1]}` : ''
   // youtu.be/XXXX 形式
   const short = url.match(/youtu\.be\/([\w-]+)/)
-  if (short) return `https://www.youtube.com/embed/${short[1]}`
+  if (short) return `https://www.youtube.com/embed/${short[1]}${startParam}`
   // watch?v=XXXX または &v=XXXX 形式
   const watch = url.match(/[?&]v=([\w-]+)/)
-  if (watch) return `https://www.youtube.com/embed/${watch[1]}`
+  if (watch) return `https://www.youtube.com/embed/${watch[1]}${startParam}`
   // /embed/ 形式はそのまま
   if (url.includes('/embed/')) return url
   return null
