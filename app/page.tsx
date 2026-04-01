@@ -90,8 +90,7 @@ function calcAge(birthdate: string): number | null {
 
 function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }) {
   const age = calcAge(player.birthdate)
-  const [maxSpeed, setMaxSpeed] = useState<number | null>(null)
-  const [stats] = useState<PlayerStats>({
+  const [displayStats, setDisplayStats] = useState<PlayerStats>({
     maxSpeed: null,
     playTime: null,
     goals: null,
@@ -100,13 +99,25 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
   })
 
   useEffect(() => {
+    // 最大速度
     fetch(`/api/speed?name=${encodeURIComponent(player.name)}`)
       .then(r => r.json())
-      .then(d => { if (d.maxSpeed) setMaxSpeed(d.maxSpeed) })
+      .then(d => { if (d.maxSpeed) setDisplayStats(prev => ({ ...prev, maxSpeed: d.maxSpeed })) })
+      .catch(() => {})
+
+    // 公式戦（TM以外）を集計して出場時間・G・A・PAをセット
+    fetch(`/api/match-performance?playerName=${encodeURIComponent(player.name)}`)
+      .then(r => r.json())
+      .then((data: Array<{ match: string; minutes: number; goals: number; assists: number; preAssists: number }>) => {
+        const official = data.filter((m: { match: string }) => !m.match.includes('(TM)') && !m.match.includes('トレーニング'))
+        const playTime   = official.reduce((s, m) => s + (m.minutes ?? 0), 0)
+        const goals      = official.reduce((s, m) => s + (m.goals ?? 0), 0)
+        const assists    = official.reduce((s, m) => s + (m.assists ?? 0), 0)
+        const preAssists = official.reduce((s, m) => s + (m.preAssists ?? 0), 0)
+        setDisplayStats(prev => ({ ...prev, playTime, goals, assists, preAssists }))
+      })
       .catch(() => {})
   }, [player.name])
-
-  const displayStats: PlayerStats = { ...stats, maxSpeed }
 
   return (
     <div className="space-y-6">
