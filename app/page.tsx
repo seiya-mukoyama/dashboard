@@ -47,27 +47,21 @@ const viewTitles: Record<string, string> = {
 }
 
 
-// 最大速度はスタッツに含む（全11項目）
+// スタッツ（5項目）
 const STATS_CONFIG = [
-  { key: "packingRate", label: "パッキングレート", unit: "",     color: "text-blue-600" },
-  { key: "pReceive",   label: "Pレシーブ",         unit: "",     color: "text-blue-400" },
-  { key: "impect",     label: "インペクト",         unit: "",     color: "text-purple-600" },
-  { key: "iReceive",   label: "Iレシーブ",          unit: "",     color: "text-purple-400" },
-  { key: "maxSpeed",   label: "最大速度",           unit: "km/h", color: "text-orange-500" },
-  { key: "hiDistance", label: "HI",                unit: "m",    color: "text-red-500" },
-  { key: "playTime",   label: "出場時間",           unit: "分",   color: "text-gray-600" },
-  { key: "goals",      label: "ゴール",             unit: "",     color: "text-green-600" },
-  { key: "assists",    label: "アシスト",           unit: "",     color: "text-green-500" },
-  { key: "preAssists", label: "プレアシスト",       unit: "",     color: "text-teal-500" },
-  { key: "lineBreaks", label: "ラインブレイク",     unit: "",     color: "text-indigo-500" },
+  { key: "maxSpeed",    label: "最大速度",     unit: "km/h", color: "text-orange-500" },
+  { key: "playTime",    label: "出場時間",     unit: "分",   color: "text-gray-600" },
+  { key: "goals",       label: "ゴール",       unit: "",     color: "text-green-600" },
+  { key: "assists",     label: "アシスト",     unit: "",     color: "text-green-500" },
+  { key: "preAssists",  label: "プレアシスト", unit: "",     color: "text-teal-500" },
 ]
 
 type PlayerStats = {
-  maxSpeed: number | null
-  playTime: number | null
-  goals: number | null
-  assists: number | null
-  preAssists: number | null
+  maxSpeed:    number | null
+  playTime:    number | null
+  goals:       number | null
+  assists:     number | null
+  preAssists:  number | null
 }
 
 function StatCard({ label, value, unit, color }: { label: string; value: number | null; unit: string; color: string }) {
@@ -186,7 +180,7 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
           {/* スタッツ 4カラム（最大速度含む全11項目） */}
           <div>
             <p className="text-xs font-semibold text-muted-foreground mb-2">スタッツ</p>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-5 gap-2">
               {STATS_CONFIG.map(({ key, label, unit, color }) => (
                 <StatCard
                   key={key}
