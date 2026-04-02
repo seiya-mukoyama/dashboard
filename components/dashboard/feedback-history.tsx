@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react"
 import { Play, X } from "lucide-react"
 
-// 対応月一覧（将来的に追加するだけでタブが増える）
-const MONTHS = ["2月"]
+// 現在対応中の月一覧（新しい月のシートができたらここに追加するだけ）
+const MONTHS = ["2月", "3月"]
 
 type FeedbackItem = {
   comment: string
@@ -15,16 +15,12 @@ type Props = { playerName: string }
 // YouTubeのURLからembedURLを生成（?t= の秒数も引き継ぐ）
 function toEmbedUrl(url: string): string | null {
   if (!url) return null
-  // t= パラメータ（開始秒数）を抽出
   const tMatch = url.match(/[?&]t=(\d+)/)
   const startParam = tMatch ? `?start=${tMatch[1]}` : ''
-  // youtu.be/XXXX 形式
   const short = url.match(/youtu\.be\/([\w-]+)/)
   if (short) return `https://www.youtube.com/embed/${short[1]}${startParam}`
-  // watch?v=XXXX または &v=XXXX 形式
   const watch = url.match(/[?&]v=([\w-]+)/)
   if (watch) return `https://www.youtube.com/embed/${watch[1]}${startParam}`
-  // /embed/ 形式はそのまま
   if (url.includes('/embed/')) return url
   return null
 }
@@ -44,7 +40,7 @@ export function FeedbackHistory({ playerName }: Props) {
         fetch(`/api/feedback?playerName=${encodeURIComponent(playerName)}&month=${encodeURIComponent(month)}`)
           .then(r => r.json())
           .then((data: FeedbackItem[]) => ({ month, data: Array.isArray(data) ? data : [] }))
-          .catch(() => ({ month, data: [] }))
+          .catch(() => ({ month, data: [] as FeedbackItem[] }))
       )
     ).then(results => {
       const map: Record<string, FeedbackItem[]> = {}
@@ -58,13 +54,15 @@ export function FeedbackHistory({ playerName }: Props) {
   )
 
   const items = feedbackMap[activeMonth] ?? []
+  // データのある月だけタブ表示（データなし月もタブは出すが「記録なし」を表示）
 
   return (
     <div className="space-y-3">
       {/* 月タブ */}
-      {MONTHS.length > 1 && (
-        <div className="flex gap-1.5 flex-wrap">
-          {MONTHS.map(m => (
+      <div className="flex gap-1.5 flex-wrap">
+        {MONTHS.map(m => {
+          const count = feedbackMap[m]?.length ?? 0
+          return (
             <button
               key={m}
               onClick={() => setActiveMonth(m)}
@@ -75,10 +73,17 @@ export function FeedbackHistory({ playerName }: Props) {
               }`}
             >
               {m}
+              {count > 0 && (
+                <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-xs ${
+                  activeMonth === m ? 'bg-white/20' : 'bg-primary/15 text-primary'
+                }`}>
+                  {count}
+                </span>
+              )}
             </button>
-          ))}
-        </div>
-      )}
+          )
+        })}
+      </div>
 
       {/* コメント一覧 */}
       {items.length === 0 ? (
