@@ -23,34 +23,21 @@ function toSheetName(month: string): string {
   return `${month}FB`
 }
 
-// スプレッドシートのhtmlviewからシート名リストを取得
-let sheetListCache: string[] | null = null
+// htmlview の data-name="シート名" からシート一覧取得
 async function getSheetNames(): Promise<string[]> {
-  if (sheetListCache) return sheetListCache
   try {
     const url = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/htmlview`
     const res = await fetch(url, { cache: "no-store" })
     if (!res.ok) return []
     const html = await res.text()
-    // HTMLの中にシート名が含まれている
-    // パターン: <li ... data-id="..." ><a ...<span ...>シート名</span>
-    // または id="sheet-button-..." data-name="シート名"
-    const matches = html.matchAll(/<li[^>]+id="[^"]*sheet[^"]*"[^>]*>.*?<span[^>]*>([^<]+)<\/span>/gs)
+    // data-name="シート名" を全て抽出
     const names: string[] = []
-    for (const m of matches) {
-      const name = m[1].trim()
-      if (name) names.push(name)
+    const re = /data-name="([^"]+)"/g
+    let m: RegExpExecArray | null
+    while ((m = re.exec(html)) !== null) {
+      names.push(m[1])
     }
-    if (names.length > 0) {
-      sheetListCache = names
-      return names
-    }
-    // fallback: 別パターン
-    const matches2 = html.matchAll(/data-name="([^"]+)"/g)
-    const names2: string[] = []
-    for (const m of matches2) names2.push(m[1])
-    sheetListCache = names2
-    return names2
+    return names
   } catch { return [] }
 }
 
