@@ -110,7 +110,7 @@ type PlayerStats = {
   packing: number; packingR: number; impact: number; impactR: number
   distance: number | null; maxSpeed: number | null; hi: number | null; sprint: number | null
   time: string | null; lineBreak: number | null
-  goals: number; assists: number; preAssists: number
+  goals: number; assists: number; preAssists: number; shoot: number
 }
 
 let lastNameMapCache: Record<string, { fullName: string; pos: string }> | null = null
