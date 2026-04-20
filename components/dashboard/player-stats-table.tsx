@@ -125,6 +125,7 @@ export function PlayerStatsTable({ opponent, date }: { opponent: string; date?: 
     { key: 'impact', label: 'Imp', sortable: true },
     { key: 'impactR', label: 'ImpR', sortable: true },
     { key: 'lineBreak', label: 'LB', sortable: true },
+    { key: 'shoot', label: 'Shoot', sortable: true },
     { key: 'distance', label: '走行距離', sortable: true },
     { key: 'maxSpeed', label: '最高速度', sortable: true },
     { key: 'hi', label: 'HI', sortable: true },
