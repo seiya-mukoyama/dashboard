@@ -18,6 +18,7 @@ type MatchRecord = {
   distance: number
   lineBreak: number
   sprint: number
+  shoot: number
 }
 
 type Props = { playerName: string }
