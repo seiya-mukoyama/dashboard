@@ -72,6 +72,11 @@ async function fetchPackingBySheetName(
   rows.forEach(cols => {
     const cat = cols[1]?.trim()
     if (!cat || SKIP_CATS.has(cat)) return
+    if (cat.endsWith('シュート')) {
+      const nm = cat.slice(0, -4).trim()
+      if (nm && !nm.startsWith('被')) { const sp = getOrCreate(nm, stats); sp.shoot += 1 }
+      return
+    }
     // 得点・失点行の処理
     if (cat === "得点" || cat === "失点") {
       if (cat === "得点") {
@@ -270,7 +275,7 @@ export async function GET(request: Request) {
         impact: round1(s.impact), impactR: round1(s.impactR),
         distance: s.distance, maxSpeed: s.maxSpeed, hi: s.hi,
         sprint: s.sprint, time: s.time, lineBreak: s.lineBreak,
-        goals: s.goals, assists: s.assists, preAssists: s.preAssists,
+        goals: s.goals, assists: s.assists, preAssists: s.preAssists, shoot: s.shoot,
       }))
       .sort((a, b) => {
         const pa = POS_ORDER[a.pos] ?? 9, pb = POS_ORDER[b.pos] ?? 9
