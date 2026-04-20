@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { Play, X } from "lucide-react"
 
 // 現在対応中の月一覧（新しい月のシートができたらここに追加するだけ）
-const MONTHS = ["2月", "3月"]
+const MONTHS = ["2月", "3月", "4月"]
 
 type FeedbackItem = {
   comment: string
