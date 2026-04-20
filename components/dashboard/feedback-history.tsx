@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react"
 import { Play, X } from "lucide-react"
 
-// 現在対応中の月一覧（新しい月のシートができたらここに追加するだけ）
-const MONTHS = ["2月", "3月", "4月"]
+// 1月〜12月を全て定義（データがある月だけ自動でタブ表示）
+const ALL_MONTHS = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"]
 
 type FeedbackItem = {
   comment: string
@@ -12,7 +12,6 @@ type FeedbackItem = {
 
 type Props = { playerName: string }
 
-// YouTubeのURLからembedURLを生成（?t= の秒数も引き継ぐ）
 function toEmbedUrl(url: string): string | null {
   if (!url) return null
   const tMatch = url.match(/[?&]t=(\d+)/)
@@ -26,7 +25,7 @@ function toEmbedUrl(url: string): string | null {
 }
 
 export function FeedbackHistory({ playerName }: Props) {
-  const [activeMonth, setActiveMonth] = useState(MONTHS[0])
+  const [activeMonth, setActiveMonth] = useState<string | null>(null)
   const [feedbackMap, setFeedbackMap] = useState<Record<string, FeedbackItem[]>>({})
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState<{ embedUrl: string } | null>(null)
@@ -36,7 +35,7 @@ export function FeedbackHistory({ playerName }: Props) {
     setLoading(true)
     // 全月を並列取得
     Promise.all(
-      MONTHS.map(month =>
+      ALL_MONTHS.map(month =>
         fetch(`/api/feedback?playerName=${encodeURIComponent(playerName)}&month=${encodeURIComponent(month)}`)
           .then(r => r.json())
           .then((data: FeedbackItem[]) => ({ month, data: Array.isArray(data) ? data : [] }))
@@ -44,8 +43,13 @@ export function FeedbackHistory({ playerName }: Props) {
       )
     ).then(results => {
       const map: Record<string, FeedbackItem[]> = {}
-      results.forEach(({ month, data }) => { map[month] = data })
+      results.forEach(({ month, data }) => {
+        if (data.length > 0) map[month] = data  // データがある月だけ保存
+      })
       setFeedbackMap(map)
+      // 最初のデータがある月をデフォルトで選択
+      const firstMonth = ALL_MONTHS.find(m => map[m])
+      setActiveMonth(firstMonth ?? null)
     }).finally(() => setLoading(false))
   }, [playerName])
 
@@ -53,14 +57,22 @@ export function FeedbackHistory({ playerName }: Props) {
     <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">読み込み中...</div>
   )
 
-  const items = feedbackMap[activeMonth] ?? []
-  // データのある月だけタブ表示（データなし月もタブは出すが「記録なし」を表示）
+  // データがある月のリスト（月順に並ぶ）
+  const activeMonths = ALL_MONTHS.filter(m => feedbackMap[m])
+
+  if (activeMonths.length === 0) return (
+    <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">
+      フィードバックの記録はありません
+    </div>
+  )
+
+  const items = activeMonth ? (feedbackMap[activeMonth] ?? []) : []
 
   return (
     <div className="space-y-3">
-      {/* 月タブ */}
+      {/* 月タブ（データがある月だけ表示） */}
       <div className="flex gap-1.5 flex-wrap">
-        {MONTHS.map(m => {
+        {activeMonths.map(m => {
           const count = feedbackMap[m]?.length ?? 0
           return (
             <button
@@ -73,52 +85,44 @@ export function FeedbackHistory({ playerName }: Props) {
               }`}
             >
               {m}
-              {count > 0 && (
-                <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-xs ${
-                  activeMonth === m ? 'bg-white/20' : 'bg-primary/15 text-primary'
-                }`}>
-                  {count}
-                </span>
-              )}
+              <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-xs ${
+                activeMonth === m ? 'bg-white/20' : 'bg-primary/15 text-primary'
+              }`}>
+                {count}
+              </span>
             </button>
           )
         })}
       </div>
 
       {/* コメント一覧 */}
-      {items.length === 0 ? (
-        <div className="flex items-center justify-center h-16 text-muted-foreground text-sm">
-          フィードバックの記録はありません
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {items.map((item, i) => {
-            const embedUrl = toEmbedUrl(item.youtube)
-            return (
-              <button
-                key={i}
-                onClick={() => embedUrl && setModal({ embedUrl })}
-                className={`w-full text-left rounded-lg p-3 border transition-colors ${
-                  embedUrl
-                    ? 'bg-secondary/50 border-border hover:bg-secondary hover:border-primary/40 cursor-pointer'
-                    : 'bg-secondary/50 border-border cursor-default'
-                }`}
-              >
-                <div className="flex items-start gap-2">
-                  {embedUrl && (
-                    <div className="shrink-0 mt-0.5 flex items-center justify-center w-5 h-5 rounded-full bg-primary/15 text-primary">
-                      <Play className="h-3 w-3 fill-current" />
-                    </div>
-                  )}
-                  <p className="text-sm text-foreground leading-relaxed flex-1">
-                    {item.comment || <span className="text-muted-foreground italic">（コメントなし）</span>}
-                  </p>
-                </div>
-              </button>
-            )
-          })}
-        </div>
-      )}
+      <div className="space-y-2">
+        {items.map((item, i) => {
+          const embedUrl = toEmbedUrl(item.youtube)
+          return (
+            <button
+              key={i}
+              onClick={() => embedUrl && setModal({ embedUrl })}
+              className={`w-full text-left rounded-lg p-3 border transition-colors ${
+                embedUrl
+                  ? 'bg-secondary/50 border-border hover:bg-secondary hover:border-primary/40 cursor-pointer'
+                  : 'bg-secondary/50 border-border cursor-default'
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                {embedUrl && (
+                  <div className="shrink-0 mt-0.5 flex items-center justify-center w-5 h-5 rounded-full bg-primary/15 text-primary">
+                    <Play className="h-3 w-3 fill-current" />
+                  </div>
+                )}
+                <p className="text-sm text-foreground leading-relaxed flex-1">
+                  {item.comment || <span className="text-muted-foreground italic">（コメントなし）</span>}
+                </p>
+              </div>
+            </button>
+          )
+        })}
+      </div>
 
       {/* YouTubeモーダル */}
       {modal && (
