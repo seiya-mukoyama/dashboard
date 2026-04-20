@@ -26,8 +26,6 @@ const mainMenuItems = [
   { id: "players", label: "選手", icon: Users },
   { id: "official-matches", label: "公式戦", icon: Medal },
   { id: "training-matches", label: "トレーニングマッチ", icon: Dumbbell },
-  { id: "training", label: "トレーニング", icon: Target },
-  { id: "events", label: "イベント", icon: Calendar },
 ]
 
 const positionColors: Record<string, string> = {
