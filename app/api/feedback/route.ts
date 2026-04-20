@@ -19,9 +19,20 @@ function normName(s: string) {
   return s.replace(/[\s\u3000]/g, "")
 }
 
-// 月ラベル（例: "2月"）→ シート名（例: "2月FB"）
+// シート名 "N月FB"
 function toSheetName(month: string): string {
   return `${month}FB`
+}
+
+// gvizのsigを取得（シート存在確認に使用）
+async function getSheetSig(sheetName: string): Promise<string> {
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`
+    const res = await fetch(url, { cache: "no-store" })
+    const text = await res.text()
+    const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''))
+    return json.sig ?? ''
+  } catch { return '' }
 }
 
 export async function GET(request: Request) {
@@ -34,8 +45,26 @@ export async function GET(request: Request) {
   const sheetName = toSheetName(month)
 
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
-    const res = await fetch(url, { cache: "no-store" })
+    // デフォルトシート（存在しない場合のフォールバック）のsigを取得
+    const defaultSigRes = await fetch(
+      `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:json`,
+      { cache: "no-store" }
+    )
+    const defaultSigText = await defaultSigRes.text()
+    const defaultSigJson = JSON.parse(defaultSigText.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''))
+    const defaultSig = defaultSigJson.sig ?? ''
+
+    // 対象シートのsigを取得
+    const targetSig = await getSheetSig(sheetName)
+
+    // sigが同じ or 空 → シートが存在しない
+    if (!targetSig || targetSig === defaultSig) {
+      return NextResponse.json([])
+    }
+
+    // CSVを取得
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
+    const res = await fetch(csvUrl, { cache: "no-store" })
     if (!res.ok) return NextResponse.json([])
     const csv = await res.text()
     if (!csv.trim()) return NextResponse.json([])
