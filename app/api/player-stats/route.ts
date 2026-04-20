@@ -122,7 +122,7 @@ function getOrCreate(lastName: string, stats: Record<string, PlayerStats>): Play
       lastName, fullName: info.fullName, pos: info.pos,
       packing: 0, packingR: 0, impact: 0, impactR: 0,
       distance: null, maxSpeed: null, hi: null, sprint: null,
-      time: null, lineBreak: null, goals: 0, assists: 0, preAssists: 0
+      time: null, lineBreak: null, goals: 0, assists: 0, preAssists: 0, shoot: 0
     }
   }
   return stats[lastName]
