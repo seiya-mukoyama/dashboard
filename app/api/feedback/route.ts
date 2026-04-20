@@ -19,16 +19,20 @@ function normName(s: string) {
   return s.replace(/[\s\u3000]/g, "")
 }
 
-// シート名 "N月FB"
 function toSheetName(month: string): string {
   return `${month}FB`
 }
 
-// gvizのsigを取得（シート存在確認に使用）
-async function getSheetSig(sheetName: string): Promise<string> {
+// 存在確認: シート名を指定したリクエストと
+// gid=0（最初のシート）を指定したリクエストのsigを比較
+// 一致する → 最初のシートが返ってきている → シートが存在しない可能性
+// ただし最初のシート自体を要求した場合は一致して当然なので
+// 最初のシート名（2月FB）かどうかで分岐する
+async function getSheetSig(sheetParam: string): Promise<string> {
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`
+    const url = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:json&${sheetParam}`
     const res = await fetch(url, { cache: "no-store" })
+    if (!res.ok) return ''
     const text = await res.text()
     const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''))
     return json.sig ?? ''
@@ -45,21 +49,18 @@ export async function GET(request: Request) {
   const sheetName = toSheetName(month)
 
   try {
-    // デフォルトシート（存在しない場合のフォールバック）のsigを取得
-    const defaultSigRes = await fetch(
-      `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:json`,
-      { cache: "no-store" }
-    )
-    const defaultSigText = await defaultSigRes.text()
-    const defaultSigJson = JSON.parse(defaultSigText.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''))
-    const defaultSig = defaultSigJson.sig ?? ''
+    // gid=0（最初のシート固定）のsigと、シート名指定のsigを比較
+    // ただし最初のシート（2月FB）の場合は比較しない
+    const sigByName = await getSheetSig(`sheet=${encodeURIComponent(sheetName)}`)
+    if (!sigByName) return NextResponse.json([])
 
-    // 対象シートのsigを取得
-    const targetSig = await getSheetSig(sheetName)
-
-    // sigが同じ or 空 → シートが存在しない
-    if (!targetSig || targetSig === defaultSig) {
-      return NextResponse.json([])
+    // 2月FB以外のシートについて、gid=0と一致するかチェック
+    // 一致する場合はそのシートが存在しないと判断
+    if (sheetName !== '2月FB') {
+      const sigByGid0 = await getSheetSig('gid=0')
+      if (sigByGid0 && sigByGid0 === sigByName) {
+        return NextResponse.json([])
+      }
     }
 
     // CSVを取得
