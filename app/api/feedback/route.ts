@@ -23,20 +23,35 @@ function toSheetName(month: string): string {
   return `${month}FB`
 }
 
-// 存在確認: シート名を指定したリクエストと
-// gid=0（最初のシート）を指定したリクエストのsigを比較
-// 一致する → 最初のシートが返ってきている → シートが存在しない可能性
-// ただし最初のシート自体を要求した場合は一致して当然なので
-// 最初のシート名（2月FB）かどうかで分岐する
-async function getSheetSig(sheetParam: string): Promise<string> {
+// スプレッドシートのhtmlviewからシート名リストを取得
+let sheetListCache: string[] | null = null
+async function getSheetNames(): Promise<string[]> {
+  if (sheetListCache) return sheetListCache
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:json&${sheetParam}`
+    const url = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/htmlview`
     const res = await fetch(url, { cache: "no-store" })
-    if (!res.ok) return ''
-    const text = await res.text()
-    const json = JSON.parse(text.replace(/^[^(]+\(/, '').replace(/\);?\s*$/, ''))
-    return json.sig ?? ''
-  } catch { return '' }
+    if (!res.ok) return []
+    const html = await res.text()
+    // HTMLの中にシート名が含まれている
+    // パターン: <li ... data-id="..." ><a ...<span ...>シート名</span>
+    // または id="sheet-button-..." data-name="シート名"
+    const matches = html.matchAll(/<li[^>]+id="[^"]*sheet[^"]*"[^>]*>.*?<span[^>]*>([^<]+)<\/span>/gs)
+    const names: string[] = []
+    for (const m of matches) {
+      const name = m[1].trim()
+      if (name) names.push(name)
+    }
+    if (names.length > 0) {
+      sheetListCache = names
+      return names
+    }
+    // fallback: 別パターン
+    const matches2 = html.matchAll(/data-name="([^"]+)"/g)
+    const names2: string[] = []
+    for (const m of matches2) names2.push(m[1])
+    sheetListCache = names2
+    return names2
+  } catch { return [] }
 }
 
 export async function GET(request: Request) {
@@ -49,18 +64,10 @@ export async function GET(request: Request) {
   const sheetName = toSheetName(month)
 
   try {
-    // gid=0（最初のシート固定）のsigと、シート名指定のsigを比較
-    // ただし最初のシート（2月FB）の場合は比較しない
-    const sigByName = await getSheetSig(`sheet=${encodeURIComponent(sheetName)}`)
-    if (!sigByName) return NextResponse.json([])
-
-    // 2月FB以外のシートについて、gid=0と一致するかチェック
-    // 一致する場合はそのシートが存在しないと判断
-    if (sheetName !== '2月FB') {
-      const sigByGid0 = await getSheetSig('gid=0')
-      if (sigByGid0 && sigByGid0 === sigByName) {
-        return NextResponse.json([])
-      }
+    // シート一覧を取得して存在確認
+    const sheetNames = await getSheetNames()
+    if (sheetNames.length > 0 && !sheetNames.includes(sheetName)) {
+      return NextResponse.json([])
     }
 
     // CSVを取得
