@@ -40,7 +40,7 @@ export function MatchPerformance({ playerName }: Props) {
   if (loading) return <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">読み込み中...</div>
   if (matches.length === 0) return <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">試合記録はありません</div>
 
-  const headers = ["日付","試合","結果","G","A","PA","出場時間","Pack","PackR","Imp","ImpR","HI","Sprint","最高速度","走行距離","LB"]
+  const headers = ["日付","試合","結果","G","A","PA","出場時間","Pack","PackR","Imp","ImpR","HI","Sprint","最高速度","走行距離","LB","Shoot"]
 
   return (
     <div className="overflow-x-auto">
