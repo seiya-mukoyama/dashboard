@@ -7,7 +7,7 @@ type PlayerStat = {
   packing: number; packingR: number
   impact: number; impactR: number
   distance: number | null; maxSpeed: number | null; hi: number | null; sprint: number | null
-  time?: string | null; lineBreak?: number | null
+  time?: string | null; lineBreak?: number | null; shoot?: number | null
   minutes?: number; goals?: number; assists?: number; preAssists?: number
 }
 
