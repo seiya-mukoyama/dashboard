@@ -41,7 +41,7 @@ export async function GET(request: Request) {
     // B列ラベルでrow indexを検索
     // 「相手チーム」の後ろに来る同ラベルを相手スタッツとして扱う
     const STAT_KEYS = ['packingRate','impact','boxEntries','goalAreaEntries',
-                       'lineBreak','lineBreakAC','crosses','shots','corners','freeKicks']
+                       'lineBreak','lineBreakAC','crosses','shots','xG','corners','freeKicks']
     const STAT_LABELS = ['パッキングレート','インペクト','ボックス侵入回数','ゴールエリア侵入回数',
                          'ラインブレイク','ラインブレイクAC','クロス','シュート','CK数','FK数']
 
@@ -92,6 +92,7 @@ export async function GET(request: Request) {
       lineBreakAC:      g('lineBreakAC', col),
       crosses:          g('crosses', col),
       shots:            g('shots', col),
+      xG:               g('xG', col),
       corners:          g('corners', col),
       freeKicks:        g('freeKicks', col),
       apt:              (rows[rowIdx['apt'] ?? -1] ?? [])[col]?.trim() || '',
@@ -103,6 +104,7 @@ export async function GET(request: Request) {
       opp_lineBreakAC:      g('opp_lineBreakAC', col),
       opp_crosses:          g('opp_crosses', col),
       opp_shots:            g('opp_shots', col),
+      opp_xG:               g('opp_xG', col),
       opp_corners:          g('opp_corners', col),
       opp_freeKicks:        g('opp_freeKicks', col),
     })
@@ -139,7 +141,7 @@ export async function GET(request: Request) {
 
     // 数値キー一覧（合計計算用）
     const NUM_KEYS = ['goalsFor','goalsAgainst','packingRate','impact','boxEntries','goalAreaEntries',
-                      'lineBreak','lineBreakAC','crosses','shots','corners','freeKicks',
+                      'lineBreak','lineBreakAC','crosses','shots','xG','corners','freeKicks',
                       'opp_packingRate','opp_impact','opp_boxEntries','opp_goalAreaEntries',
                       'opp_lineBreak','opp_lineBreakAC','opp_crosses','opp_shots','opp_corners','opp_freeKicks'] as const
 
@@ -192,11 +194,13 @@ export async function GET(request: Request) {
         boxEntries: total.boxEntries, goalAreaEntries: total.goalAreaEntries,
         lineBreak: total.lineBreak, lineBreakAC: total.lineBreakAC,
         crosses: total.crosses, shots: total.shots,
+        xG: total.xG,
         corners: total.corners, freeKicks: total.freeKicks,
         opp_packingRate: total.opp_packingRate, opp_impact: total.opp_impact,
         opp_boxEntries: total.opp_boxEntries, opp_goalAreaEntries: total.opp_goalAreaEntries,
         opp_lineBreak: total.opp_lineBreak, opp_lineBreakAC: total.opp_lineBreakAC,
         opp_crosses: total.opp_crosses, opp_shots: total.opp_shots,
+        opp_xG: total.opp_xG,
         opp_corners: total.opp_corners, opp_freeKicks: total.opp_freeKicks,
       }
     }).filter(m => m.date && m.opponent)
