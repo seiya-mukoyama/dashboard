@@ -23,10 +23,12 @@ type StatsHalf = {
   goalsFor: number; goalsAgainst: number
   packingRate: number; impact: number; boxEntries: number; goalAreaEntries: number
   lineBreak: number; lineBreakAC: number; crosses: number; shots: number
+  xG: number
   corners: number; freeKicks: number
   apt?: string
   opp_packingRate: number; opp_impact: number; opp_boxEntries: number; opp_goalAreaEntries: number
   opp_lineBreak: number; opp_lineBreakAC: number; opp_crosses: number; opp_shots: number
+  opp_xG: number
   opp_corners: number; opp_freeKicks: number
 }
 
