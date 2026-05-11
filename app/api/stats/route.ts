@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     const STAT_KEYS = ['packingRate','impact','boxEntries','goalAreaEntries',
                        'lineBreak','lineBreakAC','crosses','shots','xG','corners','freeKicks']
     const STAT_LABELS = ['パッキングレート','インペクト','ボックス侵入回数','ゴールエリア侵入回数',
-                         'ラインブレイク','ラインブレイクAC','クロス','シュート','CK数','FK数']
+                         'ラインブレイク','ラインブレイクAC','クロス','シュート','xG','CK数','FK数']
 
     const rowIdx: Record<string, number> = {}
     let oppSection = false  // 「相手チーム」行を超えたか
