@@ -27,6 +27,7 @@ type StatsHalf = {
   apt?: string
   opp_packingRate: number; opp_impact: number; opp_boxEntries: number; opp_goalAreaEntries: number
   opp_lineBreak: number; opp_lineBreakAC: number; opp_crosses: number; opp_shots: number
+  opp_xG: number
   opp_corners: number; opp_freeKicks: number
 }
 
