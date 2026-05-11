@@ -22,7 +22,7 @@ type StatsHalf = {
   half: string
   goalsFor: number; goalsAgainst: number
   packingRate: number; impact: number; boxEntries: number; goalAreaEntries: number
-  lineBreak: number; lineBreakAC: number; crosses: number; shots: number
+  lineBreak: number; lineBreakAC: number; crosses: number; shots: number; xG: number
   corners: number; freeKicks: number
   apt?: string
   opp_packingRate: number; opp_impact: number; opp_boxEntries: number; opp_goalAreaEntries: number
@@ -175,10 +175,10 @@ export function OfficialMatches() {
           <h3 className="text-sm font-semibold text-foreground mb-5">スタッツ比較</h3>
           <StatsComparisonChart
             vonds={{ packingRate:m.packingRate, impact:m.impact, boxEntries:m.boxEntries, goalAreaEntries:m.goalAreaEntries,
-              lineBreak:m.lineBreak, lineBreakAC:m.lineBreakAC, crosses:m.crosses, shots:m.shots,
+              lineBreak:m.lineBreak, lineBreakAC:m.lineBreakAC, crosses:m.crosses, shots:m.shots, xG:m.xG,
               corners:m.corners, freeKicks:m.freeKicks, apt: m.halves?.[0]?.apt }}
             opp={{ packingRate:m.opp_packingRate, impact:m.opp_impact, boxEntries:m.opp_boxEntries, goalAreaEntries:m.opp_goalAreaEntries,
-              lineBreak:m.opp_lineBreak, lineBreakAC:m.opp_lineBreakAC, crosses:m.opp_crosses, shots:m.opp_shots,
+              lineBreak:m.opp_lineBreak, lineBreakAC:m.opp_lineBreakAC, crosses:m.opp_crosses, shots:m.opp_shots, xG:m.opp_xG,
               corners:m.opp_corners, freeKicks:m.opp_freeKicks }}
             opponent={m.opponent}
             halvesVonds={halvesVonds}
