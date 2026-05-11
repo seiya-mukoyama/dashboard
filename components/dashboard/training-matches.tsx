@@ -186,8 +186,8 @@ export function TrainingMatches() {
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="text-sm font-semibold text-foreground mb-5">スタッツ比較</h3>
           <StatsComparisonChart
-            vonds={{ packingRate:m.packingRate, impact:m.impact, boxEntries:m.boxEntries, goalAreaEntries:m.goalAreaEntries, lineBreak:m.lineBreak, lineBreakAC:m.lineBreakAC, crosses:m.crosses, shots:m.shots, corners:m.corners, freeKicks:m.freeKicks, apt: m.halves?.[0]?.apt }}
-            opp={{ packingRate:m.opp_packingRate, impact:m.opp_impact, boxEntries:m.opp_boxEntries, goalAreaEntries:m.opp_goalAreaEntries, lineBreak:m.opp_lineBreak, lineBreakAC:m.opp_lineBreakAC, crosses:m.opp_crosses, shots:m.opp_shots, corners:m.opp_corners, freeKicks:m.opp_freeKicks }}
+            vonds={{ packingRate:m.packingRate, impact:m.impact, boxEntries:m.boxEntries, goalAreaEntries:m.goalAreaEntries, lineBreak:m.lineBreak, lineBreakAC:m.lineBreakAC, crosses:m.crosses, shots:m.shots, xG:m.xG ?? 0, corners:m.corners, freeKicks:m.freeKicks, apt: m.halves?.[0]?.apt }}
+            opp={{ packingRate:m.opp_packingRate, impact:m.opp_impact, boxEntries:m.opp_boxEntries, goalAreaEntries:m.opp_goalAreaEntries, lineBreak:m.opp_lineBreak, lineBreakAC:m.opp_lineBreakAC, crosses:m.opp_crosses, shots:m.opp_shots, xG:m.opp_xG ?? 0, corners:m.opp_corners, freeKicks:m.opp_freeKicks }}
             opponent={m.opponent}
             halvesVonds={halvesVonds}
             halvesOpp={halvesOpp}
