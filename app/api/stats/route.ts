@@ -143,7 +143,7 @@ export async function GET(request: Request) {
     const NUM_KEYS = ['goalsFor','goalsAgainst','packingRate','impact','boxEntries','goalAreaEntries',
                       'lineBreak','lineBreakAC','crosses','shots','xG','corners','freeKicks',
                       'opp_packingRate','opp_impact','opp_boxEntries','opp_goalAreaEntries',
-                      'opp_lineBreak','opp_lineBreakAC','opp_crosses','opp_shots','opp_corners','opp_freeKicks'] as const
+                      'opp_lineBreak','opp_lineBreakAC','opp_crosses','opp_shots','opp_xG','opp_corners','opp_freeKicks'] as const
 
     const matches = matchOrder.map(key => {
       const m = matchMap.get(key)!
