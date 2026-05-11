@@ -113,14 +113,14 @@ export function TrainingMatches() {
       packingRate: h.packingRate, impact: h.impact,
       boxEntries: h.boxEntries, goalAreaEntries: h.goalAreaEntries,
       lineBreak: h.lineBreak, lineBreakAC: h.lineBreakAC,
-      crosses: h.crosses, shots: h.shots, corners: h.corners, freeKicks: h.freeKicks,
+      crosses: h.crosses, shots: h.shots, xG: h.xG ?? 0, corners: h.corners, freeKicks: h.freeKicks,
     }))
     const halvesOpp = m.halves.map(h => ({
       half: h.half,
       packingRate: h.opp_packingRate, impact: h.opp_impact,
       boxEntries: h.opp_boxEntries, goalAreaEntries: h.opp_goalAreaEntries,
       lineBreak: h.opp_lineBreak, lineBreakAC: h.opp_lineBreakAC,
-      crosses: h.opp_crosses, shots: h.opp_shots, corners: h.opp_corners, freeKicks: h.opp_freeKicks,
+      crosses: h.opp_crosses, shots: h.opp_shots, xG: h.opp_xG ?? 0, corners: h.opp_corners, freeKicks: h.opp_freeKicks,
     }))
 
     return (
