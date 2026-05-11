@@ -4,12 +4,12 @@ import { useState } from "react"
 type StatsHalf = {
   half: string
   packingRate: number; impact: number; boxEntries: number; goalAreaEntries: number
-  lineBreak: number; lineBreakAC: number; crosses: number; shots: number
+  lineBreak: number; lineBreakAC: number; crosses: number; shots: number; xG: number
   corners: number; freeKicks: number; apt?: string
 }
 type StatsData = {
   packingRate: number; impact: number; boxEntries: number; goalAreaEntries: number
-  lineBreak: number; lineBreakAC: number; crosses: number; shots: number
+  lineBreak: number; lineBreakAC: number; crosses: number; shots: number; xG: number
   corners: number; freeKicks: number; apt?: string
 }
 type Props = {
@@ -26,6 +26,7 @@ const ITEMS = [
   { key: 'lineBreakAC', label: 'ラインブレイクAC' },
   { key: 'crosses',   label: 'クロス' },
   { key: 'shots',     label: 'シュート' },
+  { key: 'xG',        label: 'xG' },
   { key: 'corners',   label: 'CK' },
   { key: 'freeKicks', label: 'FK' },
 ] as const
