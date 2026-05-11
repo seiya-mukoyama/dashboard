@@ -81,13 +81,13 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
             {/* 数値+項目名: fit-content で中央寄せ */}
             <div style={{display:'flex', justifyContent:'center', gap:0}} className="mb-0.5">
               <span className={`text-sm font-bold tabular-nums text-right whitespace-nowrap pt-1 ${v > o ? 'text-primary' : 'text-foreground'}`}>
-                {fmt(v)}
+                {fmt(v, item.decimals)}
               </span>
               <span className="text-xs text-muted-foreground whitespace-nowrap px-1 pt-1">
                 {label}
               </span>
               <span className={`text-sm font-bold tabular-nums text-left whitespace-nowrap pt-1 ${o > v ? 'text-foreground' : 'text-muted-foreground'}`}>
-                {fmt(o)}
+                {fmt(o, item.decimals)}
               </span>
             </div>
             {/* 棒グラフ: w-full */}
