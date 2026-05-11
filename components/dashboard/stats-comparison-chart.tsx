@@ -17,7 +17,8 @@ type Props = {
   halvesVonds?: StatsHalf[]; halvesOpp?: StatsHalf[]
 }
 
-const ITEMS = [
+type Item = { key: keyof StatsHalf; label: string; decimals?: number }
+const ITEMS: Item[] = [
   { key: 'packingRate', label: 'パッキングレート' },
   { key: 'impact',      label: 'インペクト' },
   { key: 'boxEntries',      label: 'ボックス侵入' },
