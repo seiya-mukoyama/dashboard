@@ -52,8 +52,8 @@ function Bar({ vPct }: { vPct: number }) {
 
 function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsData; opponent: string }) {
   const rows = ITEMS.map(({ key, label }) => {
-    const v = (vonds as Record<string, unknown>)[key] as number ?? 0
-    const o = (opp as Record<string, unknown>)[key] as number ?? 0
+    const v = (vonds as never as Record<string, number>)[key] ?? 0
+    const o = (opp as never as Record<string, number>)[key] ?? 0
     const vPct = (v + o) > 0 ? (v / (v + o)) * 100 : 50
     return { key, label, v, o, vPct }
   })
@@ -81,13 +81,13 @@ function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsDat
             {/* 数値+項目名: fit-content で中央寄せ */}
             <div style={{display:'flex', justifyContent:'center', gap:0}} className="mb-0.5">
               <span className={`text-sm font-bold tabular-nums text-right whitespace-nowrap pt-1 ${v > o ? 'text-primary' : 'text-foreground'}`}>
-                {fmt(v, item.decimals)}
+                {key === 'xG' ? v.toFixed(2) : fmt(v)}
               </span>
               <span className="text-xs text-muted-foreground whitespace-nowrap px-1 pt-1">
                 {label}
               </span>
               <span className={`text-sm font-bold tabular-nums text-left whitespace-nowrap pt-1 ${o > v ? 'text-foreground' : 'text-muted-foreground'}`}>
-                {fmt(o, item.decimals)}
+                {key === 'xG' ? o.toFixed(2) : fmt(o)}
               </span>
             </div>
             {/* 棒グラフ: w-full */}
