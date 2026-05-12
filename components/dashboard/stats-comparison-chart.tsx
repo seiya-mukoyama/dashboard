@@ -52,8 +52,8 @@ function Bar({ vPct }: { vPct: number }) {
 
 function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsData; opponent: string }) {
   const rows = ITEMS.map(({ key, label }) => {
-    const v = (vonds as Record<string, number>)[key] ?? 0
-    const o = (opp as Record<string, number>)[key] ?? 0
+    const v = (vonds as unknown as Record<string, number>)[key] ?? 0
+    const o = (opp as unknown as Record<string, number>)[key] ?? 0
     const vPct = (v + o) > 0 ? (v / (v + o)) * 100 : 50
     return { key, label, v, o, vPct }
   })
