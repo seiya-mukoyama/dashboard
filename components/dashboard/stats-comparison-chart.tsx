@@ -17,8 +17,7 @@ type Props = {
   halvesVonds?: StatsHalf[]; halvesOpp?: StatsHalf[]
 }
 
-type Item = { key: keyof StatsData; label: string; decimals?: number }
-const ITEMS: Item[] = [
+const ITEMS: { key: string; label: string; decimals?: number }[] = [
   { key: 'packingRate', label: 'パッキングレート' },
   { key: 'impact',      label: 'インペクト' },
   { key: 'boxEntries',      label: 'ボックス侵入' },
@@ -53,8 +52,8 @@ function Bar({ vPct }: { vPct: number }) {
 
 function SingleChart({ vonds, opp, opponent }: { vonds: StatsData; opp: StatsData; opponent: string }) {
   const rows = ITEMS.map(({ key, label }) => {
-    const v = vonds[key] ?? 0
-    const o = opp[key] ?? 0
+    const v = (vonds as Record<string, number>)[key] ?? 0
+    const o = (opp as Record<string, number>)[key] ?? 0
     const vPct = (v + o) > 0 ? (v / (v + o)) * 100 : 50
     return { key, label, v, o, vPct }
   })
