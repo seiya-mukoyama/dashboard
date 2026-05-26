@@ -7,14 +7,14 @@ type PlayerStat = {
   packing: number; packingR: number
   impact: number; impactR: number
   distance: number | null; maxSpeed: number | null; hi: number | null; sprint: number | null
-  time?: string | null; lineBreak?: number | null; shoot?: number | null
+  time?: string | null; lineBreak?: number | null; shoot?: number | null; xG?: number | null
   minutes?: number; goals?: number; assists?: number; preAssists?: number
 }
 
 type NumericKey = 'packing' | 'packingR' | 'impact' | 'impactR' | 'lineBreak' | 'distance' | 'maxSpeed' | 'hi' | 'sprint'
 type SortDir = 'desc' | 'asc'
 
-const NUMERIC_COLS: NumericKey[] = ['packing', 'packingR', 'impact', 'impactR', 'lineBreak', 'distance', 'maxSpeed', 'hi', 'sprint']
+const NUMERIC_COLS: NumericKey[] = ['packing', 'packingR', 'impact', 'impactR', 'lineBreak', 'shoot', 'xG', 'distance', 'maxSpeed', 'hi', 'sprint']
 const SESSIONS = ['合計', '前半', '後半', '3本目'] as const
 type Session = typeof SESSIONS[number]
 
@@ -126,6 +126,7 @@ export function PlayerStatsTable({ opponent, date }: { opponent: string; date?: 
     { key: 'impactR', label: 'ImpR', sortable: true },
     { key: 'lineBreak', label: 'LB', sortable: true },
     { key: 'shoot', label: 'Shoot', sortable: true },
+    { key: 'xG', label: 'xG', sortable: true },
     { key: 'distance', label: '走行距離', sortable: true },
     { key: 'maxSpeed', label: '最高速度', sortable: true },
     { key: 'hi', label: 'HI', sortable: true },
@@ -199,7 +200,7 @@ export function PlayerStatsTable({ opponent, date }: { opponent: string; date?: 
                       )
                       return (
                         <td key={c.key} className={`py-1.5 px-2 whitespace-nowrap tabular-nums rounded ${bgClass} ${textClass}`}>
-                          {fmt(s[c.key] as number | null | undefined)}
+                          {c.key === 'xG' ? (s[c.key] == null ? '-' : (s[c.key] as number).toFixed(2)) : fmt(s[c.key] as number | null | undefined)}
                         </td>
                       )
                     })}
