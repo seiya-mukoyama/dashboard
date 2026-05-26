@@ -11,7 +11,7 @@ type PlayerStat = {
   minutes?: number; goals?: number; assists?: number; preAssists?: number
 }
 
-type NumericKey = 'packing' | 'packingR' | 'impact' | 'impactR' | 'lineBreak' | 'distance' | 'maxSpeed' | 'hi' | 'sprint'
+type NumericKey = 'packing' | 'packingR' | 'impact' | 'impactR' | 'lineBreak' | 'shoot' | 'xG' | 'distance' | 'maxSpeed' | 'hi' | 'sprint'
 type SortDir = 'desc' | 'asc'
 
 const NUMERIC_COLS: NumericKey[] = ['packing', 'packingR', 'impact', 'impactR', 'lineBreak', 'shoot', 'xG', 'distance', 'maxSpeed', 'hi', 'sprint']
