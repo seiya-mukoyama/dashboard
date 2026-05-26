@@ -78,6 +78,7 @@ export async function GET(request: Request) {
             lineBreak: player.lineBreak ?? 0,
             sprint: player.sprint ?? 0,
             shoot: player.shoot ?? 0,
+            xG: player.xG ?? null,
           }
         } catch { return null }
       })
