@@ -113,7 +113,7 @@ async function fetchPackingBySheetName(
 type PlayerStats = {
   lastName: string; fullName: string; pos: string
   packing: number; packingR: number; impact: number; impactR: number
-  distance: number | null; maxSpeed: number | null; hi: number | null; sprint: number | null
+  distance: number | null; maxSpeed: number | null; hi: number | null; sprint: number | null; xG: number | null
   time: string | null; lineBreak: number | null
   goals: number; assists: number; preAssists: number; shoot: number
 }
@@ -126,7 +126,7 @@ function getOrCreate(lastName: string, stats: Record<string, PlayerStats>): Play
     stats[lastName] = {
       lastName, fullName: info.fullName, pos: info.pos,
       packing: 0, packingR: 0, impact: 0, impactR: 0,
-      distance: null, maxSpeed: null, hi: null, sprint: null,
+      distance: null, maxSpeed: null, hi: null, sprint: null, xG: null,
       time: null, lineBreak: null, goals: 0, assists: 0, preAssists: 0, shoot: 0
     }
   }
@@ -250,6 +250,8 @@ export async function GET(request: Request) {
             if (idxDist >= 0) matched.distance = Math.round(parseFloat(cols[idxDist]) || 0) || null
             if (idxSpeed >= 0) matched.maxSpeed = parseFloat(cols[idxSpeed]) || null
             if (idxHI >= 0) matched.hi = parseFloat(cols[idxHI]) || null
+          const idxXG = header.findIndex(h => h.toLowerCase() === 'xg')
+          if (idxXG >= 0) matched.xG = parseFloat(cols[idxXG]) || null
             if (idxSprint >= 0) {
               const sv = cols[idxSprint]?.trim()
               matched.sprint = (sv !== "" && sv != null) ? (parseInt(sv) ?? null) : null
@@ -275,7 +277,7 @@ export async function GET(request: Request) {
         impact: round1(s.impact), impactR: round1(s.impactR),
         distance: s.distance, maxSpeed: s.maxSpeed, hi: s.hi,
         sprint: s.sprint, time: s.time, lineBreak: s.lineBreak,
-        goals: s.goals, assists: s.assists, preAssists: s.preAssists, shoot: s.shoot,
+        goals: s.goals, assists: s.assists, preAssists: s.preAssists, shoot: s.shoot, xG: s.xG,
       }))
       .sort((a, b) => {
         const pa = POS_ORDER[a.pos] ?? 9, pb = POS_ORDER[b.pos] ?? 9
