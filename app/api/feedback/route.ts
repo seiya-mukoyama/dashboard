@@ -25,7 +25,7 @@ function toSheetName(month: string): string {
 
 // gid=0（最初のシート=2月FB）のCSVを取得
 async function getFirstSheetCSV(): Promise<string> {
-  const url = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:csv&gid=0`
+  const url = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2%E6%9C%88FB`
   const res = await fetch(url, { cache: "no-store" })
   return res.ok ? await res.text() : ''
 }
