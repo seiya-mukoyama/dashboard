@@ -2,6 +2,21 @@ import { NextResponse } from "next/server"
 
 const FB_SHEET_ID = "16b5KqE5LZghiQYbv6Ra_ZDMeFM0vZ8GoCLvdVAJq0NM"
 
+// =====================================================================
+// シート名 -> gid のマッピング
+// 新しい月のFBシートを追加したら、スプレッドシートのURLに表示される
+// gid=XXXXXXX の数値をここに追加してください。
+// 例: 6月FBを追加したら URLで gid=XXXXXXXXX を確認して追加
+// =====================================================================
+const SHEET_GIDS: Record<string, string> = {
+  "2月FB": "787446982",
+  "3月FB": "1670399719",
+  "4月FB": "214233510",
+  "5月FB": "2059143529",
+  // "6月FB": "XXXXXXXXX",  // 6月追加時にここを追加
+  // "7月FB": "XXXXXXXXX",
+}
+
 function parseCSVLine(line: string): string[] {
   const cols: string[] = []
   let cur = ""
@@ -27,25 +42,15 @@ export async function GET(request: Request) {
   if (!playerName || !month) return NextResponse.json([])
 
   const sheetName = `${month}FB`
+  const gid = SHEET_GIDS[sheetName]
+  if (!gid) return NextResponse.json([])
 
   try {
-    // export エンドポイントを使用（シート名で直接取得可能）
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/export?format=csv&sheet=${encodeURIComponent(sheetName)}`
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`
     const res = await fetch(csvUrl, { cache: "no-store" })
     if (!res.ok) return NextResponse.json([])
     const csv = await res.text()
     if (!csv.trim()) return NextResponse.json([])
-
-    // 存在しないシートを指定すると最初のシートが返る
-    // 2月FB以外のシートは最初のシート（2月FB）と内容が同じなら存在しないと判断
-    if (sheetName !== '2月FB') {
-      const refUrl = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/export?format=csv&sheet=2月FB`
-      const refRes = await fetch(refUrl, { cache: "no-store" })
-      if (refRes.ok) {
-        const refCSV = await refRes.text()
-        if (refCSV && csv === refCSV) return NextResponse.json([])
-      }
-    }
 
     const rows = csv.split("\n").slice(1).map(parseCSVLine)
     const results: { comment: string; youtube: string }[] = []
