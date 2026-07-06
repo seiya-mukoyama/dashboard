@@ -13,8 +13,13 @@ const SHEET_GIDS: Record<string, string> = {
   "3月FB": "1670399719",
   "4月FB": "214233510",
   "5月FB": "2059143529",
-  // "6月FB": "XXXXXXXXX",  // 6月追加時にここを追加
-  // "7月FB": "XXXXXXXXX",
+  // 6月はデータなしのため除外
+  "7月FB": "1971407910",
+  "8月FB": "771076295",
+  "9月FB": "1905500733",
+  "10月FB": "276845586",
+  "11月FB": "1241193195",
+  "12月FB": "1031120025",
 }
 
 function parseCSVLine(line: string): string[] {
