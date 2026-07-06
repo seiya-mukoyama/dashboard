@@ -23,6 +23,13 @@ function toSheetName(month: string): string {
   return `${month}FB`
 }
 
+async function fetchCSV(sheetName: string): Promise<string> {
+  // encodeURIComponent の代わりに直接文字列を使う（gviz APIの仕様上）
+  const url = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${sheetName}`
+  const res = await fetch(url, { cache: "no-store" })
+  return res.ok ? await res.text() : ''
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const playerName = searchParams.get("playerName") ?? ""
@@ -34,23 +41,14 @@ export async function GET(request: Request) {
   const sheetName = toSheetName(month)
 
   try {
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
-    const res = await fetch(csvUrl, { cache: "no-store" })
-    if (!res.ok) return NextResponse.json([])
-    const csv = await res.text()
+    const csv = await fetchCSV(sheetName)
     if (!csv.trim()) return NextResponse.json([])
 
-    // 2月FB以外のシートは存在確認（2月FBのCSVと比較）
-    if (sheetName !== '2\u6708FB') {
-      const ref = await fetch(
-        `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('2\u6708FB')}`,
-        { cache: "no-store" }
-      )
-      if (ref.ok) {
-        const refCSV = await ref.text()
-        if (debug) return NextResponse.json({ sheetCSVLen: csv.length, refCSVLen: refCSV.length, same: csv === refCSV, first100: csv.substring(0, 100) })
-        if (refCSV && csv === refCSV) return NextResponse.json([])
-      }
+    // 2月FB以外のシートは、基準シートCSVと内容が同じなら「存在しない」と判断
+    if (sheetName !== '2月FB') {
+      const refCSV = await fetchCSV('2月FB')
+      if (debug) return NextResponse.json({ sheetName, csvLen: csv.length, refLen: refCSV.length, same: csv === refCSV, first100: csv.substring(0, 100) })
+      if (refCSV && csv === refCSV) return NextResponse.json([])
     }
 
     const rows = csv.split("\n").slice(1).map(parseCSVLine)
