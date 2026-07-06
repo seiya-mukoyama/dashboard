@@ -23,35 +23,33 @@ function toSheetName(month: string): string {
   return `${month}FB`
 }
 
-// gid=0（最初のシート=2月FB）のCSVを取得
-async function getFirstSheetCSV(): Promise<string> {
-  const url = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=2%E6%9C%88FB`
-  const res = await fetch(url, { cache: "no-store" })
-  return res.ok ? await res.text() : ''
-}
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const playerName = searchParams.get("playerName") ?? ""
   const month = searchParams.get("month") ?? ""
+  const debug = searchParams.get("debug")
 
   if (!playerName || !month) return NextResponse.json([])
 
   const sheetName = toSheetName(month)
 
   try {
-    // 対象シートのCSVを取得
     const csvUrl = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
     const res = await fetch(csvUrl, { cache: "no-store" })
     if (!res.ok) return NextResponse.json([])
     const csv = await res.text()
     if (!csv.trim()) return NextResponse.json([])
 
-    // 2月FB以外のシートは、gid=0のCSVと内容が同じなら「存在しない」と判断
-    if (sheetName !== '2月FB') {
-      const firstCSV = await getFirstSheetCSV()
-      if (firstCSV && csv === firstCSV) {
-        return NextResponse.json([])
+    // 2月FB以外のシートは存在確認（2月FBのCSVと比較）
+    if (sheetName !== '2\u6708FB') {
+      const ref = await fetch(
+        `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('2\u6708FB')}`,
+        { cache: "no-store" }
+      )
+      if (ref.ok) {
+        const refCSV = await ref.text()
+        if (debug) return NextResponse.json({ sheetCSVLen: csv.length, refCSVLen: refCSV.length, same: csv === refCSV, first100: csv.substring(0, 100) })
+        if (refCSV && csv === refCSV) return NextResponse.json([])
       }
     }
 
