@@ -19,15 +19,27 @@ function normName(s: string) {
   return s.replace(/[\s\u3000]/g, "")
 }
 
-function toSheetName(month: string): string {
-  return `${month}FB`
-}
+// シート名 -> gid のマッピングをキャッシュ
+let sheetGidCache: Record<string, string> | null = null
 
-async function fetchCSV(sheetName: string): Promise<string> {
-  // encodeURIComponent の代わりに直接文字列を使う（gviz APIの仕様上）
-  const url = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${sheetName}`
-  const res = await fetch(url, { cache: "no-store" })
-  return res.ok ? await res.text() : ''
+// スプレッドシートのHTMLからシート名->gidマッピングを取得
+async function getSheetGidMap(): Promise<Record<string, string>> {
+  if (sheetGidCache) return sheetGidCache
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/htmlview`
+    const res = await fetch(url, { cache: "no-store" })
+    if (!res.ok) return {}
+    const html = await res.text()
+    const map: Record<string, string> = {}
+    // パターン: "sheetId":XXXXXXX,"title":"シート名"
+    const re = /"sheetId":(d+),"title":"([^"]+)"/g
+    let m: RegExpExecArray | null
+    while ((m = re.exec(html)) !== null) {
+      map[m[2]] = m[1]
+    }
+    if (Object.keys(map).length > 0) sheetGidCache = map
+    return map
+  } catch { return {} }
 }
 
 export async function GET(request: Request) {
@@ -38,18 +50,24 @@ export async function GET(request: Request) {
 
   if (!playerName || !month) return NextResponse.json([])
 
-  const sheetName = toSheetName(month)
+  const sheetName = `${month}FB`
 
   try {
-    const csv = await fetchCSV(sheetName)
-    if (!csv.trim()) return NextResponse.json([])
+    // gidマッピングを取得
+    const gidMap = await getSheetGidMap()
+    const gid = gidMap[sheetName]
 
-    // 2月FB以外のシートは、基準シートCSVと内容が同じなら「存在しない」と判断
-    if (sheetName !== '2月FB') {
-      const refCSV = await fetchCSV('2月FB')
-      if (debug) return NextResponse.json({ sheetName, csvLen: csv.length, refLen: refCSV.length, same: csv === refCSV, first100: csv.substring(0, 100) })
-      if (refCSV && csv === refCSV) return NextResponse.json([])
-    }
+    if (debug) return NextResponse.json({ sheetName, gid: gid ?? null, availableSheets: Object.keys(gidMap) })
+
+    // gidが取れない場合はシートが存在しない
+    if (!gid) return NextResponse.json([])
+
+    // gidを使ってCSVを取得（シート名ではなくgidを使う）
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`
+    const res = await fetch(csvUrl, { cache: "no-store" })
+    if (!res.ok) return NextResponse.json([])
+    const csv = await res.text()
+    if (!csv.trim()) return NextResponse.json([])
 
     const rows = csv.split("\n").slice(1).map(parseCSVLine)
     const results: { comment: string; youtube: string }[] = []
