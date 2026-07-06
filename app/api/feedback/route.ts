@@ -2,6 +2,16 @@ import { NextResponse } from "next/server"
 
 const FB_SHEET_ID = "16b5KqE5LZghiQYbv6Ra_ZDMeFM0vZ8GoCLvdVAJq0NM"
 
+// シート名 -> gid のマッピング（スプレッドシートURLのgidパラメータから確認）
+// 新しい月のシートが追加されたらここに追加する
+const SHEET_GIDS: Record<string, string> = {
+  "2月FB": "787446982",
+  "3月FB": "1670399719",
+  "4月FB": "214233510",
+  "5月FB": "2059143529",
+  // 6月以降は追加時にgidを確認してここに追加
+}
+
 function parseCSVLine(line: string): string[] {
   const cols: string[] = []
   let cur = ""
@@ -19,66 +29,21 @@ function normName(s: string) {
   return s.replace(/[\s\u3000]/g, "")
 }
 
-let sheetGidCache: Record<string, string> | null = null
-
-async function getSheetGidMap(): Promise<Record<string, string>> {
-  if (sheetGidCache) return sheetGidCache
-  try {
-    // htmlviewからJSに埋め込まれたシートID情報を取得
-    const url = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/htmlview`
-    const res = await fetch(url, { cache: "no-store" })
-    if (!res.ok) return {}
-    const html = await res.text()
-    const map: Record<string, string> = {}
-
-    // パターン1: "title":"シート名","index":N,"sheetId":XXXXXXX
-    const re1 = /"title":"([^"]+)","index":d+,"sheetId":(d+)/g
-    let m: RegExpExecArray | null
-    while ((m = re1.exec(html)) !== null) map[m[1]] = m[2]
-    if (Object.keys(map).length > 0) { sheetGidCache = map; return map }
-
-    // パターン2: "sheetId":XXXXXXX,"title":"シート名"  
-    const re2 = /"sheetId":(d+)[^}]*?"title":"([^"]+)"/g
-    while ((m = re2.exec(html)) !== null) map[m[2]] = m[1]
-    if (Object.keys(map).length > 0) { sheetGidCache = map; return map }
-
-    // パターン3: ,XXXXXXX,"シート名",
-    const re3 = /,(d{5,}),"([^"]+)",/g
-    while ((m = re3.exec(html)) !== null) {
-      if (m[2].endsWith('FB') || m[2].includes('FB')) map[m[2]] = m[1]
-    }
-    if (Object.keys(map).length > 0) { sheetGidCache = map; return map }
-
-    return {}
-  } catch { return {} }
-}
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const playerName = searchParams.get("playerName") ?? ""
   const month = searchParams.get("month") ?? ""
-  const debug = searchParams.get("debug")
 
   if (!playerName || !month) return NextResponse.json([])
 
   const sheetName = `${month}FB`
+  const gid = SHEET_GIDS[sheetName]
+
+  // gidが不明なシートは存在しないとみなす
+  if (!gid) return NextResponse.json([])
 
   try {
-    const gidMap = await getSheetGidMap()
-    const gid = gidMap[sheetName]
-
-    if (debug) {
-      const url = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/htmlview`
-      const res = await fetch(url, { cache: "no-store" })
-      const html = res.ok ? await res.text() : ''
-      // FB含むスニペットを探す
-      const fbIdx = html.indexOf('FB')
-      const snippet = fbIdx >= 0 ? html.substring(Math.max(0, fbIdx-100), fbIdx+200) : html.substring(0, 300)
-      return NextResponse.json({ sheetName, gid: gid ?? null, availableSheets: Object.keys(gidMap), htmlFBSnippet: snippet })
-    }
-
-    if (!gid) return NextResponse.json([])
-
+    // gidを直接指定してCSVを取得（シート名指定では動作しない場合があるため）
     const csvUrl = `https://docs.google.com/spreadsheets/d/${FB_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`
     const res = await fetch(csvUrl, { cache: "no-store" })
     if (!res.ok) return NextResponse.json([])
