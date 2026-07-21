@@ -15,7 +15,7 @@ type NumericKey = 'packing' | 'packingR' | 'impact' | 'impactR' | 'lineBreak' | 
 type SortDir = 'desc' | 'asc'
 
 const NUMERIC_COLS: NumericKey[] = ['packing', 'packingR', 'impact', 'impactR', 'lineBreak', 'shoot', 'xG', 'distance', 'maxSpeed', 'hi', 'sprint']
-const SESSIONS = ['合計', '前半', '後半', '3本目'] as const
+const SESSIONS = ['合計', '前半', '後半', '3本目', '4本目'] as const
 type Session = typeof SESSIONS[number]
 
 const fmt = (v: number | null | undefined) =>
