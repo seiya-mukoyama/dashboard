@@ -11,7 +11,6 @@ import { StatsCards } from "@/components/dashboard/stats-cards"
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches"
 import { PlayerCardsGrid, type Player } from "@/components/dashboard/player-cards-grid"
 import { BodyCompositionChart } from "@/components/dashboard/body-composition-chart"
-import { InjuryHistory } from "@/components/dashboard/injury-history"
 import { FeedbackHistory } from "@/components/dashboard/feedback-history"
 import { MatchPerformance } from "@/components/dashboard/match-performance"
 import {
@@ -210,11 +209,6 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
         <BodyCompositionChart playerName={player.name} />
       </div>
 
-      {/* 怪我履歴 */}
-      <div className="rounded-xl border border-border bg-card p-5">
-        <h3 className="text-sm font-semibold text-foreground mb-4">🩹 怪我の履歴</h3>
-        <InjuryHistory playerName={player.name} />
-      </div>
 
       {/* フィードバック履歴 */}
       <div className="rounded-xl border border-border bg-card p-5">
