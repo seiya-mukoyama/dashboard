@@ -94,10 +94,6 @@ const players: Record<string, {
       { month: "11月", speed: 33.2 },
       { month: "12月", speed: 33.5 },
     ],
-    injuries: [
-      { date: "2024/05/15", type: "右ハムストリング肉離れ", duration: "3週間", status: "recovered" },
-      { date: "2024/09/20", type: "左足首捻挫", duration: "1週間", status: "recovered" },
-    ],
     matchHistory: [
       { date: "12/15", match: "vs 東京FC", result: "3-1 勝", rating: 8.5, goals: 2, assists: 0, minutes: 90, packing: 9.2, impact: 14.5 },
       { date: "12/08", match: "vs 大阪ユナイテッド", result: "2-2 分", rating: 7.8, goals: 1, assists: 1, minutes: 85, packing: 7.5, impact: 11.2 },
@@ -153,9 +149,6 @@ const players: Record<string, {
       { month: "10月", speed: 30.8 },
       { month: "11月", speed: 30.6 },
       { month: "12月", speed: 30.9 },
-    ],
-    injuries: [
-      { date: "2024/03/10", type: "軽度の筋疲労", duration: "5日間", status: "recovered" },
     ],
     matchHistory: [
       { date: "12/15", match: "vs 東京FC", result: "3-1 勝", rating: 7.5, goals: 0, assists: 2, minutes: 90, packing: 10.2, impact: 11.5 },
@@ -213,17 +206,6 @@ const players: Record<string, {
       { month: "11月", speed: 29.9 },
       { month: "12月", speed: 30.1 },
     ],
-    injuries: [],
-    matchHistory: [
-      { date: "12/15", match: "vs 東京FC", result: "3-1 勝", rating: 7.2, goals: 0, assists: 0, minutes: 90, packing: 5.5, impact: 6.8 },
-      { date: "12/08", match: "vs 大阪ユナイテッド", result: "2-2 分", rating: 7.8, goals: 1, assists: 0, minutes: 90, packing: 6.2, impact: 7.5 },
-      { date: "12/01", match: "vs 横浜レッズ", result: "4-0 勝", rating: 7.5, goals: 0, assists: 1, minutes: 90, packing: 5.0, impact: 6.2 },
-      { date: "11/24", match: "vs 名古屋FC", result: "2-1 勝", rating: 8.0, goals: 0, assists: 1, minutes: 90, packing: 5.8, impact: 7.0 },
-      { date: "11/17", match: "vs 福岡シティ", result: "3-2 勝", rating: 7.6, goals: 1, assists: 0, minutes: 90, packing: 5.2, impact: 6.5 },
-      { date: "11/10", match: "vs 札幌FC", result: "1-0 勝", rating: 7.8, goals: 0, assists: 0, minutes: 90, packing: 4.8, impact: 6.0 },
-      { date: "11/03", match: "vs 神戸ヴィクトリー", result: "2-2 分", rating: 7.2, goals: 0, assists: 0, minutes: 90, packing: 5.0, impact: 6.2 },
-      { date: "10/27", match: "vs 広島SC", result: "3-1 勝", rating: 7.5, goals: 0, assists: 1, minutes: 90, packing: 5.5, impact: 6.8 },
-    ],
     seasonPerformance: [
       { month: "8月", rating: 7.0 },
       { month: "9月", rating: 7.2 },
@@ -269,9 +251,6 @@ const players: Record<string, {
       { month: "10月", speed: 25.8 },
       { month: "11月", speed: 25.6 },
       { month: "12月", speed: 25.9 },
-    ],
-    injuries: [
-      { date: "2024/02/20", type: "右肩脱臼", duration: "6週間", status: "recovered" },
     ],
     matchHistory: [
       { date: "12/15", match: "vs 東京FC", result: "3-1 勝", rating: 8.0, goals: 0, assists: 0, minutes: 90, packing: 1.5, impact: 3.0 },
@@ -329,9 +308,6 @@ const players: Record<string, {
       { month: "11月", speed: 31.9 },
       { month: "12月", speed: 32.2 },
     ],
-    injuries: [
-      { date: "2024/10/05", type: "軽度の筋肉痛", duration: "3日間", status: "recovered" },
-    ],
     matchHistory: [
       { date: "12/15", match: "vs 東京FC", result: "3-1 勝", rating: 7.0, goals: 0, assists: 1, minutes: 75, packing: 7.5, impact: 9.0 },
       { date: "12/08", match: "vs 大阪ユナイテッド", result: "2-2 分", rating: 7.2, goals: 1, assists: 0, minutes: 82, packing: 8.0, impact: 9.5 },
@@ -388,17 +364,6 @@ const players: Record<string, {
       { month: "11月", speed: 34.5 },
       { month: "12月", speed: 34.8 },
     ],
-    injuries: [],
-    matchHistory: [
-      { date: "12/15", match: "vs 東京FC", result: "3-1 勝", rating: 7.8, goals: 1, assists: 0, minutes: 70, packing: 7.5, impact: 11.5 },
-      { date: "12/08", match: "vs 大阪ユナイテッド", result: "2-2 分", rating: 7.2, goals: 1, assists: 1, minutes: 75, packing: 6.8, impact: 10.5 },
-      { date: "12/01", match: "vs 横浜レッズ", result: "4-0 勝", rating: 7.5, goals: 2, assists: 0, minutes: 68, packing: 7.2, impact: 12.0 },
-      { date: "11/24", match: "vs 名古屋FC", result: "2-1 勝", rating: 7.8, goals: 1, assists: 1, minutes: 72, packing: 7.0, impact: 11.2 },
-      { date: "11/17", match: "vs 福岡シティ", result: "3-2 勝", rating: 7.5, goals: 1, assists: 0, minutes: 65, packing: 6.5, impact: 10.8 },
-      { date: "11/10", match: "vs 札幌FC", result: "1-0 勝", rating: 7.0, goals: 0, assists: 0, minutes: 70, packing: 6.0, impact: 9.5 },
-      { date: "11/03", match: "vs 神戸ヴィクトリー", result: "2-2 分", rating: 7.2, goals: 1, assists: 0, minutes: 68, packing: 6.8, impact: 10.2 },
-      { date: "10/27", match: "vs 広島SC", result: "3-1 勝", rating: 7.8, goals: 1, assists: 1, minutes: 75, packing: 7.5, impact: 11.8 },
-    ],
     seasonPerformance: [
       { month: "8月", rating: 6.8 },
       { month: "9月", rating: 7.0 },
@@ -444,9 +409,6 @@ const players: Record<string, {
       { month: "10月", speed: 29.0 },
       { month: "11月", speed: 28.9 },
       { month: "12月", speed: 29.1 },
-    ],
-    injuries: [
-      { date: "2024/08/15", type: "右膝靭帯損傷", duration: "4週間", status: "recovered" },
     ],
     matchHistory: [
       { date: "12/15", match: "vs 東京FC", result: "3-1 勝", rating: 7.0, goals: 0, assists: 0, minutes: 90, packing: 4.5, impact: 5.5 },
@@ -504,9 +466,6 @@ const players: Record<string, {
       { month: "11月", speed: 30.9 },
       { month: "12月", speed: 31.2 },
     ],
-    injuries: [
-      { date: "2024/11/20", type: "右足首捻挫", duration: "2週間", status: "recovering" },
-    ],
     matchHistory: [
       { date: "12/15", match: "vs 東京FC", result: "3-1 勝", rating: 6.8, goals: 0, assists: 1, minutes: 65, packing: 7.0, impact: 8.2 },
       { date: "12/08", match: "vs 大阪ユナイテッド", result: "2-2 分", rating: 7.2, goals: 1, assists: 0, minutes: 72, packing: 7.5, impact: 8.8 },
@@ -562,10 +521,6 @@ const players: Record<string, {
       { month: "10月", speed: 29.5 },
       { month: "11月", speed: 29.3 },
       { month: "12月", speed: 29.5 },
-    ],
-    injuries: [
-      { date: "2024/06/10", type: "左ハムストリング肉離れ", duration: "4週間", status: "recovered" },
-      { date: "2024/12/01", type: "右膝炎症", duration: "2週間", status: "recovering" },
     ],
     matchHistory: [
       { date: "12/15", match: "vs 東京FC", result: "3-1 勝", rating: 6.5, goals: 0, assists: 0, minutes: 78, packing: 4.0, impact: 4.8 },
