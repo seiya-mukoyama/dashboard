@@ -940,57 +940,7 @@ export default function PlayerDetailPage({ params }: { params: Promise<{ id: str
           </Card>
         </div>
 
-        {/* Injury Data */}
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-card-foreground flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-              怪我データ
-            </CardTitle>
-            <CardDescription>過去の怪我履歴と現在の状態</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {player.injuries.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                怪我の記録はありません
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {player.injuries.map((injury, index) => (
-                  <div
-                    key={index}
-                    className={`flex items-center justify-between rounded-lg p-4 ${
-                      injury.status === "recovering" 
-                        ? "bg-destructive/10 border border-destructive/30" 
-                        : "bg-secondary/50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`p-2 rounded-full ${
-                        injury.status === "recovering" ? "bg-destructive/20" : "bg-primary/20"
-                      }`}>
-                        <AlertTriangle className={`h-4 w-4 ${
-                          injury.status === "recovering" ? "text-destructive" : "text-primary"
-                        }`} />
-                      </div>
-                      <div>
-                        <p className="font-medium text-card-foreground">{injury.type}</p>
-                        <p className="text-sm text-muted-foreground">{injury.date} - 離脱期間: {injury.duration}</p>
-                      </div>
-                    </div>
-                    <Badge className={
-                      injury.status === "recovering" 
-                        ? "bg-destructive text-destructive-foreground" 
-                        : "bg-primary text-primary-foreground"
-                    }>
-                      {injury.status === "recovering" ? "療養中" : "回復済み"}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        
 
         {/* Match History Table */}
         <Card className="border-border/50">
