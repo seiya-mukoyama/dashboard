@@ -47,7 +47,7 @@ function buildChartData(half: HalfData) {
   })
 
   const mapped = half.labels.map((label, i) => ({
-    t: label,
+    t: parseInt(label) || 0,
     vPack: half.vonds.packing[i] ?? null,
     vImp: half.vonds.impact[i] ?? null,
     oPack: half.opp.packing[i] ?? null,
@@ -55,7 +55,7 @@ function buildChartData(half: HalfData) {
     vondsGoal: vondsGoalMap[label] ?? null,
     oppGoal: oppGoalMap[label] ?? null,
     }))
-  return [{ t: 0, vPack: 0, vImp: 0, oPack: 0, oImp: 0, vondsGoal: null, oppGoal: null }, ...mapped]
+  return mapped
 }
 
 const EndLabel = ({ x, y, value, color }: { x?: number; y?: number; value?: number; color: string }) => {
@@ -93,7 +93,7 @@ function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
       <ResponsiveContainer width="100%" height={400}>
         <ComposedChart data={data} margin={{ top: 20, right: 40, left: -16, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
-          <XAxis dataKey="t" type="number" domain={[0, data.length > 0 ? data[data.length - 1].t : 90]} tick={{ fontSize: 10, fill: 'rgb(148,163,184)' }}
+          <XAxis dataKey="t" type="number" domain={[0, 'auto']} tick={{ fontSize: 10, fill: 'rgb(148,163,184)' }}
             label={{ value: '経過時間', position: 'insideBottomRight', offset: -4, fontSize: 10, fill: 'rgb(148,163,184)' }}
           />
           {/* 左軸: パッキング・インペクト */}
