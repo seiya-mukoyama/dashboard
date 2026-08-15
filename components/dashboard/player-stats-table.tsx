@@ -209,26 +209,26 @@ export function PlayerStatsTable({ opponent, date }: { opponent: string; date?: 
               })}
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-primary/30 bg-primary/5 font-semibold">
+              <tr className="border-t-2 border-primary/30 bg-primary/5 font-semibold text-xs">
                 {cols.map(c => {
                   const AVG_KEYS = ['maxSpeed', 'hi']
-                  const SKIP_KEYS = ['name', 'pos', 'minutes', 'xG']
+                  const SKIP_KEYS = ['pos', 'minutes']
                   if (c.key === 'name') return (
-                    <td key={c.key} className="py-2 px-2 text-left text-xs text-primary sticky left-0 bg-primary/5 z-10">
+                    <td key={c.key} className="py-1.5 px-2 whitespace-nowrap text-primary sticky left-0 bg-primary/5 z-10">
                       合計
                     </td>
                   )
                   if (SKIP_KEYS.includes(c.key)) return (
-                    <td key={c.key} className="py-2 px-2 text-center text-xs text-muted-foreground">-</td>
+                    <td key={c.key} className="py-1.5 px-2 whitespace-nowrap text-muted-foreground">-</td>
                   )
                   const vals = sorted.map(s => (s as Record<string, unknown>)[c.key] as number | null | undefined).filter((v): v is number => v != null && !isNaN(v))
-                  if (vals.length === 0) return <td key={c.key} className="py-2 px-2 text-center text-xs text-muted-foreground">-</td>
+                  if (vals.length === 0) return <td key={c.key} className="py-1.5 px-2 whitespace-nowrap tabular-nums text-muted-foreground">-</td>
                   if (AVG_KEYS.includes(c.key)) {
                     const avg = vals.reduce((a, b) => a + b, 0) / vals.length
-                    return <td key={c.key} className="py-2 px-2 text-center text-xs">{c.key === 'xG' ? avg.toFixed(2) : fmt(avg)}</td>
+                    return <td key={c.key} className="py-1.5 px-2 whitespace-nowrap tabular-nums">{fmt(avg)}</td>
                   }
                   const sum = vals.reduce((a, b) => a + b, 0)
-                  return <td key={c.key} className="py-2 px-2 text-center text-xs">{fmt(sum)}</td>
+                  return <td key={c.key} className="py-1.5 px-2 whitespace-nowrap tabular-nums">{c.key === 'xG' ? sum.toFixed(2) : fmt(sum)}</td>
                 })}
               </tr>
             </tfoot>
