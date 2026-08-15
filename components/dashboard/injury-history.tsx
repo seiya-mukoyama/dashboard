@@ -1,3 +1,3 @@
-export default function InjuryHistory() {
+export function InjuryHistory() {
   return null
 }
