@@ -55,6 +55,7 @@ function buildChartData(half: HalfData) {
     vondsGoal: vondsGoalMap[label] ?? null,
     oppGoal: oppGoalMap[label] ?? null,
   }))
+]
 }
 
 const EndLabel = ({ x, y, value, color }: { x?: number; y?: number; value?: number; color: string }) => {
@@ -92,7 +93,7 @@ function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
       <ResponsiveContainer width="100%" height={400}>
         <ComposedChart data={data} margin={{ top: 20, right: 40, left: -16, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
-          <XAxis dataKey="t" type="number" domain={[0, chartData.length > 0 ? chartData[chartData.length - 1].t : 'auto']} tick={{ fontSize: 10, fill: 'rgb(148,163,184)' }}
+          <XAxis dataKey="t" type="number" domain={[0, chartData.length > 0 ? chartData[chartData.length - 1].t : 90]} allowDataOverflow tick={{ fontSize: 10, fill: 'rgb(148,163,184)' }}
             label={{ value: '経過時間', position: 'insideBottomRight', offset: -4, fontSize: 10, fill: 'rgb(148,163,184)' }}
           />
           {/* 左軸: パッキング・インペクト */}
