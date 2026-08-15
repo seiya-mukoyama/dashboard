@@ -63,7 +63,8 @@ export async function GET(request: Request) {
     for (const cols of rows) {
       const name = cols[0]?.trim() ?? ""
       if (!name) continue
-      if (normName(name) !== normName(playerName)) continue
+      const nn = normName(name), np = normName(playerName)
+      if (nn !== np && !np.includes(nn) && !nn.includes(np)) continue
       const comment = cols[1]?.trim() ?? ""
       const youtube = cols[2]?.trim() ?? ""
       if (comment || youtube) results.push({ comment, youtube })
