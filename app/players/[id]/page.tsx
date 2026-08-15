@@ -27,36 +27,8 @@ import {
   Bar,
 } from "recharts"
 
-const players: Record<string, {
-  id: number
-  name: string
-  position: string
-  number: number
-  rating: number
-  goals: number
-  assists: number
-  preAssists: number
-  matches: number
-  form: "excellent" | "good" | "average" | "poor"
-  initials: string
-  speed: number
-  injuries?: any[]
-  shooting: number
-  passing: number
-  defense: number
-  physical: number
-  age: number
-  height: string
-  weight: string
-  nationality: string
-  playingTime: number
-  avgPackingRate: number
-  avgImpact: number
-  weightHistory: { month: string; weight: number }[]
-  maxSpeedHistory: { month: string; speed: number }[]
-  matchHistory: { date: string; match: string; result: string; rating: number; goals: number; assists: number; minutes: number; packing: number; impact: number }[]
-  seasonPerformance: { month: string; rating: number }[]
-}> = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const players: Record<string, any> = {
   "1": {
     id: 1,
     name: "田中 翔太",
