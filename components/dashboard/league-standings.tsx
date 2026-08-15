@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 
 type Standing = {
   rank: number; team: string; points: number; played: number
-  won: number; pkWon: number; pkLost: number; lost: number
+  won: number; lost: number
   gd: string; gf: number; ga: number; isOurTeam: boolean
 }
 
@@ -41,7 +41,7 @@ export function LeagueStandings() {
     <Card className="border-border/50">
       <CardHeader>
         <CardTitle className="text-card-foreground">リーグ順位表</CardTitle>
-        <CardDescription>2026 JFL CUP{updated ? ` · ${updated}` : ''}</CardDescription>
+        <CardDescription>2026-2027 JFL{updated ? ` · ${updated}` : ''}</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -57,8 +57,6 @@ export function LeagueStandings() {
                   <th className="py-2 px-2 text-left text-muted-foreground font-medium">チーム</th>
                   <th className="py-2 px-1 text-center text-muted-foreground font-medium w-9">試</th>
                   <th className="py-2 px-1 text-center text-muted-foreground font-medium w-9">勝</th>
-                  <th className="py-2 px-1 text-center text-muted-foreground font-medium w-9">PK勝</th>
-                  <th className="py-2 px-1 text-center text-muted-foreground font-medium w-9">PK負</th>
                   <th className="py-2 px-1 text-center text-muted-foreground font-medium w-9">敗</th>
                   <th className="py-2 px-1 text-center text-muted-foreground font-medium w-12">得失</th>
                   <th className="py-2 px-1 text-center text-muted-foreground font-medium w-9">得</th>
@@ -80,8 +78,6 @@ export function LeagueStandings() {
                     </td>
                     <td className="py-1.5 px-1 text-center text-muted-foreground">{team.played}</td>
                     <td className="py-1.5 px-1 text-center text-card-foreground">{team.won}</td>
-                    <td className="py-1.5 px-1 text-center text-muted-foreground">{team.pkWon}</td>
-                    <td className="py-1.5 px-1 text-center text-muted-foreground">{team.pkLost}</td>
                     <td className="py-1.5 px-1 text-center text-muted-foreground">{team.lost}</td>
                     <td className={`py-1.5 px-1 text-center font-medium ${
                       team.gd.startsWith('+') ? 'text-primary' : team.gd.startsWith('-') ? 'text-destructive' : 'text-muted-foreground'
