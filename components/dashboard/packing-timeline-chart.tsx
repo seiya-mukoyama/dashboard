@@ -46,7 +46,7 @@ function buildChartData(half: HalfData) {
     else oppGoalMap[lbl] = (oppGoalMap[lbl] ?? 0) + 1
   })
 
-  return half.labels.map((label, i) => ({
+  const mapped = half.labels.map((label, i) => ({
     t: label,
     vPack: half.vonds.packing[i] ?? null,
     vImp: half.vonds.impact[i] ?? null,
@@ -54,8 +54,8 @@ function buildChartData(half: HalfData) {
     oImp: half.opp.impact[i] ?? null,
     vondsGoal: vondsGoalMap[label] ?? null,
     oppGoal: oppGoalMap[label] ?? null,
-  }))
-]
+    }))
+  return [{ t: 0, vPack: 0, vImp: 0, oPack: 0, oImp: 0, vondsGoal: null, oppGoal: null }, ...mapped]
 }
 
 const EndLabel = ({ x, y, value, color }: { x?: number; y?: number; value?: number; color: string }) => {
