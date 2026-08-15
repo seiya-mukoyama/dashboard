@@ -53,7 +53,6 @@ const players: Record<string, {
   avgImpact: number
   weightHistory: { month: string; weight: number }[]
   maxSpeedHistory: { month: string; speed: number }[]
-  injuries: { date: string; type: string; duration: string; status: "recovered" | "recovering" }[]
   matchHistory: { date: string; match: string; result: string; rating: number; goals: number; assists: number; minutes: number; packing: number; impact: number }[]
   seasonPerformance: { month: string; rating: number }[]
 }> = {
