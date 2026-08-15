@@ -24,19 +24,20 @@ export async function GET() {
       const cells = (row.match(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi) ?? [])
         .map(cell => cell.replace(/<[^>]+>/g, '').trim())
         .filter(t => t !== '')
-      if (cells.length < 9) return
+      if (cells.length < 4) return
 
       const rank = parseInt(cells[0]) || (i)
       const team = cells[1]
       const points = parseInt(cells[2]) || 0
       const played = parseInt(cells[3]) || 0
       const won = parseInt(cells[4]) || 0
-      const pkWon = parseInt(cells[5]) || 0
-      const pkLost = parseInt(cells[6]) || 0
-      const lost = parseInt(cells[7]) || 0
-      const gd = cells[8] || '0'
-      const gf = parseInt(cells[9]) || 0
-      const ga = parseInt(cells[10]) || 0
+      // a=1ページは勝利・引分・敗戦・得失の8列形式
+      const pkWon = 0
+      const pkLost = 0
+      const lost = parseInt(cells[6]) || parseInt(cells[5]) || 0
+      const gd = cells[7] || cells[5] || '0'
+      const gf = 0
+      const ga = 0
       const isOurTeam = team.includes('ボンズ') || team.includes('VONDS') || team.includes('Ｖ市原') || team.includes('ボンズ')
 
       if (team) standings.push({ rank, team, points, played, won, pkWon, pkLost, lost, gd, gf, ga, isOurTeam })
