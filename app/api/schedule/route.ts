@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-const JFL_URL = "http://www.jfl.or.jp/jfl-pc/view/s.php?a=2513&f=2026A008_spc.html"
+const JFL_URL = "https://www.jfl.or.jp/jfl-pc/view/s.php?a=2591&f=2026A001_spc.html"
 const OUR_TEAM = "ボンズ市原"
 
 function toHalf(s: string) {
