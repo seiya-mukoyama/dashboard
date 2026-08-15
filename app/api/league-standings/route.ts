@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-const JFL_URL = "http://www.jfl.or.jp/jfl-pc/view/s.php?a=2514"
+const JFL_URL = "https://www.jfl.or.jp/jfl-pc/view/s.php?a=1"
 
 export async function GET() {
   try {
@@ -37,7 +37,7 @@ export async function GET() {
       const gd = cells[8] || '0'
       const gf = parseInt(cells[9]) || 0
       const ga = parseInt(cells[10]) || 0
-      const isOurTeam = team.includes('ボンズ') || team.includes('VONDS') || team.includes('Ｖ市原')
+      const isOurTeam = team.includes('ボンズ') || team.includes('VONDS') || team.includes('Ｖ市原') || team.includes('ボンズ')
 
       if (team) standings.push({ rank, team, points, played, won, pkWon, pkLost, lost, gd, gf, ga, isOurTeam })
     })
