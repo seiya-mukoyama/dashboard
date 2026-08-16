@@ -71,7 +71,7 @@ const EndLabel = ({ x, y, value, color }: { x?: number; y?: number; value?: numb
 const GoalBarLabel = (props: any) => {
   const { x, y, width, value, goals, team, bucketLabel } = props
   if (!value || value === 0) return null
-  const matchingGoals = (goals ?? []).filter((g: GoalEvent) => g.team === team && minuteToLabel(g.minute) === bucketLabel)
+  const matchingGoals = (goals ?? []).filter((g: GoalEvent) => g.team === team && Math.floor(g.minute / 5) * 5 === bucketLabel)
   const scorers = matchingGoals.map((g: GoalEvent) => g.scorer).join(",")
   if (!scorers) return null
   const color = team === "vonds" ? "rgb(21,128,61)" : "rgb(71,85,105)"
