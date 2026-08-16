@@ -93,7 +93,27 @@ function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
       <ResponsiveContainer width="100%" height={400}>
         <ComposedChart data={data} margin={{ top: 20, right: 40, left: -16, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
-          <XAxis dataKey="t" type="number" domain={[0, 'auto']} tick={{ fontSize: 10, fill: 'rgb(148,163,184)' }}
+          <XAxis
+            dataKey="t"
+            type="number"
+            domain={[0, (() => {
+              if (data.length === 0) return 90
+              // 最後のラベルの終端値: "50-EX"→50, "95-100"→100, "100-EX"→100
+              // 最後のデータ点のt値（parseInt("50-EX")=50, parseInt("95-100")=95）ではなく
+              // ラベルの終端を使う
+              // data[last].t は parseInt(label) なので最後の開始値
+              // ticks は 0,5,10,...,lastT+5 まで
+              const lastT = data[data.length - 1].t
+              return lastT + 5
+            })()]}
+            ticks={(() => {
+              if (data.length === 0) return [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+              const lastT = data[data.length - 1].t
+              const result = []
+              for (let i = 0; i <= lastT + 5; i += 5) result.push(i)
+              return result
+            })()}
+            tick={{ fontSize: 10, fill: 'rgb(148,163,184)' }}
             label={{ value: '経過時間', position: 'insideBottomRight', offset: -4, fontSize: 10, fill: 'rgb(148,163,184)' }}
           />
           {/* 左軸: パッキング・インペクト */}
