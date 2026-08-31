@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 
 type Standing = {
   rank: number; team: string; points: number; played: number
-  won: number; lost: number
+  won: number; drawn: number; lost: number
   gd: string; gf: number; ga: number; isOurTeam: boolean
 }
 
@@ -56,12 +56,13 @@ export function LeagueStandings() {
                   <th className="py-2 px-2 text-left text-muted-foreground font-medium w-10">順位</th>
                   <th className="py-2 px-2 text-left text-muted-foreground font-medium">チーム</th>
                   <th className="py-2 px-1 text-center text-muted-foreground font-medium w-9">試</th>
+                  <th className="py-2 px-1 text-center text-muted-foreground font-medium w-12">勝点</th>
                   <th className="py-2 px-1 text-center text-muted-foreground font-medium w-9">勝</th>
-                  <th className="py-2 px-1 text-center text-muted-foreground font-medium w-9">敗</th>
+                  <th className="py-2 px-1 text-center text-muted-foreground font-medium w-9">負</th>
+                  <th className="py-2 px-1 text-center text-muted-foreground font-medium w-9">引</th>
                   <th className="py-2 px-1 text-center text-muted-foreground font-medium w-12">得失</th>
                   <th className="py-2 px-1 text-center text-muted-foreground font-medium w-9">得</th>
                   <th className="py-2 px-1 text-center text-muted-foreground font-medium w-9">失</th>
-                  <th className="py-2 px-1 text-center text-muted-foreground font-medium w-12">勝点</th>
                 </tr>
               </thead>
               <tbody>
@@ -77,15 +78,16 @@ export function LeagueStandings() {
 
                     </td>
                     <td className="py-1.5 px-1 text-center text-muted-foreground">{team.played}</td>
+                    <td className="py-1.5 px-1 text-center font-bold text-card-foreground">{team.points}</td>
                     <td className="py-1.5 px-1 text-center text-card-foreground">{team.won}</td>
                     <td className="py-1.5 px-1 text-center text-muted-foreground">{team.lost}</td>
+                    <td className="py-1.5 px-1 text-center text-muted-foreground">{team.drawn ?? 0}</td>
                     <td className={`py-1.5 px-1 text-center font-medium ${
                       team.gd.startsWith('+') ? 'text-primary' : team.gd.startsWith('-') ? 'text-destructive' : 'text-muted-foreground'
                     }`}>{team.gd}</td>
                     <td className="py-1.5 px-1 text-center text-card-foreground">{team.gf}</td>
                     <td className="py-1.5 px-1 text-center text-muted-foreground">{team.ga}</td>
-                    <td className="py-1.5 px-1 text-center font-bold text-card-foreground">{team.points}</td>
-                  </tr>
+                    <td className="py-1.5 px-1 text-center </tr>
                 ))}
               </tbody>
             </table>
