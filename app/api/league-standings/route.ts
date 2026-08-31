@@ -27,31 +27,31 @@ export async function GET() {
       while ((tdMatch = tdRegex.exec(row)) !== null) {
         cells.push(stripTags(tdMatch[1]))
       }
-      if (cells.length < 10) continue
+      // 列構成: [0]順位 [1]チーム [2]勝点 [3]試合数
+      // [4]勝(bold) [5]勝H [6]勝A [7]引(bold) [8]引H [9]引A
+      // [10]敖(bold) [11]敖H [12]敖A [13]得失(bold) [14]得点 [15]失点
+      if (cells.length < 14) continue
       const rank = parseInt(cells[0])
       if (isNaN(rank)) continue
       const team = cells[1]?.replace(/\s+/g, '') ?? ''
       if (!team) continue
 
-      // cols: [0]=順位 [1]=チーム [2]=勝点 [3]=試合数
-      // [4]=勝H [5]=勝A [6]=引H [7]=引A [8]=敖H [9]=敖A
-      // [10]=得失 [11]=得点 [12]=失点
       const points = parseInt(cells[2]) || 0
       const played = parseInt(cells[3]) || 0
-      const won = (parseInt(cells[4]) || 0) + (parseInt(cells[5]) || 0)
-      const drawn = (parseInt(cells[6]) || 0) + (parseInt(cells[7]) || 0)
-      const lost = (parseInt(cells[8]) || 0) + (parseInt(cells[9]) || 0)
-      const gd = cells[10] || '0'
-      const gf = parseInt(cells[11]) || 0
-      const ga = parseInt(cells[12]) || 0
+      const won = (parseInt(cells[5]) || 0) + (parseInt(cells[6]) || 0)
+      const drawn = (parseInt(cells[8]) || 0) + (parseInt(cells[9]) || 0)
+      const lost = (parseInt(cells[11]) || 0) + (parseInt(cells[12]) || 0)
+      const gd = cells[13] || '0'
+      const gf = parseInt(cells[14]) || 0
+      const ga = parseInt(cells[15]) || 0
 
-      const isOurTeam = team.includes('ボンズ') || team.includes('VONDS') ||
-        team.includes('Ｖ市原')
+      const isOurTeam = team.includes('\u30dc\u30f3\u30ba') || team.includes('VONDS') ||
+        team.includes('\uff36\u5e02\u539f')
 
       standings.push({ rank, team, points, played, won, drawn, lost, gd, gf, ga, isOurTeam })
     }
 
-    const titleMatch = html.match(/第[^<]*日本フットボールリーグ[^<]*/)
+    const titleMatch = html.match(/\u7b2c[^\u003c]*\u65e5\u672c\u30d5\u30c3\u30c8\u30dc\u30fc\u30eb\u30ea\u30fc\u30b0[^\u003c]*/)
     const title = titleMatch ? titleMatch[0].trim() : '2026-2027 JFL'
 
     return NextResponse.json({ standings, title })
