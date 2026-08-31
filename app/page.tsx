@@ -233,6 +233,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const handler = (e: Event) => {
       const { section, date } = (e as CustomEvent).detail
+      if (section === 'condition') { window.location.href = '/condition'; return }
       setActiveView(section)
       // date パラメータを URL に反映（training/official コンポーネントが読む）
       const url = new URL(window.location.href)
