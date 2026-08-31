@@ -14,7 +14,7 @@ import { BodyCompositionChart } from "@/components/dashboard/body-composition-ch
 import { FeedbackHistory } from "@/components/dashboard/feedback-history"
 import { MatchPerformance } from "@/components/dashboard/match-performance"
 import {
-  LayoutDashboard, Users, Medal, Dumbbell, Target, Calendar,
+  LayoutDashboard, Users, Medal, Dumbbell, Target, Calendar, Activity,
   Settings, Menu,
   ArrowLeft, ExternalLink, Cake, Ruler, Weight,
 } from "lucide-react"
@@ -25,6 +25,7 @@ const mainMenuItems = [
   { id: "players", label: "選手", icon: Users },
   { id: "official-matches", label: "公式戦", icon: Medal },
   { id: "training-matches", label: "トレーニングマッチ", icon: Dumbbell },
+  { id: "condition", label: "コンディション", icon: Activity },
 ]
 
 const positionColors: Record<string, string> = {
