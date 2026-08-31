@@ -6,17 +6,18 @@ import {
 } from "recharts"
 
 type Player = {
-  number: number; name: string
+  number: number; name: string; days: number
   distance: number; spdMx: number; seasonSpdMx: number; spdMxRatio: number
   siD: number; hiD: number; sprint: number
   hrMax: number; hrMid: number; accelZ3: number; decelZ3: number
   acute: number; chronic: number; acwr: number | null
   zone: "sweet" | "caution" | "danger" | "low" | "none"
 }
+type WeekTarget = {
+  week: number; trStart: string; matchDate: string
+  distance: number; siD: number; hiD: number; sprint: number; accelZ3: number; decelZ3: number
+}
 type AcwrSeries = Record<string, { date: string; distance: number; acwr: number | null; zone: string }[]>
-
-// 4日間TRの合計目標値
-const TARGETS_4DAY = { distance: 28000, siD: 2000, hiD: 1200, sprint: 8, accelZ3: 20, decelZ3: 20 }
 
 const ZONE_COLORS = {
   sweet:   { bg: "bg-green-100",  border: "border-green-400",  text: "text-green-800",  label: "スウィート", color: "#16a34a" },
@@ -26,28 +27,13 @@ const ZONE_COLORS = {
   none:    { bg: "bg-gray-100",   border: "border-gray-300",   text: "text-gray-600",   label: "-",       color: "#9ca3af" },
 }
 
-// 残りTR日数（0-4）から按分目標を計算
-function getProrated(fullTarget: number, trDaysRemaining: number): number {
-  return Math.round(fullTarget * (trDaysRemaining / 4))
+function fmtDate(s: string) {
+  return s.replace(/(\d{4})(\d{2})(\d{2})/, "$1/$2/$3")
 }
 
-// 試合日から逆算したTR残日数を計算
-function calcTrDaysRemaining(nextMatchDate: string | null, latestDataDate: string): number {
-  if (!nextMatchDate) return 4 // 試合日不明ならフル4日
-  // latestDataDate: YYYYMMDD, nextMatchDate: YYYY-MM-DD or YYYYMMDD
-  const clean = nextMatchDate.replace(/-/g, '')
-  const dataDateNum = parseInt(latestDataDate)
-  const matchDateNum = parseInt(clean)
-  if (isNaN(matchDateNum) || isNaN(dataDateNum)) return 4
-  // 日付の差分を計算（簡易計算）
-  const d1 = new Date(latestDataDate.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'))
-  const d2 = new Date(clean.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'))
-  const diffDays = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24))
-  // 試合日までの残りTR日数（0-4の範囲）
-  return Math.min(4, Math.max(0, diffDays))
-}
-
-function Bar2({ label, value, target, unit = "", dec = 0 }: { label: string; value: number; target: number; unit?: string; dec?: number }) {
+function Bar2({ label, value, target, unit = "", dec = 0 }: {
+  label: string; value: number; target: number; unit?: string; dec?: number
+}) {
   const pct = target > 0 ? Math.min(100, (value / target) * 100) : 0
   const ok = value >= target
   return (
@@ -59,32 +45,35 @@ function Bar2({ label, value, target, unit = "", dec = 0 }: { label: string; val
         </span>
       </div>
       <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-        <div className={ok ? "h-full rounded-full bg-green-500" : "h-full rounded-full bg-yellow-400"} style={{ width: pct + "%" }} />
+        <div className={ok ? "h-full rounded-full bg-green-500" : "h-full rounded-full bg-yellow-400"}
+          style={{ width: pct + "%" }} />
       </div>
     </div>
   )
 }
 
-function PlayerCard({ p, sel, onClick, targets }: {
-  p: Player; sel: boolean; onClick: () => void
-  targets: typeof TARGETS_4DAY
+function PlayerCard({ p, sel, onClick, wt }: {
+  p: Player; sel: boolean; onClick: () => void; wt: WeekTarget | null
 }) {
   const z = ZONE_COLORS[p.zone]
   return (
     <div onClick={onClick} className={`cursor-pointer rounded-xl border-2 p-3 transition-all ${z.bg} ${z.border} ${sel ? "ring-2 ring-primary ring-offset-1" : ""}`}>
       <div className="flex justify-between items-center mb-2">
-        <span className="font-semibold text-sm">{p.name}</span>
+        <div>
+          <span className="font-semibold text-sm">{p.name}</span>
+          <span className="text-[10px] text-muted-foreground ml-1">{p.days}日間</span>
+        </div>
         <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${z.bg} ${z.border} ${z.text}`}>
           {z.label} {p.acwr !== null ? p.acwr.toFixed(2) : "-"}
         </span>
       </div>
-      <Bar2 label="総走行距離" value={p.distance} target={targets.distance} unit="m" />
-      <Bar2 label="中強度 SI" value={p.siD} target={targets.siD} unit="m" />
-      <Bar2 label="高強度 HI" value={p.hiD} target={targets.hiD} unit="m" />
-      <Bar2 label="スプリント" value={p.sprint} target={targets.sprint} unit="回" />
+      <Bar2 label="総走行距離" value={Math.round(p.distance)} target={wt?.distance ?? 0} unit="m" />
+      <Bar2 label="中強度 SI" value={Math.round(p.siD)} target={wt?.siD ?? 0} unit="m" />
+      <Bar2 label="高強度 HI" value={Math.round(p.hiD)} target={wt?.hiD ?? 0} unit="m" />
+      <Bar2 label="スプリント" value={Math.round(p.sprint)} target={wt?.sprint ?? 0} unit="回" />
       <div className="grid grid-cols-2 gap-2 mt-1">
-        <Bar2 label="高加速 Z3" value={p.accelZ3} target={targets.accelZ3} unit="回" />
-        <Bar2 label="高減速 Z3" value={p.decelZ3} target={targets.decelZ3} unit="回" />
+        <Bar2 label="高加速 Z3" value={Math.round(p.accelZ3)} target={wt?.accelZ3 ?? 0} unit="回" />
+        <Bar2 label="高減速 Z3" value={Math.round(p.decelZ3)} target={wt?.decelZ3 ?? 0} unit="回" />
       </div>
       <div className="grid grid-cols-3 gap-1 mt-2 text-center text-[11px]">
         <div><div className="text-muted-foreground">最高速度比</div>
@@ -97,83 +86,55 @@ function PlayerCard({ p, sel, onClick, targets }: {
 }
 
 export default function ConditionPage() {
-  const [latest, setLatest] = useState<{ date: string; players: Player[] } | null>(null)
+  const [data, setData] = useState<{
+    date: string; weekDays: number; currentWeek: WeekTarget | null; players: Player[]
+  } | null>(null)
   const [series, setSeries] = useState<AcwrSeries>({})
   const [sel, setSel] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<"list" | "acwr" | "compare">("list")
-  const [nextMatch, setNextMatch] = useState<string | null>(null)
-  const [trDaysRemaining, setTrDaysRemaining] = useState(4)
 
   useEffect(() => {
     Promise.all([
       fetch("/api/condition?action=latest").then(r => r.json()),
       fetch("/api/condition?action=acwr").then(r => r.json()),
-      fetch("/api/schedule").then(r => r.json()).catch(() => null),
-    ]).then(([lat, acwr, schedule]) => {
-      setLatest(lat)
+    ]).then(([lat, acwr]) => {
+      setData(lat)
       setSeries(acwr.series ?? {})
       if (lat.players?.[0]) setSel(lat.players[0].name)
-
-      // 次の試合日を取得
-      const today = new Date()
-      const upcoming = schedule?.upcoming ?? []
-      const nextGame = upcoming.find((g: {date: string}) => new Date(g.date) > today)
-      const matchDate = nextGame?.date ?? null
-      setNextMatch(matchDate)
-
-      // TR残日数を計算
-      if (lat.date && matchDate) {
-        const days = calcTrDaysRemaining(matchDate, lat.date)
-        setTrDaysRemaining(days)
-      }
-
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [])
 
-  // 按分目標を計算
-  const targets = {
-    distance: getProrated(TARGETS_4DAY.distance, trDaysRemaining),
-    siD:      getProrated(TARGETS_4DAY.siD,      trDaysRemaining),
-    hiD:      getProrated(TARGETS_4DAY.hiD,      trDaysRemaining),
-    sprint:   getProrated(TARGETS_4DAY.sprint,   trDaysRemaining),
-    accelZ3:  getProrated(TARGETS_4DAY.accelZ3,  trDaysRemaining),
-    decelZ3:  getProrated(TARGETS_4DAY.decelZ3,  trDaysRemaining),
-  }
-
   if (loading) return <div className="flex items-center justify-center h-64 text-muted-foreground">読み込み中...</div>
-  if (!latest || !latest.players?.length) return <div className="p-8 text-muted-foreground">データがありません</div>
+  if (!data || !data.players?.length) return <div className="p-8 text-muted-foreground">データがありません</div>
 
-  const selP = latest.players.find(p => p.name === sel)
+  const wt = data.currentWeek
+  const selP = data.players.find(p => p.name === sel)
   const acwrData = sel ? (series[sel] ?? []).map(s => ({ date: s.date, ACWR: s.acwr })) : []
   const zones: Record<string, number> = { sweet: 0, caution: 0, danger: 0, low: 0 }
-  latest.players.forEach(p => { if (p.zone in zones) zones[p.zone]++ })
-
-  // 残りTR日数の表示ラベル
-  const trLabel = trDaysRemaining === 4
-    ? "4日間TR目標"
-    : nextMatch
-      ? `残り${trDaysRemaining}日(次試合までの按分)`
-      : "4日間TR目標"
+  data.players.forEach(p => { if (p.zone in zones) zones[p.zone]++ })
 
   return (
     <div className="p-4 space-y-4 max-w-6xl">
       {/* ヘッダー */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm text-muted-foreground">
-            {latest.date.replace(/(\d{4})(\d{2})(\d{2})/, "$1年$2月$3日")} 練習データ
-          </p>
-          <div className="flex items-center gap-3 mt-1">
-            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-              {trLabel}
-            </span>
-            {nextMatch && (
-              <span className="text-xs text-muted-foreground">
-                次試合: {nextMatch.replace(/(\d{4})-(\d{2})-(\d{2})/, "$2/$3")}
+          {wt ? (
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-bold text-base">Week {wt.week}</span>
+              <span className="text-sm text-muted-foreground">
+                {fmtDate(wt.trStart)} → {fmtDate(wt.matchDate)}(試合)
               </span>
-            )}
+            </div>
+          ) : null}
+          <div className="flex items-center gap-2">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+              週累計 {data.weekDays}日/{wt ? 4 : "?"}日
+            </span>
+            <span className="text-xs text-muted-foreground">
+              最終データ: {data.date.replace(/(\d{4})(\d{2})(\d{2})/, "$1/$2/$3")}
+            </span>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -184,6 +145,19 @@ export default function ConditionPage() {
           ))}
         </div>
       </div>
+
+      {/* 週目標値バナー */}
+      {wt && (
+        <div className="bg-muted/50 rounded-lg px-4 py-2 text-xs text-muted-foreground flex flex-wrap gap-4">
+          <span className="font-semibold text-foreground">Week{wt.week}目標値:</span>
+          <span>距離 {wt.distance.toLocaleString()}m</span>
+          <span>SI {wt.siD.toLocaleString()}m</span>
+          <span>HI {wt.hiD.toLocaleString()}m</span>
+          <span>Sprint {wt.sprint}回</span>
+          <span>高加速 {wt.accelZ3}回</span>
+          <span>高減速 {wt.decelZ3}回</span>
+        </div>
+      )}
 
       {/* タブ */}
       <div className="flex gap-2">
@@ -198,8 +172,8 @@ export default function ConditionPage() {
       {/* 選手一覧 */}
       {tab === "list" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {latest.players.map(p => (
-            <PlayerCard key={p.name} p={p} sel={sel===p.name} onClick={() => setSel(p.name)} targets={targets} />
+          {data.players.map(p => (
+            <PlayerCard key={p.name} p={p} sel={sel===p.name} onClick={() => setSel(p.name)} wt={wt} />
           ))}
         </div>
       )}
@@ -208,7 +182,7 @@ export default function ConditionPage() {
       {tab === "acwr" && (
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
-            {latest.players.map(p => {
+            {data.players.map(p => {
               const z = ZONE_COLORS[p.zone]
               return (
                 <button key={p.name} onClick={() => setSel(p.name)}
@@ -236,7 +210,7 @@ export default function ConditionPage() {
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <p className="text-sm text-muted-foreground py-8 text-center">データが1日分のみです。シートを追加すると推移が表示されます。</p>
+                <p className="text-sm text-muted-foreground py-8 text-center">データが蘵積されると推移グラフが表示されます。</p>
               )}
             </div>
           )}
@@ -247,26 +221,25 @@ export default function ConditionPage() {
       {tab === "compare" && (
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
-            {latest.players.map(p => (
+            {data.players.map(p => (
               <button key={p.name} onClick={() => setSel(p.name)}
                 className={`px-3 py-1 rounded-full text-xs border ${sel===p.name ? "bg-primary text-white border-primary" : "bg-muted text-muted-foreground"}`}>
                 {p.name}
               </button>
             ))}
           </div>
-          {selP && (
+          {selP && wt && (
             <div className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold mb-1">{selP.name} — 目標 vs 実績</h3>
-              <p className="text-xs text-muted-foreground mb-3">{trLabel}</p>
+              <h3 className="font-semibold mb-1">{selP.name} — Week{wt.week} 目標 vs 実績(週累計)</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart margin={{ top: 10, right: 20, bottom: 30, left: 0 }}
                   data={[
-                    { name: "総走行(m)", 実績: selP.distance, 目標: targets.distance },
-                    { name: "SI(m)", 実績: selP.siD, 目標: targets.siD },
-                    { name: "HI(m)", 実績: selP.hiD, 目標: targets.hiD },
-                    { name: "スプリント", 実績: selP.sprint, 目標: targets.sprint },
-                    { name: "高加速", 実績: selP.accelZ3, 目標: targets.accelZ3 },
-                    { name: "高減速", 実績: selP.decelZ3, 目標: targets.decelZ3 },
+                    { name: "距離(m)", 実績: Math.round(selP.distance), 目標: wt.distance },
+                    { name: "SI(m)", 実績: Math.round(selP.siD), 目標: wt.siD },
+                    { name: "HI(m)", 実績: Math.round(selP.hiD), 目標: wt.hiD },
+                    { name: "スプリント", 実績: Math.round(selP.sprint), 目標: wt.sprint },
+                    { name: "高加速", 実績: Math.round(selP.accelZ3), 目標: wt.accelZ3 },
+                    { name: "高減速", 実績: Math.round(selP.decelZ3), 目標: wt.decelZ3 },
                   ]}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} />
