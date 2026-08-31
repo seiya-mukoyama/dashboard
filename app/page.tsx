@@ -259,6 +259,7 @@ export default function DashboardPage() {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
 
   const handleViewChange = (view: string) => {
+    if (view === 'condition') { window.location.href = '/condition'; return }
     setActiveView(view)
     setSelectedPlayer(null)
     // モバイルの場合はメニュー選択後にサイドバーを閉じる
