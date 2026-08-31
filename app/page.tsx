@@ -25,7 +25,7 @@ const mainMenuItems = [
   { id: "players", label: "選手", icon: Users },
   { id: "official-matches", label: "公式戦", icon: Medal },
   { id: "training-matches", label: "トレーニングマッチ", icon: Dumbbell },
-  { id: "condition", label: "コンディション", icon: Activity },
+  { id: "condition", label: "コンディション", icon: Activity, href: "/condition" },
 ]
 
 const positionColors: Record<string, string> = {
@@ -295,13 +295,13 @@ export default function DashboardPage() {
           {!collapsed && <p className="px-4 py-1 text-xs font-medium text-muted-foreground">メインメニュー</p>}
           <nav className="mt-1">
             {mainMenuItems.map((item) => (
-              <button key={item.id} onClick={() => handleViewChange(item.id)} title={collapsed ? item.label : undefined}
+              <a key={item.id} {...((item as {href?: string}).href ? { href: (item as {href?: string}).href } : { onClick: () => handleViewChange(item.id) })} title={collapsed ? item.label : undefined}
                 className={`flex w-full items-center gap-3 py-2 text-sm transition-colors
                   ${collapsed ? "justify-center px-0" : "px-4"}
                   ${activeView === item.id ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-accent"}`}>
                 <item.icon className="h-4 w-4 shrink-0" />
                 {!collapsed && item.label}
-              </button>
+              </a>
             ))}
           </nav>
         </div>
