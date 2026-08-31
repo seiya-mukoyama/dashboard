@@ -87,7 +87,7 @@ export function LeagueStandings() {
                     }`}>{team.gd}</td>
                     <td className="py-1.5 px-1 text-center text-card-foreground">{team.gf}</td>
                     <td className="py-1.5 px-1 text-center text-muted-foreground">{team.ga}</td>
-                    <td className="py-1.5 px-1 text-center </tr>
+                    </tr>
                 ))}
               </tbody>
             </table>
