@@ -40,7 +40,9 @@ type PlayerData = {
 }
 
 type WeekTarget = {
-  week: number; trStart: string; matchDate: string
+  week: number
+  day1: string; day2: string; day3: string; day4: string
+  game: string; recovery: string
   distance: number; siD: number; hiD: number; sprint: number; accelZ3: number; decelZ3: number
 }
 
@@ -79,34 +81,58 @@ async function fetchWeekTargets(): Promise<WeekTarget[]> {
   if (lines.length < 2) return []
   const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, '').trim())
   const idx = (key: string) => headers.indexOf(key)
+
   return lines.slice(1).flatMap(line => {
     const cols = parseCSVLine(line).map(c => c.replace(/"/g, '').trim())
     const week = parseInt(cols[idx("Week")])
     if (!week || isNaN(week)) return []
     return [{
-      week, trStart: cols[idx("TR\u958b\u59cb\u65e5")] ?? "", matchDate: cols[idx("\u8a66\u5408\u65e5")] ?? "",
+      week,
+      day1: cols[idx("Day1")] ?? "",
+      day2: cols[idx("Day2")] ?? "",
+      day3: cols[idx("Day3")] ?? "",
+      day4: cols[idx("Day4")] ?? "",
+      game: cols[idx("GAME")] ?? "",
+      recovery: cols[idx("recovery & TRorGAME")] ?? "",
       distance: parseFloat(cols[idx("\u8ddd\u96e2\u76ee\u6a19")]) || 0,
-      siD: parseFloat(cols[idx("SI\u76ee\u6a19")]) || 0,
-      hiD: parseFloat(cols[idx("HI\u76ee\u6a19")]) || 0,
-      sprint: parseFloat(cols[idx("Sprint\u76ee\u6a19")]) || 0,
-      accelZ3: parseFloat(cols[idx("\u9ad8\u52a0\u901f\u76ee\u6a19")]) || 0,
-      decelZ3: parseFloat(cols[idx("\u9ad8\u6e1b\u901f\u76ee\u6a19")]) || 0,
+      siD:      parseFloat(cols[idx("SI\u76ee\u6a19")]) || 0,
+      hiD:      parseFloat(cols[idx("HI\u76ee\u6a19")]) || 0,
+      sprint:   parseFloat(cols[idx("Sprint\u76ee\u6a19")]) || 0,
+      accelZ3:  parseFloat(cols[idx("\u9ad8\u52a0\u901f\u76ee\u6a19")]) || 0,
+      decelZ3:  parseFloat(cols[idx("\u9ad8\u6e1b\u901f\u76ee\u6a19")]) || 0,
     }]
   })
 }
 
-function dateToNum(s: string): number { return parseInt(s.replace(/-/g, '')) }
+function dateToNum(s: string): number { return parseInt(s.replace(/-/g, '')) || 0 }
 
+// 今日がどのWeekに属するか: Day1≤today≤recovery または最近週
 function findCurrentWeek(weeks: WeekTarget[], dateStr: string): WeekTarget | null {
   const d = dateToNum(dateStr)
+  // Day1からrecoveryまでの範囲
   for (const w of weeks) {
-    if (d >= dateToNum(w.trStart) && d < dateToNum(w.matchDate)) return w
+    const start = dateToNum(w.day1)
+    const end = dateToNum(w.recovery || w.game)
+    if (start > 0 && d >= start && d <= end) return w
   }
-  const past = weeks.filter(w => dateToNum(w.matchDate) <= d)
-  return past[past.length - 1] ?? weeks[0] ?? null
+  // 最近の週（GAME日より前に最も近い）
+  const past = weeks.filter(w => dateToNum(w.day1) <= d && dateToNum(w.day1) > 0)
+  past.sort((a, b) => dateToNum(b.day1) - dateToNum(a.day1))
+  return past[0] ?? null
 }
 
-function acwrZone(v: number | null): "sweet" | "caution" | "danger" | "low" | "none" {
+// 日付文字列からDayタイプを判定
+function getDayType(date: string, wt: WeekTarget): "Day1"|"Day2"|"Day3"|"Day4"|"GAME"|"Recovery"|null {
+  if (date === wt.day1) return "Day1"
+  if (date === wt.day2) return "Day2"
+  if (date === wt.day3) return "Day3"
+  if (date === wt.day4) return "Day4"
+  if (date === wt.game) return "GAME"
+  if (date === wt.recovery) return "Recovery"
+  return null
+}
+
+function acwrZone(v: number | null): "sweet"|"caution"|"danger"|"low"|"none" {
   if (v === null) return "none"
   if (v >= 1.5) return "danger"
   if (v >= 1.3) return "caution"
@@ -124,7 +150,6 @@ export async function GET(request: Request) {
     ...DATE_SHEETS.map(s => parseSheet(s.gid))
   ])
 
-  // 全日程: date が分かる形で配列化
   const allData = DATE_SHEETS.map((s, i) => ({ date: s.name, players: sheetDataArr[i] }))
     .filter(d => d.players.length > 0)
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -133,14 +158,14 @@ export async function GET(request: Request) {
   const latestDate = allData[allData.length - 1]?.date ?? ""
   const currentWeek = findCurrentWeek(weekTargets, latestDate)
 
+  // 今週のデータ: Day1-Day4のシートのみ（GAMEやRecoveryは累計から除外）
   const weekSheets = currentWeek
     ? allData.filter(d => {
-        const n = dateToNum(d.date)
-        return n >= dateToNum(currentWeek.trStart) && n < dateToNum(currentWeek.matchDate)
+        const dt = getDayType(d.date, currentWeek)
+        return dt === "Day1" || dt === "Day2" || dt === "Day3" || dt === "Day4"
       })
     : allData
 
-  // 選手別週累計集計
   function aggregatePlayers(sheets: typeof allData) {
     const map = new Map<string, PlayerData & { days: number }>()
     for (const sheet of sheets) {
@@ -153,7 +178,8 @@ export async function GET(request: Request) {
           ex.sprint += p.sprint; ex.accelZ3 += p.accelZ3; ex.decelZ3 += p.decelZ3
           ex.hrMax = Math.max(ex.hrMax, p.hrMax)
           ex.hrMid = Math.round((ex.hrMid * ex.days + p.hrMid) / (ex.days + 1))
-          ex.spdMx = Math.max(ex.spdMx, p.spdMx); ex.spdMxRatio = Math.max(ex.spdMxRatio, p.spdMxRatio)
+          ex.spdMx = Math.max(ex.spdMx, p.spdMx)
+          ex.spdMxRatio = Math.max(ex.spdMxRatio, p.spdMxRatio)
           ex.days += 1
         }
       }
@@ -161,7 +187,6 @@ export async function GET(request: Request) {
     return map
   }
 
-  // ACWR計算
   function calcAcwr(name: string) {
     const history = allData.map(d => d.players.find(x => x.name === name)?.distance ?? 0)
     const i = history.length - 1
@@ -171,23 +196,28 @@ export async function GET(request: Request) {
     return chronic > 0 ? +(acute / chronic).toFixed(2) : null
   }
 
-  // ===== latest: 選手一覧 =====
   if (action === "latest") {
     const aggMap = aggregatePlayers(weekSheets)
     const players = Array.from(aggMap.values()).map(p => {
       const acwr = calcAcwr(p.name)
-      return { ...p, acute: 0, chronic: 0, acwr, zone: acwrZone(acwr) }
+      return { ...p, acwr, zone: acwrZone(acwr) }
     })
-    return NextResponse.json({ dates, date: latestDate, weekDays: weekSheets.length, currentWeek, players })
+    return NextResponse.json({
+      dates, date: latestDate,
+      weekDays: weekSheets.length,
+      currentWeek,
+      players
+    })
   }
 
-  // ===== acwr: 全選手 ACWR推移 =====
   if (action === "acwr") {
-    const seriesMap: Record<string, { date: string; distance: number; acwr: number | null; zone: string }[]> = {}
+    const seriesMap: Record<string, { date: string; distance: number; acwr: number | null; zone: string; dayType: string }[]> = {}
     for (const d of allData) {
+      const wt = findCurrentWeek(weekTargets, d.date)
+      const dayType = wt ? (getDayType(d.date, wt) ?? "Other") : "Other"
       for (const p of d.players) {
         if (!seriesMap[p.name]) seriesMap[p.name] = []
-        seriesMap[p.name].push({ date: d.date, distance: p.distance, acwr: null, zone: "none" })
+        seriesMap[p.name].push({ date: d.date, distance: p.distance, acwr: null, zone: "none", dayType })
       }
     }
     for (const name of Object.keys(seriesMap)) {
@@ -203,49 +233,33 @@ export async function GET(request: Request) {
     return NextResponse.json({ dates, series: seriesMap })
   }
 
-  // ===== player: 選手別詳細 (Day別/週別/過去平均) =====
   if (action === "player" && playerName) {
-    // 以前のWeekのデータを週別に集約
-    const weeklyData: {
-      week: WeekTarget; days: { date: string; dayNum: number; data: PlayerData | null }[]
-    }[] = []
-
-    for (const wt of weekTargets) {
-      const wtStart = dateToNum(wt.trStart)
-      const wtEnd = dateToNum(wt.matchDate)
-      const wtSheets = allData.filter(d => {
-        const n = dateToNum(d.date)
-        return n >= wtStart && n < wtEnd
-      })
-      if (wtSheets.length === 0) continue
-      const days = wtSheets.map((s, i) => ({
-        date: s.date,
-        dayNum: i + 1,
-        data: s.players.find(p => p.name === playerName) ?? null
-      }))
-      weeklyData.push({ week: wt, days })
+    // 週別データ
+    const weeklyData: { week: WeekTarget; days: { date: string; dayType: string; data: PlayerData | null }[] }[] = []
+    for (const wt of weekTargets.sort((a,b) => a.week - b.week)) {
+      const dayDates = [wt.day1, wt.day2, wt.day3, wt.day4, wt.game, wt.recovery].filter(Boolean)
+      const days = dayDates.map(date => ({
+        date,
+        dayType: getDayType(date, wt) ?? "Other",
+        data: allData.find(d => d.date === date)?.players.find(p => p.name === playerName) ?? null
+      })).filter(d => d.data !== null || allData.some(ad => ad.date === d.date))
+      if (days.length > 0) weeklyData.push({ week: wt, days })
     }
 
-    // 週平均（現在週以外の週の1日当たり平均）
+    // 過去平均 (Day1-4のみ, 現在週以外)
     const pastWeeks = weeklyData.filter(w => w.week.week !== (currentWeek?.week ?? -1))
-    const metrics = ["distance", "siD", "hiD", "sprint", "accelZ3", "decelZ3"] as const
+    const metrics = ["distance","siD","hiD","sprint","accelZ3","decelZ3"] as const
     const pastAvg: Record<string, number> = {}
     for (const m of metrics) {
-      const vals = pastWeeks.flatMap(w => w.days.map(d => d.data?.[m] ?? null)).filter((v): v is number => v !== null)
-      pastAvg[m] = vals.length > 0 ? Math.round(vals.reduce((s,v) => s+v, 0) / vals.length) : 0
+      const vals = pastWeeks.flatMap(w =>
+        w.days.filter(d => ["Day1","Day2","Day3","Day4"].includes(d.dayType))
+               .map(d => d.data?.[m] ?? null)
+      ).filter((v): v is number => v !== null)
+      pastAvg[m] = vals.length > 0 ? Math.round(vals.reduce((s,v)=>s+v,0)/vals.length) : 0
     }
 
-    // Day別詳細: 現在週のDay1/2/3/4データ
     const currentWeekData = weeklyData.find(w => w.week.week === currentWeek?.week)
-
-    return NextResponse.json({
-      playerName,
-      currentWeek,
-      currentWeekDays: currentWeekData?.days ?? [],
-      weeklyData,
-      pastAvg,
-      dates,
-    })
+    return NextResponse.json({ playerName, currentWeek, currentWeekDays: currentWeekData?.days ?? [], weeklyData, pastAvg, dates })
   }
 
   return NextResponse.json({ dates, allData, weekTargets })
