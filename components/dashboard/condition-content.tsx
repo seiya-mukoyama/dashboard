@@ -46,7 +46,7 @@ const METRICS = [
 
 function fmtDate(s: string) { return s.replace(/(\d{4})(\d{2})(\d{2})/, "$2/$3") }
 
-function Bar2({ label, value, target, unit="" }: { label: string; value: number; target: number; avg?: number; unit?: string }) {
+function Bar2({ label, value, target, avg, unit="" }: { label: string; value: number; target: number; avg?: number; unit?: string }) {
   const pct = target > 0 ? Math.min(100, (value/target)*100) : 0
   const ok = value >= target
   return (
