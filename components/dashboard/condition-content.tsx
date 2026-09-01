@@ -14,7 +14,8 @@ type Player = {
   acwr: number | null; zone: "sweet"|"caution"|"danger"|"low"|"none"
 }
 type WeekTarget = {
-  week: number; trStart: string; matchDate: string
+  week: number
+  day1: string; day2: string; day3: string; day4: string; game: string; recovery: string
   distance: number; siD: number; hiD: number; sprint: number; accelZ3: number; decelZ3: number
 }
 type DayData = { date: string; dayNum: number; data: Record<string, number> | null }
@@ -299,7 +300,7 @@ export default function ConditionContent() {
           {wt && <div className="flex items-center gap-2 mb-1">
             <span className="font-bold text-base">Week {wt.week}</span>
             <span className="text-sm text-muted-foreground">
-              {wt.trStart.replace(/(\d{4})(\d{2})(\d{2})/, "$2/$3")} → {wt.matchDate.replace(/(\d{4})(\d{2})(\d{2})/, "$2/$3")}(試合)
+              {wt.day1.replace(/(\d{4})(\d{2})(\d{2})/, "$2/$3")(\d{2})(\d{2})/, "$2/$3")} → {wt.game.replace(/(\d{4})(\d{2})(\d{2})/, "$2/$3")(\d{2})(\d{2})/, "$2/$3")}(試合)
             </span>
           </div>}
           <div className="flex items-center gap-2">
