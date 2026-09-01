@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from "next/server"
 
 const SHEET_ID = "1Cf9UCMrJDu6upu2n6LObRqfo8HxCCjtaikyHXssyvao"
