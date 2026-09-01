@@ -230,9 +230,25 @@ export async function GET(request: Request) {
       teamPastAvg[m] = vals.length > 0 ? Math.round(vals.reduce((s,v) => s+v, 0) / vals.length) : 0
     }
 
+    const metrics = ["distance","siD","hiD","sprint","accelZ3","decelZ3"]
     const players = Array.from(aggMap.values()).map(p => {
       const acwr = calcAcwr(p.name)
-      return { ...p, acwr, zone: acwrZone(acwr) }
+      // 選手個人の過去週平均（1日あたり）
+      const playerPastAvg: Record<string, number> = {}
+      for (const m of metrics) {
+        const vals = pastWeekTargets.flatMap(wt => {
+          const wtSheets = allData.filter(d => {
+            const dt = getDayType(d.date, wt)
+            return dt === "Day1" || dt === "Day2" || dt === "Day3" || dt === "Day4"
+          })
+          return wtSheets.map(sheet => {
+            const player = sheet.players.find(x => x.name === p.name)
+            return player ? player[m] : null
+          }).filter(v => v !== null)
+        })
+        playerPastAvg[m] = vals.length > 0 ? Math.round(vals.reduce((s,v) => s+v, 0) / vals.length) : 0
+      }
+      return { ...p, acwr, zone: acwrZone(acwr), playerPastAvg }
     })
     return NextResponse.json({
       dates, date: latestDate, weekDays: targetSheets.length,
