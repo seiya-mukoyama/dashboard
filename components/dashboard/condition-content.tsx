@@ -136,6 +136,11 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
         </button>
         <span className="font-bold text-lg">{playerName}</span>
         {wt && <span className="text-sm text-muted-foreground">Week{wt.week}</span>}
+            {data?.allWeeks && data.allWeeks.length > 0 && (
+              <select value={selectedWeek ?? data.currentWeek?.week ?? ""} onChange={e => { setSelectedWeek(Number(e.target.value)); setLoading(true) }} className="text-xs border border-border rounded px-2 py-1 bg-background">
+                {data.allWeeks.map(w => <option key={w.week} value={w.week}>Week{w.week} ({w.day1.slice(4,6)}/{w.day1.slice(6,8)}~)</option>)}
+              </select>
+            )}
       </div>
 
       {/* タブ */}
@@ -260,21 +265,22 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
 
 // メインコンポーネント
 export default function ConditionContent() {
-  const [data, setData] = useState<{ date: string; weekDays: number; currentWeek: WeekTarget|null; players: Player[] }|null>(null)
+  const [data, setData] = useState<{ date: string; weekDays: number; currentWeek: WeekTarget|null; players: Player[]; allWeeks?: {week:number;day1:string;game:string}[]; teamPastAvg?: Record<string,number> }|null>(null)
   const [series, setSeries] = useState<AcwrSeries>({})
   const [selPlayer, setSelPlayer] = useState<string|null>(null)
+  const [selectedWeek, setSelectedWeek] = useState<number|null>(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<"list"|"acwr">("list")
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/condition?action=latest").then(r => r.json()),
+      fetch(`/api/condition?action=latest${selectedWeek ? "&week="+selectedWeek : ""}`).then(r => r.json()),
       fetch("/api/condition?action=acwr").then(r => r.json()),
     ]).then(([lat, acwr]) => {
       setData(lat); setSeries(acwr.series ?? {})
       setLoading(false)
     }).catch(() => setLoading(false))
-  }, [])
+  }, [selectedWeek])
 
   if (loading) return <div className="flex items-center justify-center h-64 text-muted-foreground">読み込み中...</div>
   if (!data || !data.players?.length) return <div className="p-8 text-muted-foreground">データなし</div>
@@ -322,12 +328,12 @@ export default function ConditionContent() {
       {wt && (
         <div className="bg-muted/50 rounded-lg px-4 py-2 text-xs flex flex-wrap gap-4">
           <span className="font-semibold text-foreground">Week{wt.week}目標:</span>
-          <span>距離 {wt.distance.toLocaleString()}m</span>
-          <span>SI {wt.siD.toLocaleString()}m</span>
-          <span>HI {wt.hiD.toLocaleString()}m</span>
-          <span>Sprint {wt.sprint}回</span>
-          <span>高加速 {wt.accelZ3}回</span>
-          <span>高減速 {wt.decelZ3}回</span>
+          <span>距離 {wt.distance.toLocaleString()}m <span className="opacity-60">(平{data?.teamPastAvg?.distance??0}m)</span></span>
+          <span>SI {wt.siD.toLocaleString()}m <span className="opacity-60">(平{data?.teamPastAvg?.siD??0}m)</span></span>
+          <span>HI {wt.hiD.toLocaleString()}m <span className="opacity-60">(平{data?.teamPastAvg?.hiD??0}m)</span></span>
+          <span>Sprint {wt.sprint}回 <span className="opacity-60">(平{data?.teamPastAvg?.sprint??0}回)</span></span>
+          <span>高加速 {wt.accelZ3}回 <span className="opacity-60">(平{data?.teamPastAvg?.accelZ3??0}回)</span></span>
+          <span>高減速 {wt.decelZ3}回 <span className="opacity-60">(平{data?.teamPastAvg?.decelZ3??0}回)</span></span>
         </div>
       )}
 
