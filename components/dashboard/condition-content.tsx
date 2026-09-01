@@ -300,7 +300,7 @@ export default function ConditionContent() {
           {wt && <div className="flex items-center gap-2 mb-1">
             <span className="font-bold text-base">Week {wt.week}</span>
             <span className="text-sm text-muted-foreground">
-              {wt.day1.replace(/(\d{4})(\d{2})(\d{2})/, "$2/$3")(\d{2})(\d{2})/, "$2/$3")} → {wt.game.replace(/(\d{4})(\d{2})(\d{2})/, "$2/$3")(\d{2})(\d{2})/, "$2/$3")}(試合)
+              {wt.day1.replace(/(\d{4})(\d{2})(\d{2})/, "$2/$3")} → {wt.game.replace(/(\d{4})(\d{2})(\d{2})/, "$2/$3")}(試合)
             </span>
           </div>}
           <div className="flex items-center gap-2">
