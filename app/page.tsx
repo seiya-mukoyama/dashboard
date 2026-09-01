@@ -7,6 +7,7 @@ import { RecentMatches } from "@/components/dashboard/recent-matches"
 import { MatchInfoCard } from "@/components/dashboard/match-info-card"
 import { OfficialMatches } from "@/components/dashboard/official-matches"
 import { TrainingMatches } from "@/components/dashboard/training-matches"
+import ConditionContent from "@/app/condition/page"
 import { StatsCards } from "@/components/dashboard/stats-cards"
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches"
 import { PlayerCardsGrid, type Player } from "@/components/dashboard/player-cards-grid"
@@ -25,7 +26,7 @@ const mainMenuItems = [
   { id: "players", label: "選手", icon: Users },
   { id: "official-matches", label: "公式戦", icon: Medal },
   { id: "training-matches", label: "トレーニングマッチ", icon: Dumbbell },
-  { id: "condition", label: "コンディション", icon: Activity, href: "/condition" },
+  { id: "condition", label: "コンディション", icon: Activity },
 ]
 
 const positionColors: Record<string, string> = {
@@ -40,6 +41,7 @@ const viewTitles: Record<string, string> = {
   players: "選手",
   "official-matches": "公式戦",
   "training-matches": "トレーニングマッチ",
+  "condition": "コンディション管理",
   training: "トレーニング",
   events: "イベント",
 }
@@ -233,7 +235,6 @@ export default function DashboardPage() {
   useEffect(() => {
     const handler = (e: Event) => {
       const { section, date } = (e as CustomEvent).detail
-      if (section === 'condition') { window.location.href = '/condition'; return }
       setActiveView(section)
       // date パラメータを URL に反映（training/official コンポーネントが読む）
       const url = new URL(window.location.href)
@@ -295,13 +296,13 @@ export default function DashboardPage() {
           {!collapsed && <p className="px-4 py-1 text-xs font-medium text-muted-foreground">メインメニュー</p>}
           <nav className="mt-1">
             {mainMenuItems.map((item) => (
-              <a key={item.id} {...((item as {href?: string}).href ? { href: (item as {href?: string}).href } : { onClick: () => handleViewChange(item.id) })} title={collapsed ? item.label : undefined}
+              <button key={item.id} onClick={() => handleViewChange(item.id)} title={collapsed ? item.label : undefined}
                 className={`flex w-full items-center gap-3 py-2 text-sm transition-colors
                   ${collapsed ? "justify-center px-0" : "px-4"}
                   ${activeView === item.id ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-accent"}`}>
                 <item.icon className="h-4 w-4 shrink-0" />
                 {!collapsed && item.label}
-              </a>
+              </button>
             ))}
           </nav>
         </div>
@@ -344,6 +345,7 @@ export default function DashboardPage() {
           )}
           {activeView === "official-matches" && <OfficialMatches />}
           {activeView === "training-matches" && <TrainingMatches />}
+          {activeView === "condition" && <ConditionContent />}
           {activeView === "training" && <StatsCards />}
           {activeView === "events" && <UpcomingMatches />}
         </main>
