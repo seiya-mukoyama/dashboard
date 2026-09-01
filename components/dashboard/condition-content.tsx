@@ -46,7 +46,7 @@ const METRICS = [
 
 function fmtDate(s: string) { return s.replace(/(\d{4})(\d{2})(\d{2})/, "$2/$3") }
 
-function Bar2({ label, value, target, unit="" }: { label: string; value: number; target: number; unit?: string }) {
+function Bar2({ label, value, target, unit="" }: { label: string; value: number; target: number; avg?: number; unit?: string }) {
   const pct = target > 0 ? Math.min(100, (value/target)*100) : 0
   const ok = value >= target
   return (
@@ -54,10 +54,10 @@ function Bar2({ label, value, target, unit="" }: { label: string; value: number;
       <div className="flex justify-between text-[11px] mb-0.5">
         <span className="text-muted-foreground">{label}</span>
         <span className={ok ? "text-green-700 font-semibold" : ""}>
-          {Math.round(value)}{unit} <span className="text-muted-foreground text-[10px]">/{target}{unit}</span>
+          {Math.round(value)}{unit}{avg !== undefined && avg > 0 ? <span className="text-muted-foreground text-[10px] ml-1">(平{Math.round(avg)}{unit})</span> : null}<span className="text-muted-foreground text-[10px]"> /{target}{unit}</span>
         </span>
       </div>
-      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+      <div className="h-1.5 bg-muted rounded-full overflow-hidden relative">
         <div className={ok ? "h-full bg-green-500 rounded-full" : "h-full bg-yellow-400 rounded-full"} style={{ width: pct+"%" }} />
       </div>
     </div>
