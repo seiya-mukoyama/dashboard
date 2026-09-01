@@ -136,11 +136,6 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
         </button>
         <span className="font-bold text-lg">{playerName}</span>
         {wt && <span className="text-sm text-muted-foreground">Week{wt.week}</span>}
-            {data?.allWeeks && data.allWeeks.length > 0 && (
-              <select value={selectedWeek ?? data.currentWeek?.week ?? ""} onChange={e => { setSelectedWeek(Number(e.target.value)); setLoading(true) }} className="text-xs border border-border rounded px-2 py-1 bg-background">
-                {data.allWeeks.map(w => <option key={w.week} value={w.week}>Week{w.week} ({w.day1.slice(4,6)}/{w.day1.slice(6,8)}~)</option>)}
-              </select>
-            )}
       </div>
 
       {/* タブ */}
@@ -305,6 +300,18 @@ export default function ConditionContent() {
         <div>
           {wt && <div className="flex items-center gap-2 mb-1">
             <span className="font-bold text-base">Week {wt.week}</span>
+            {data?.allWeeks && data.allWeeks.length > 1 && (
+              <select
+                value={selectedWeek ?? data.currentWeek?.week ?? ""}
+                onChange={e => { setSelectedWeek(Number(e.target.value)); setLoading(true) }}
+                className="text-xs border border-border rounded px-2 py-1 bg-background text-foreground ml-2">
+                {data.allWeeks.map(w => (
+                  <option key={w.week} value={w.week}>
+                    Week{w.week} ({w.day1.slice(4,6)}/{w.day1.slice(6,8)}〜)
+                  </option>
+                ))}
+              </select>
+            )}
             <span className="text-sm text-muted-foreground">
               {wt.day1.replace(/(\d{4})(\d{2})(\d{2})/, "$2/$3")} → {wt.game.replace(/(\d{4})(\d{2})(\d{2})/, "$2/$3")}(試合)
             </span>
