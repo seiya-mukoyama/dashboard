@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server"
 
 const SHEET_ID = "1Cf9UCMrJDu6upu2n6LObRqfo8HxCCjtaikyHXssyvao"
-const WEEK_GID = "510630760"
 
-// 練習日シート一覧 - 新しい練習日を追加したらgidを追尾
-const DATE_SHEETS: { name: string; gid: string }[] = [
-  { name: "20260825", gid: "1688750764" },
-  { name: "20260826", gid: "906373835" },
-  { name: "20260827", gid: "915779806" },
-  { name: "20260828", gid: "1011047146" },
-  { name: "20260901", gid: "1311272156" },
+// 練習日シート一覧 - 新しい日を追加したらここに追尾（シート名=YYYYMMDD）
+const DATE_SHEETS: string[] = [
+  "20260624","20260625","20260626","20260627","20260628",
+  "20260630","20260701","20260702","20260703","20260704",
+  "20260825","20260826","20260827","20260828","20260829",
+  "20260901",
 ]
 
 function parseCSVLine(line: string): string[] {
@@ -24,11 +22,20 @@ function parseCSVLine(line: string): string[] {
   return cols
 }
 
-async function fetchCSV(gid: string): Promise<string | null> {
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`
+// シート名でCSVを取得（gid不要）
+async function fetchCSV(sheetName: string): Promise<string | null> {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
   try {
     const res = await fetch(url, { cache: "no-store" })
-    return res.ok ? await res.text() : null
+    if (!res.ok) return null
+    const text = await res.text()
+    // gvizは存在しないシート名の場合で1枚目のシートを返すので、内容を検証
+    // 「使い方」シートの内容が返ってきた場合はスキップ
+    if (text.includes('VONDS') || text.includes('使い方')) return null
+    // Numberカラムがなければスキップ
+    const firstLine = text.split('\n')[0]
+    if (!firstLine.includes('Number')) return null
+    return text
   } catch { return null }
 }
 
@@ -41,13 +48,12 @@ type PlayerData = {
 
 type WeekTarget = {
   week: number
-  day1: string; day2: string; day3: string; day4: string
-  game: string; recovery: string
+  day1: string; day2: string; day3: string; day4: string; game: string; recovery: string
   distance: number; siD: number; hiD: number; sprint: number; accelZ3: number; decelZ3: number
 }
 
-async function parseSheet(gid: string): Promise<PlayerData[]> {
-  const csv = await fetchCSV(gid)
+async function parseSheet(sheetName: string): Promise<PlayerData[]> {
+  const csv = await fetchCSV(sheetName)
   if (!csv) return []
   const lines = csv.split("\n").filter(l => l.trim())
   if (lines.length < 2) return []
@@ -75,25 +81,21 @@ async function parseSheet(gid: string): Promise<PlayerData[]> {
 }
 
 async function fetchWeekTargets(): Promise<WeekTarget[]> {
-  const csv = await fetchCSV(WEEK_GID)
+  const csv = await fetchCSV("\u9031\u76ee\u6a19\u5024")
   if (!csv) return []
   const lines = csv.split("\n").filter(l => l.trim())
   if (lines.length < 2) return []
   const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, '').trim())
   const idx = (key: string) => headers.indexOf(key)
-
   return lines.slice(1).flatMap(line => {
     const cols = parseCSVLine(line).map(c => c.replace(/"/g, '').trim())
     const week = parseInt(cols[idx("Week")])
     if (!week || isNaN(week)) return []
     return [{
       week,
-      day1: cols[idx("Day1")] ?? "",
-      day2: cols[idx("Day2")] ?? "",
-      day3: cols[idx("Day3")] ?? "",
-      day4: cols[idx("Day4")] ?? "",
-      game: cols[idx("GAME")] ?? "",
-      recovery: cols[idx("recovery & TRorGAME")] ?? "",
+      day1: cols[idx("Day1")] ?? "", day2: cols[idx("Day2")] ?? "",
+      day3: cols[idx("Day3")] ?? "", day4: cols[idx("Day4")] ?? "",
+      game: cols[idx("GAME")] ?? "", recovery: cols[idx("recovery & TRorGAME")] ?? "",
       distance: parseFloat(cols[idx("\u8ddd\u96e2\u76ee\u6a19")]) || 0,
       siD:      parseFloat(cols[idx("SI\u76ee\u6a19")]) || 0,
       hiD:      parseFloat(cols[idx("HI\u76ee\u6a19")]) || 0,
@@ -106,22 +108,18 @@ async function fetchWeekTargets(): Promise<WeekTarget[]> {
 
 function dateToNum(s: string): number { return parseInt(s.replace(/-/g, '')) || 0 }
 
-// 今日がどのWeekに属するか: Day1≤today≤recovery または最近週
 function findCurrentWeek(weeks: WeekTarget[], dateStr: string): WeekTarget | null {
   const d = dateToNum(dateStr)
-  // Day1からrecoveryまでの範囲
   for (const w of weeks) {
     const start = dateToNum(w.day1)
     const end = dateToNum(w.recovery || w.game)
     if (start > 0 && d >= start && d <= end) return w
   }
-  // 最近の週（GAME日より前に最も近い）
   const past = weeks.filter(w => dateToNum(w.day1) <= d && dateToNum(w.day1) > 0)
   past.sort((a, b) => dateToNum(b.day1) - dateToNum(a.day1))
   return past[0] ?? null
 }
 
-// 日付文字列からDayタイプを判定
 function getDayType(date: string, wt: WeekTarget): "Day1"|"Day2"|"Day3"|"Day4"|"GAME"|"Recovery"|null {
   if (date === wt.day1) return "Day1"
   if (date === wt.day2) return "Day2"
@@ -147,10 +145,10 @@ export async function GET(request: Request) {
 
   const [weekTargets, ...sheetDataArr] = await Promise.all([
     fetchWeekTargets(),
-    ...DATE_SHEETS.map(s => parseSheet(s.gid))
+    ...DATE_SHEETS.map(s => parseSheet(s))
   ])
 
-  const allData = DATE_SHEETS.map((s, i) => ({ date: s.name, players: sheetDataArr[i] }))
+  const allData = DATE_SHEETS.map((s, i) => ({ date: s, players: sheetDataArr[i] }))
     .filter(d => d.players.length > 0)
     .sort((a, b) => a.date.localeCompare(b.date))
 
@@ -158,7 +156,6 @@ export async function GET(request: Request) {
   const latestDate = allData[allData.length - 1]?.date ?? ""
   const currentWeek = findCurrentWeek(weekTargets, latestDate)
 
-  // 今週のデータ: Day1-Day4のシートのみ（GAMEやRecoveryは累計から除外）
   const weekSheets = currentWeek
     ? allData.filter(d => {
         const dt = getDayType(d.date, currentWeek)
@@ -197,7 +194,6 @@ export async function GET(request: Request) {
   }
 
   if (action === "latest") {
-    // weekパラメータで週を選択可能
     const requestedWeek = searchParams.get("week") ? parseInt(searchParams.get("week")!) : null
     const targetWeek = requestedWeek
       ? weekTargets.find(w => w.week === requestedWeek) ?? currentWeek
@@ -211,7 +207,6 @@ export async function GET(request: Request) {
 
     const aggMap = aggregatePlayers(targetSheets)
 
-    // 過去週の1日当たり平均を計算 (対象週以外)
     const pastWeekTargets = weekTargets.filter(w => w.week !== (targetWeek?.week ?? -1))
     const metrics = ["distance","siD","hiD","sprint","accelZ3","decelZ3"] as const
     const teamPastAvg: Record<string, number> = {}
@@ -222,8 +217,6 @@ export async function GET(request: Request) {
           const dt = getDayType(d.date, wt)
           return dt === "Day1" || dt === "Day2" || dt === "Day3" || dt === "Day4"
         })
-        if (sheets.length === 0) continue
-        // 全選手の各日の平均
         for (const sheet of sheets) {
           const dayAvg = sheet.players.reduce((s, p) => s + (p[m] || 0), 0) / Math.max(1, sheet.players.length)
           vals.push(dayAvg)
@@ -270,7 +263,6 @@ export async function GET(request: Request) {
   }
 
   if (action === "player" && playerName) {
-    // 週別データ
     const weeklyData: { week: WeekTarget; days: { date: string; dayType: string; data: PlayerData | null }[] }[] = []
     for (const wt of weekTargets.sort((a,b) => a.week - b.week)) {
       const dayDates = [wt.day1, wt.day2, wt.day3, wt.day4, wt.game, wt.recovery].filter(Boolean)
@@ -278,11 +270,10 @@ export async function GET(request: Request) {
         date,
         dayType: getDayType(date, wt) ?? "Other",
         data: allData.find(d => d.date === date)?.players.find(p => p.name === playerName) ?? null
-      })).filter(d => d.data !== null || allData.some(ad => ad.date === d.date))
-      if (days.length > 0) weeklyData.push({ week: wt, days })
+      }))
+      if (days.some(d => d.data !== null)) weeklyData.push({ week: wt, days })
     }
 
-    // 過去平均 (Day1-4のみ, 現在週以外)
     const pastWeeks = weeklyData.filter(w => w.week.week !== (currentWeek?.week ?? -1))
     const metrics = ["distance","siD","hiD","sprint","accelZ3","decelZ3"] as const
     const pastAvg: Record<string, number> = {}
