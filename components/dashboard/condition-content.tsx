@@ -12,6 +12,7 @@ type Player = {
   siD: number; hiD: number; sprint: number
   hrMax: number; hrMid: number; accelZ3: number; decelZ3: number
   acwr: number | null; zone: "sweet"|"caution"|"danger"|"low"|"none"
+  playerPastAvg?: Record<string, number>
 }
 type WeekTarget = {
   week: number
@@ -76,7 +77,7 @@ function PlayerCard({ p, sel, onClick, wt }: { p: Player; sel: boolean; onClick:
         </span>
       </div>
       {METRICS.map(m => (
-        <Bar2 key={m.key} label={m.label} value={(p as Record<string,number>)[m.key]||0} target={wt ? ((wt as unknown as Record<string,number>)[m.tKey]||0) : 0} unit={m.unit} />
+        <Bar2 key={m.key} label={m.label} value={(p as Record<string,number>)[m.key]||0} target={wt ? ((wt as unknown as Record<string,number>)[m.tKey]||0) : 0} avg={p.playerPastAvg?.[m.key]} unit={m.unit} />
       ))}
       <div className="grid grid-cols-3 gap-1 mt-2 text-center text-[11px]">
         <div><div className="text-muted-foreground">最高速度比</div>
