@@ -197,15 +197,51 @@ export async function GET(request: Request) {
   }
 
   if (action === "latest") {
-    const aggMap = aggregatePlayers(weekSheets)
+    // weekパラメータで週を選択可能
+    const requestedWeek = searchParams.get("week") ? parseInt(searchParams.get("week")!) : null
+    const targetWeek = requestedWeek
+      ? weekTargets.find(w => w.week === requestedWeek) ?? currentWeek
+      : currentWeek
+    const targetSheets = targetWeek
+      ? allData.filter(d => {
+          const dt = getDayType(d.date, targetWeek)
+          return dt === "Day1" || dt === "Day2" || dt === "Day3" || dt === "Day4"
+        })
+      : weekSheets
+
+    const aggMap = aggregatePlayers(targetSheets)
+
+    // 過去週の1日当たり平均を計算 (対象週以外)
+    const pastWeekTargets = weekTargets.filter(w => w.week !== (targetWeek?.week ?? -1))
+    const metrics = ["distance","siD","hiD","sprint","accelZ3","decelZ3"] as const
+    const teamPastAvg: Record<string, number> = {}
+    for (const m of metrics) {
+      const vals: number[] = []
+      for (const wt of pastWeekTargets) {
+        const sheets = allData.filter(d => {
+          const dt = getDayType(d.date, wt)
+          return dt === "Day1" || dt === "Day2" || dt === "Day3" || dt === "Day4"
+        })
+        if (sheets.length === 0) continue
+        // 全選手の各日の平均
+        for (const sheet of sheets) {
+          const dayAvg = sheet.players.reduce((s, p) => s + (p[m] || 0), 0) / Math.max(1, sheet.players.length)
+          vals.push(dayAvg)
+        }
+      }
+      teamPastAvg[m] = vals.length > 0 ? Math.round(vals.reduce((s,v) => s+v, 0) / vals.length) : 0
+    }
+
     const players = Array.from(aggMap.values()).map(p => {
       const acwr = calcAcwr(p.name)
       return { ...p, acwr, zone: acwrZone(acwr) }
     })
     return NextResponse.json({
       dates, date: latestDate,
-      weekDays: weekSheets.length,
-      currentWeek,
+      weekDays: targetSheets.length,
+      currentWeek: targetWeek,
+      allWeeks: weekTargets.sort((a,b) => b.week - a.week).map(w => ({ week: w.week, day1: w.day1, game: w.game })),
+      teamPastAvg,
       players
     })
   }
