@@ -74,7 +74,7 @@ function PlayerCard({ p, sel, onClick, wt }: { p: Player; sel: boolean; onClick:
         </span>
       </div>
       {METRICS.map(m => (
-        <Bar2 key={m.key} label={m.label} value={(p as Record<string,number>)[m.key]||0} target={(wt as Record<string,number>|null)?.[m.tKey]||0} unit={m.unit} />
+        <Bar2 key={m.key} label={m.label} value={(p as Record<string,number>)[m.key]||0} target={wt ? ((wt as unknown as Record<string,number>)[m.tKey]||0) : 0} unit={m.unit} />
       ))}
       <div className="grid grid-cols-3 gap-1 mt-2 text-center text-[11px]">
         <div><div className="text-muted-foreground">最高速度比</div>
