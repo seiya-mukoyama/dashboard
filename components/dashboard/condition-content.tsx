@@ -1,8 +1,8 @@
 "use client"
 import { useEffect, useState } from "react"
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, ReferenceLine, BarChart, Bar
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, LineChart, Line, ReferenceLine
 } from "recharts"
 
 type Player = {
@@ -10,144 +10,316 @@ type Player = {
   distance: number; spdMx: number; seasonSpdMx: number; spdMxRatio: number
   siD: number; hiD: number; sprint: number
   hrMax: number; hrMid: number; accelZ3: number; decelZ3: number
-  acute: number; chronic: number; acwr: number | null
-  zone: "sweet" | "caution" | "danger" | "low" | "none"
+  acwr: number | null; zone: "sweet"|"caution"|"danger"|"low"|"none"
 }
 type WeekTarget = {
   week: number; trStart: string; matchDate: string
   distance: number; siD: number; hiD: number; sprint: number; accelZ3: number; decelZ3: number
 }
-type AcwrSeries = Record<string, { date: string; distance: number; acwr: number | null; zone: string }[]>
-
-const ZONE_COLORS = {
-  sweet:   { bg: "bg-green-100",  border: "border-green-400",  text: "text-green-800",  label: "スウィート", color: "#16a34a" },
-  caution: { bg: "bg-yellow-100", border: "border-yellow-400", text: "text-yellow-800", label: "注意",    color: "#ca8a04" },
-  danger:  { bg: "bg-red-100",    border: "border-red-400",    text: "text-red-800",    label: "過剰",    color: "#dc2626" },
-  low:     { bg: "bg-blue-100",   border: "border-blue-400",   text: "text-blue-800",   label: "不足",    color: "#2563eb" },
-  none:    { bg: "bg-gray-100",   border: "border-gray-300",   text: "text-gray-600",   label: "-",       color: "#9ca3af" },
+type DayData = { date: string; dayNum: number; data: Record<string, number> | null }
+type WeeklyData = { week: WeekTarget; days: DayData[] }
+type PlayerDetail = {
+  playerName: string; currentWeek: WeekTarget | null
+  currentWeekDays: DayData[]; weeklyData: WeeklyData[]
+  pastAvg: Record<string, number>
 }
+type AcwrSeries = Record<string, { date: string; acwr: number | null; zone: string }[]>
 
-function fmtDate(s: string) {
-  return s.replace(/(\d{4})(\d{2})(\d{2})/, "$1/$2/$3")
+const ZONE = {
+  sweet:   { bg: "bg-green-100",  border: "border-green-400",  text: "text-green-800",  label: "スウィート" },
+  caution: { bg: "bg-yellow-100", border: "border-yellow-400", text: "text-yellow-800", label: "注意" },
+  danger:  { bg: "bg-red-100",    border: "border-red-400",    text: "text-red-800",    label: "過剰" },
+  low:     { bg: "bg-blue-100",   border: "border-blue-400",   text: "text-blue-800",   label: "不足" },
+  none:    { bg: "bg-gray-100",   border: "border-gray-300",   text: "text-gray-600",   label: "-" },
 }
+const METRICS = [
+  { key: "distance", label: "総走行距離", unit: "m", tKey: "distance" },
+  { key: "siD",      label: "中強度 SI",   unit: "m", tKey: "siD" },
+  { key: "hiD",      label: "高強度 HI",   unit: "m", tKey: "hiD" },
+  { key: "sprint",   label: "スプリント",   unit: "回", tKey: "sprint" },
+  { key: "accelZ3",  label: "高加速 Z3",  unit: "回", tKey: "accelZ3" },
+  { key: "decelZ3",  label: "高減速 Z3",  unit: "回", tKey: "decelZ3" },
+]
 
-function Bar2({ label, value, target, unit = "", dec = 0 }: {
-  label: string; value: number; target: number; unit?: string; dec?: number
-}) {
-  const pct = target > 0 ? Math.min(100, (value / target) * 100) : 0
+function fmtDate(s: string) { return s.replace(/(\d{4})(\d{2})(\d{2})/, "$2/$3") }
+
+function Bar2({ label, value, target, unit="" }: { label: string; value: number; target: number; unit?: string }) {
+  const pct = target > 0 ? Math.min(100, (value/target)*100) : 0
   const ok = value >= target
   return (
     <div className="mb-1.5">
       <div className="flex justify-between text-[11px] mb-0.5">
         <span className="text-muted-foreground">{label}</span>
-        <span className={ok ? "text-green-700 font-semibold" : "text-foreground"}>
-          {value.toFixed(dec)}{unit} <span className="text-muted-foreground text-[10px]">/{target}{unit}</span>
+        <span className={ok ? "text-green-700 font-semibold" : ""}>
+          {Math.round(value)}{unit} <span className="text-muted-foreground text-[10px]">/{target}{unit}</span>
         </span>
       </div>
       <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-        <div className={ok ? "h-full rounded-full bg-green-500" : "h-full rounded-full bg-yellow-400"}
-          style={{ width: pct + "%" }} />
+        <div className={ok ? "h-full bg-green-500 rounded-full" : "h-full bg-yellow-400 rounded-full"} style={{ width: pct+"%" }} />
       </div>
     </div>
   )
 }
 
-function PlayerCard({ p, sel, onClick, wt }: {
-  p: Player; sel: boolean; onClick: () => void; wt: WeekTarget | null
-}) {
-  const z = ZONE_COLORS[p.zone]
+// 選手カード（一覧表示用）
+function PlayerCard({ p, sel, onClick, wt }: { p: Player; sel: boolean; onClick: () => void; wt: WeekTarget | null }) {
+  const z = ZONE[p.zone]
   return (
     <div onClick={onClick} className={`cursor-pointer rounded-xl border-2 p-3 transition-all ${z.bg} ${z.border} ${sel ? "ring-2 ring-primary ring-offset-1" : ""}`}>
       <div className="flex justify-between items-center mb-2">
-        <div>
-          <span className="font-semibold text-sm">{p.name}</span>
-          <span className="text-[10px] text-muted-foreground ml-1">{p.days}日間</span>
-        </div>
+        <div><span className="font-semibold text-sm">{p.name}</span>
+          <span className="text-[10px] text-muted-foreground ml-1">{p.days}日間</span></div>
         <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${z.bg} ${z.border} ${z.text}`}>
-          {z.label} {p.acwr !== null ? p.acwr.toFixed(2) : "-"}
+          {z.label} {p.acwr?.toFixed(2) ?? "-"}
         </span>
       </div>
-      <Bar2 label="総走行距離" value={Math.round(p.distance)} target={wt?.distance ?? 0} unit="m" />
-      <Bar2 label="中強度 SI" value={Math.round(p.siD)} target={wt?.siD ?? 0} unit="m" />
-      <Bar2 label="高強度 HI" value={Math.round(p.hiD)} target={wt?.hiD ?? 0} unit="m" />
-      <Bar2 label="スプリント" value={Math.round(p.sprint)} target={wt?.sprint ?? 0} unit="回" />
-      <div className="grid grid-cols-2 gap-2 mt-1">
-        <Bar2 label="高加速 Z3" value={Math.round(p.accelZ3)} target={wt?.accelZ3 ?? 0} unit="回" />
-        <Bar2 label="高減速 Z3" value={Math.round(p.decelZ3)} target={wt?.decelZ3 ?? 0} unit="回" />
-      </div>
+      {METRICS.map(m => (
+        <Bar2 key={m.key} label={m.label} value={(p as Record<string,number>)[m.key]||0} target={(wt as Record<string,number>|null)?.[m.tKey]||0} unit={m.unit} />
+      ))}
       <div className="grid grid-cols-3 gap-1 mt-2 text-center text-[11px]">
         <div><div className="text-muted-foreground">最高速度比</div>
-          <div className={`font-bold ${p.spdMxRatio >= 95 ? "text-green-700" : ""}`}>{p.spdMxRatio.toFixed(1)}%</div></div>
-        <div><div className="text-muted-foreground">HR最大</div><div className="font-bold">{p.hrMax || "-"}</div></div>
-        <div><div className="text-muted-foreground">HR中央</div><div className="font-bold">{p.hrMid || "-"}</div></div>
+          <div className={`font-bold ${p.spdMxRatio>=95?"text-green-700":""}`}>{p.spdMxRatio.toFixed(1)}%</div></div>
+        <div><div className="text-muted-foreground">HR最大</div><div className="font-bold">{p.hrMax||"-"}</div></div>
+        <div><div className="text-muted-foreground">HR中央</div><div className="font-bold">{p.hrMid||"-"}</div></div>
       </div>
     </div>
   )
 }
 
-export default function ConditionContent() {
-  const [data, setData] = useState<{
-    date: string; weekDays: number; currentWeek: WeekTarget | null; players: Player[]
-  } | null>(null)
-  const [series, setSeries] = useState<AcwrSeries>({})
-  const [sel, setSel] = useState<string | null>(null)
+// 選手詳細ビュー
+function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: WeekTarget | null; onBack: () => void }) {
+  const [detail, setDetail] = useState<PlayerDetail | null>(null)
+  const [acwrSer, setAcwrSer] = useState<{ date: string; ACWR: number|null }[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<"list" | "acwr" | "compare">("list")
+  const [detailTab, setDetailTab] = useState<"week"|"day"|"history">("week")
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`/api/condition?action=player&name=${encodeURIComponent(playerName)}`).then(r => r.json()),
+      fetch(`/api/condition?action=acwr`).then(r => r.json()),
+    ]).then(([d, acwr]: [PlayerDetail, {series: AcwrSeries}]) => {
+      setDetail(d)
+      const ser = acwr.series?.[playerName] ?? []
+      setAcwrSer(ser.map(s => ({ date: s.date, ACWR: s.acwr })))
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [playerName])
+
+  if (loading) return <div className="p-8 text-muted-foreground">読み込み中...</div>
+  if (!detail) return <div className="p-8 text-muted-foreground">データなし</div>
+
+  const days = detail.currentWeekDays
+  const past = detail.pastAvg
+
+  // Day別チャート用データ
+  const dayChartData = days.map(d => ({
+    name: `Day${d.dayNum}\n${fmtDate(d.date)}`,
+    ...Object.fromEntries(METRICS.map(m => [m.label, d.data ? Math.round((d.data as Record<string,number>)[m.key]||0) : 0]))
+  }))
+
+  // 週別履歴チャート: 各週の累計値
+  const weekHistChart = detail.weeklyData.map(w => {
+    const totals: Record<string, number> = {}
+    for (const m of METRICS) {
+      totals[m.label] = Math.round(w.days.reduce((s, d) => s + ((d.data as Record<string,number>|null)?.[m.key]||0), 0))
+    }
+    return { name: `W${w.week.week}`, ...totals }
+  })
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <button onClick={onBack} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
+          ← 一覧に戻る
+        </button>
+        <span className="font-bold text-lg">{playerName}</span>
+        {wt && <span className="text-sm text-muted-foreground">Week{wt.week}</span>}
+      </div>
+
+      {/* タブ */}
+      <div className="flex gap-2">
+        {[{k:"week",l:"週目標 vs 実績"},{k:"day",l:"Day別"},{k:"history",l:"週別履歴"}].map(({k,l}) => (
+          <button key={k} onClick={() => setDetailTab(k as "week"|"day"|"history")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${detailTab===k ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {/* 週目標 vs 実績 + 過去平均 */}
+      {detailTab === "week" && wt && (
+        <div className="space-y-3">
+          <div className="bg-card rounded-xl border p-4">
+            <h3 className="font-semibold mb-3 text-sm">Week{wt.week}目標 vs 実績累計　過去平均(同時期)</h3>
+            <div className="grid gap-1.5">
+              {METRICS.map(m => {
+                const val = days.reduce((s,d) => s + ((d.data as Record<string,number>|null)?.[m.key]||0), 0)
+                const target = (wt as Record<string,number>)[m.tKey] || 0
+                const avg = past[m.key] || 0
+                return (
+                  <div key={m.key} className="grid grid-cols-[120px_1fr_80px_80px] items-center gap-2 text-sm">
+                    <span className="text-muted-foreground text-xs">{m.label}</span>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden relative">
+                      <div className="h-full bg-primary/80 rounded-full transition-all"
+                        style={{ width: target>0 ? Math.min(100,(Math.round(val)/target)*100)+"%" : "0%" }} />
+                      {avg > 0 && target > 0 && (
+                        <div className="absolute top-0 h-full w-0.5 bg-orange-400"
+                          style={{ left: Math.min(100,(avg/target)*100)+"%" }} />
+                      )}
+                    </div>
+                    <span className={`text-xs text-right font-medium ${Math.round(val)>=target?"text-green-700":""}`}>
+                      {Math.round(val)}{m.unit}
+                    </span>
+                    <span className="text-xs text-muted-foreground text-right">
+                      平均{Math.round(avg)}{m.unit}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-2">オレンジの縦線 = 過去平均値　バーの終点 = 目標値</p>
+          </div>
+        </div>
+      )}
+
+      {/* Day別 */}
+      {detailTab === "day" && (
+        <div className="space-y-3">
+          {/* Day別カード */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {days.map(d => (
+              <div key={d.date} className="bg-card rounded-xl border p-3">
+                <div className="font-semibold text-sm mb-2">Day{d.dayNum} <span className="text-xs text-muted-foreground">{fmtDate(d.date)}</span></div>
+                {d.data ? METRICS.map(m => (
+                  <div key={m.key} className="flex justify-between text-xs mb-0.5">
+                    <span className="text-muted-foreground">{m.label}</span>
+                    <span className="font-medium">{Math.round((d.data as Record<string,number>)[m.key]||0)}{m.unit}</span>
+                  </div>
+                )) : <p className="text-xs text-muted-foreground">データなし</p>}
+              </div>
+            ))}
+            {days.length === 0 && <p className="text-sm text-muted-foreground col-span-4">今週のデータなし</p>}
+          </div>
+          {/* Day別棒グラフ */}
+          {dayChartData.length > 0 && (
+            <div className="bg-card rounded-xl border p-4">
+              <h3 className="font-semibold mb-3 text-sm">Day別走行距離</h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={dayChartData} margin={{ top:5, right:10, bottom:5, left:0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Bar dataKey="総走行距離" fill="#22c55e" radius={[4,4,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 週別履歴 */}
+      {detailTab === "history" && (
+        <div className="space-y-3">
+          {acwrSer.length > 1 && (
+            <div className="bg-card rounded-xl border p-4">
+              <h3 className="font-semibold mb-2 text-sm">ACWR推移</h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={acwrSer} margin={{ top:5, right:10, bottom:5, left:0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
+                  <XAxis dataKey="date" tick={{ fontSize: 9 }} />
+                  <YAxis domain={[0,2]} tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <ReferenceLine y={0.8} stroke="#3b82f6" strokeDasharray="4 4" />
+                  <ReferenceLine y={1.3} stroke="#eab308" strokeDasharray="4 4" />
+                  <ReferenceLine y={1.5} stroke="#ef4444" strokeDasharray="4 4" />
+                  <Line type="monotone" dataKey="ACWR" stroke="#22c55e" strokeWidth={2} dot={{ r:3 }} connectNulls />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+          <div className="bg-card rounded-xl border p-4">
+            <h3 className="font-semibold mb-2 text-sm">週別総走行距離</h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={weekHistChart} margin={{ top:5, right:10, bottom:5, left:0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Bar dataKey="総走行距離" fill="#22c55e" radius={[4,4,0,0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// メインコンポーネント
+export default function ConditionContent() {
+  const [data, setData] = useState<{ date: string; weekDays: number; currentWeek: WeekTarget|null; players: Player[] }|null>(null)
+  const [series, setSeries] = useState<AcwrSeries>({})
+  const [selPlayer, setSelPlayer] = useState<string|null>(null)
+  const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState<"list"|"acwr">("list")
 
   useEffect(() => {
     Promise.all([
       fetch("/api/condition?action=latest").then(r => r.json()),
       fetch("/api/condition?action=acwr").then(r => r.json()),
     ]).then(([lat, acwr]) => {
-      setData(lat)
-      setSeries(acwr.series ?? {})
-      if (lat.players?.[0]) setSel(lat.players[0].name)
+      setData(lat); setSeries(acwr.series ?? {})
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [])
 
   if (loading) return <div className="flex items-center justify-center h-64 text-muted-foreground">読み込み中...</div>
-  if (!data || !data.players?.length) return <div className="p-8 text-muted-foreground">データがありません</div>
+  if (!data || !data.players?.length) return <div className="p-8 text-muted-foreground">データなし</div>
 
   const wt = data.currentWeek
-  const selP = data.players.find(p => p.name === sel)
-  const acwrData = sel ? (series[sel] ?? []).map(s => ({ date: s.date, ACWR: s.acwr })) : []
-  const zones: Record<string, number> = { sweet: 0, caution: 0, danger: 0, low: 0 }
+  const zones: Record<string, number> = { sweet:0, caution:0, danger:0, low:0 }
   data.players.forEach(p => { if (p.zone in zones) zones[p.zone]++ })
+
+  // 選手詳細ビュー
+  if (selPlayer) {
+    return (
+      <div className="p-4 max-w-4xl">
+        <PlayerDetailView playerName={selPlayer} wt={wt} onBack={() => setSelPlayer(null)} />
+      </div>
+    )
+  }
 
   return (
     <div className="p-4 space-y-4 max-w-6xl">
+      {/* ヘッダ */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          {wt ? (
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-bold text-base">Week {wt.week}</span>
-              <span className="text-sm text-muted-foreground">
-                {fmtDate(wt.trStart)} → {fmtDate(wt.matchDate)}(試合)
-              </span>
-            </div>
-          ) : null}
+          {wt && <div className="flex items-center gap-2 mb-1">
+            <span className="font-bold text-base">Week {wt.week}</span>
+            <span className="text-sm text-muted-foreground">
+              {wt.trStart.replace(/(\d{4})(\d{2})(\d{2})/, "$2/$3")} → {wt.matchDate.replace(/(\d{4})(\d{2})(\d{2})/, "$2/$3")}(試合)
+            </span>
+          </div>}
           <div className="flex items-center gap-2">
             <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-              週累計 {data.weekDays}日/{wt ? 4 : "?"}日
+              週累計 {data.weekDays}日/4日
             </span>
-            <span className="text-xs text-muted-foreground">
-              最終データ: {data.date.replace(/(\d{4})(\d{2})(\d{2})/, "$1/$2/$3")}
-            </span>
+            <span className="text-xs text-muted-foreground">最終: {data.date.replace(/(\d{4})(\d{2})(\d{2})/, "$1/$2/$3")}</span>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
           {(["sweet","caution","danger","low"] as const).map(k => (
-            <div key={k} className={`px-2 py-1 rounded-full text-xs border ${ZONE_COLORS[k].bg} ${ZONE_COLORS[k].border} ${ZONE_COLORS[k].text}`}>
-              {ZONE_COLORS[k].label} {zones[k] ?? 0}名
+            <div key={k} className={`px-2 py-1 rounded-full text-xs border ${ZONE[k].bg} ${ZONE[k].border} ${ZONE[k].text}`}>
+              {ZONE[k].label} {zones[k]??0}名
             </div>
           ))}
         </div>
       </div>
 
       {wt && (
-        <div className="bg-muted/50 rounded-lg px-4 py-2 text-xs text-muted-foreground flex flex-wrap gap-4">
-          <span className="font-semibold text-foreground">Week{wt.week}目標値:</span>
+        <div className="bg-muted/50 rounded-lg px-4 py-2 text-xs flex flex-wrap gap-4">
+          <span className="font-semibold text-foreground">Week{wt.week}目標:</span>
           <span>距離 {wt.distance.toLocaleString()}m</span>
           <span>SI {wt.siD.toLocaleString()}m</span>
           <span>HI {wt.hiD.toLocaleString()}m</span>
@@ -157,95 +329,40 @@ export default function ConditionContent() {
         </div>
       )}
 
+      {/* タブ */}
       <div className="flex gap-2">
-        {[{k:"list",l:"選手一覧"},{k:"acwr",l:"ACWR推移"},{k:"compare",l:"目標vs実績"}].map(({k,l}) => (
-          <button key={k} onClick={() => setTab(k as "list"|"acwr"|"compare")}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${tab===k ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
+        {[{k:"list",l:"選手一覧"},{k:"acwr",l:"ACWR推移"}].map(({k,l}) => (
+          <button key={k} onClick={() => setTab(k as "list"|"acwr")}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium ${tab===k ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
             {l}
           </button>
         ))}
       </div>
 
+      {/* 選手一覧 - カードをクリックすると詳細表示 */}
       {tab === "list" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {data.players.map(p => (
-            <PlayerCard key={p.name} p={p} sel={sel===p.name} onClick={() => setSel(p.name)} wt={wt} />
+            <PlayerCard key={p.name} p={p} sel={selPlayer===p.name} onClick={() => setSelPlayer(p.name)} wt={wt} />
           ))}
         </div>
       )}
 
+      {/* ACWR推移 */}
       {tab === "acwr" && (
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
             {data.players.map(p => {
-              const z = ZONE_COLORS[p.zone]
+              const z = ZONE[p.zone]
               return (
-                <button key={p.name} onClick={() => setSel(p.name)}
-                  className={`px-3 py-1 rounded-full text-xs border transition-colors ${sel===p.name ? "bg-primary text-white border-primary" : `${z.bg} ${z.border} ${z.text}`}`}>
+                <button key={p.name} onClick={() => setSelPlayer(p.name)}
+                  className={`px-3 py-1 rounded-full text-xs border ${z.bg} ${z.border} ${z.text}`}>
                   {p.name}
                 </button>
               )
             })}
           </div>
-          {selP && (
-            <div className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold mb-1">{selP.name} — ACWR推移</h3>
-              <p className="text-xs text-muted-foreground mb-3">スウィート: 0.8〜1.3 / 注意: 1.3〜1.5 / 過剰: 1.5以上 / 不足: 0.8未満</p>
-              {acwrData.length > 1 ? (
-                <ResponsiveContainer width="100%" height={280}>
-                  <LineChart data={acwrData} margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 2]} tick={{ fontSize: 10 }} />
-                    <Tooltip />
-                    <ReferenceLine y={0.8} stroke="#3b82f6" strokeDasharray="4 4" />
-                    <ReferenceLine y={1.3} stroke="#eab308" strokeDasharray="4 4" />
-                    <ReferenceLine y={1.5} stroke="#ef4444" strokeDasharray="4 4" />
-                    <Line type="monotone" dataKey="ACWR" stroke="#22c55e" strokeWidth={2} dot={{ r: 4 }} connectNulls />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <p className="text-sm text-muted-foreground py-8 text-center">データが袅積されると推移グラフが表示されます。</p>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {tab === "compare" && (
-        <div className="space-y-3">
-          <div className="flex flex-wrap gap-2">
-            {data.players.map(p => (
-              <button key={p.name} onClick={() => setSel(p.name)}
-                className={`px-3 py-1 rounded-full text-xs border ${sel===p.name ? "bg-primary text-white border-primary" : "bg-muted text-muted-foreground"}`}>
-                {p.name}
-              </button>
-            ))}
-          </div>
-          {selP && wt && (
-            <div className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold mb-1">{selP.name} — Week{wt.week} 目標 vs 実績(週累計)</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart margin={{ top: 10, right: 20, bottom: 30, left: 0 }}
-                  data={[
-                    { name: "距離(m)", 実績: Math.round(selP.distance), 目標: wt.distance },
-                    { name: "SI(m)", 実績: Math.round(selP.siD), 目標: wt.siD },
-                    { name: "HI(m)", 実績: Math.round(selP.hiD), 目標: wt.hiD },
-                    { name: "スプリント", 実績: Math.round(selP.sprint), 目標: wt.sprint },
-                    { name: "高加速", 実績: Math.round(selP.accelZ3), 目標: wt.accelZ3 },
-                    { name: "高減速", 実績: Math.round(selP.decelZ3), 目標: wt.decelZ3 },
-                  ]}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
-                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="実績" fill="#22c55e" radius={[4,4,0,0]} />
-                  <Bar dataKey="目標" fill="rgba(148,163,184,0.4)" radius={[4,4,0,0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+          <p className="text-xs text-muted-foreground">選手名をクリックすると詳細ビューへ</p>
         </div>
       )}
     </div>
