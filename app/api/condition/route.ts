@@ -230,7 +230,6 @@ export async function GET(request: Request) {
       teamPastAvg[m] = vals.length > 0 ? Math.round(vals.reduce((s,v) => s+v, 0) / vals.length) : 0
     }
 
-    const metrics = ["distance","siD","hiD","sprint","accelZ3","decelZ3"]
     const players = Array.from(aggMap.values()).map(p => {
       const acwr = calcAcwr(p.name)
       // 選手個人の過去週平均（1日あたり）
@@ -290,7 +289,6 @@ export async function GET(request: Request) {
       if (days.some(d => d.data !== null)) weeklyData.push({ week: wt, days })
     }
     const pastWeeks = weeklyData.filter(w => w.week.week !== (currentWeek?.week ?? -1))
-    const metrics = ["distance","siD","hiD","sprint","accelZ3","decelZ3"] as const
     const pastAvg: Record<string, number> = {}
     for (const m of metrics) {
       const vals = pastWeeks.flatMap(w =>
