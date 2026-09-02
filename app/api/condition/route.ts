@@ -156,8 +156,14 @@ export async function GET(request: Request) {
   }
   const dateSheets = Array.from(allDatesSet).sort()
 
-  // 全日程のCSVを並列取得
-  const sheetDataArr = await Promise.all(dateSheets.map(s => parseSheet(s)))
+  // 全日程のCSVを取得（10件ずつ並列レート制限）
+  const CHUNK = 10
+  const sheetDataArr: PlayerData[][] = []
+  for (let i = 0; i < dateSheets.length; i += CHUNK) {
+    const chunk = dateSheets.slice(i, i + CHUNK)
+    const results = await Promise.all(chunk.map(s => parseSheet(s)))
+    sheetDataArr.push(...results)
+  }
 
   const allData = dateSheets
     .map((s, i) => ({ date: s, players: sheetDataArr[i] }))
