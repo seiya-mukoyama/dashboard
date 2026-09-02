@@ -12,6 +12,7 @@ type Player = {
   siD: number; hiD: number; sprint: number
   hrMax: number; hrMid: number; accelZ3: number; decelZ3: number
   acwr: number | null; zone: "sweet"|"caution"|"danger"|"low"|"none"
+  acwrSI?: number | null; zoneSI?: "sweet"|"caution"|"danger"|"low"|"none"
   playerPastAvg?: Record<string, number>
 }
 type WeekTarget = {
@@ -72,9 +73,17 @@ function PlayerCard({ p, sel, onClick, wt }: { p: Player; sel: boolean; onClick:
       <div className="flex justify-between items-center mb-2">
         <div><span className="font-semibold text-sm">{p.name}</span>
           <span className="text-[10px] text-muted-foreground ml-1">{p.days}日間</span></div>
-        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${z.bg} ${z.border} ${z.text}`}>
-          {z.label} {p.acwr?.toFixed(2) ?? "-"}
-        </span>
+        <div className="flex gap-1">
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${z.bg} ${z.border} ${z.text}`} title="総走行距離ACWR">
+            距{z.label} {p.acwr?.toFixed(2) ?? "-"}
+          </span>
+          {p.acwrSI !== undefined && p.zoneSI && (() => {
+            const zsi = ZONE[p.zoneSI]
+            return <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${zsi.bg} ${zsi.border} ${zsi.text}`} title="SI ACWR">
+              SI{zsi.label} {p.acwrSI?.toFixed(2) ?? "-"}
+            </span>
+          })()}
+        </div>
       </div>
       {METRICS.map(m => (
         <Bar2 key={m.key} label={m.label} value={(p as Record<string,number>)[m.key]||0} target={wt ? ((wt as unknown as Record<string,number>)[m.tKey]||0) : 0} avg={p.playerPastAvg?.[m.key]} unit={m.unit} />
