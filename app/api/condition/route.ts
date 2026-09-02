@@ -195,8 +195,8 @@ export async function GET(request: Request) {
     return map
   }
 
-  function calcAcwr(name: string) {
-    const history = allData.map(d => d.players.find(x => x.name === name)?.distance ?? 0)
+  function calcAcwr(name: string, metric = "distance") {
+    const history = allData.map(d => d.players.find(x => x.name === name)?.[metric] ?? 0)
     const i = history.length - 1
     const s7 = Math.max(0, i - 6); const s28 = Math.max(0, i - 27)
     const acute = history.slice(s7).reduce((s,v) => s+v, 0) / Math.max(1, history.slice(s7).length)
