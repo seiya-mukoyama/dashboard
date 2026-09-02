@@ -214,36 +214,53 @@ export async function GET(request: Request) {
     const pastWeekTargets = weekTargets.filter(w => w.week !== (targetWeek?.week ?? -1))
     const metrics = ["distance","siD","hiD","sprint","accelZ3","decelZ3"]
     const teamPastAvg: Record<string, number> = {}
+    // チーム累計平均: 各週の全選手平均累計値の平均
     for (const m of metrics) {
-      const vals: number[] = []
+      const weekAvgs: number[] = []
       for (const wt of pastWeekTargets) {
         const sheets = allData.filter(d => {
           const dt = getDayType(d.date, wt)
           return dt === "Day1" || dt === "Day2" || dt === "Day3" || dt === "Day4"
         })
-        for (const sheet of sheets) {
-          const dayAvg = sheet.players.reduce((s, p) => s + (p[m] || 0), 0) / Math.max(1, sheet.players.length)
-          vals.push(dayAvg)
+        if (sheets.length === 0) continue
+        // 各選手の週累計を計算して平均
+        const playerNames = [...new Set(sheets.flatMap(s => s.players.map(p => p.name)))]
+        const playerWeekTotals = playerNames.map(name => {
+          return sheets.reduce((sum, sheet) => {
+            const player = sheet.players.find(x => x.name === name)
+            return sum + (player ? (player[m] || 0) : 0)
+          }, 0)
+        }).filter(v => v > 0)
+        if (playerWeekTotals.length > 0) {
+          weekAvgs.push(playerWeekTotals.reduce((s,v) => s+v, 0) / playerWeekTotals.length)
         }
       }
-      teamPastAvg[m] = vals.length > 0 ? Math.round(vals.reduce((s,v) => s+v, 0) / vals.length) : 0
+      teamPastAvg[m] = weekAvgs.length > 0 ? Math.round(weekAvgs.reduce((s,v) => s+v, 0) / weekAvgs.length) : 0
     }
 
     const players = Array.from(aggMap.values()).map(p => {
       const acwr = calcAcwr(p.name)
+      // 週累計平均: 各週のDay1-4の合計値を計算し、その週平均
       const playerPastAvg: Record<string, number> = {}
       for (const m of metrics) {
-        const vals = pastWeekTargets.flatMap(wt => {
+        // 各週の累計値を集める
+        const weekTotals: number[] = []
+        for (const wt of pastWeekTargets) {
           const wtSheets = allData.filter(d => {
             const dt = getDayType(d.date, wt)
             return dt === "Day1" || dt === "Day2" || dt === "Day3" || dt === "Day4"
           })
-          return wtSheets.map(sheet => {
-            const player = sheet.players.find(x => x.name === p.name)
-            return player ? player[m] : null
-          }).filter(v => v !== null)
-        })
-        playerPastAvg[m] = vals.length > 0 ? Math.round(vals.reduce((s,v) => s+v, 0) / vals.length) : 0
+          // その週に1日以上参加している場合のみ累計
+          const days = wtSheets.filter(sheet => sheet.players.find(x => x.name === p.name))
+          if (days.length > 0) {
+            const weekTotal = days.reduce((sum, sheet) => {
+              const player = sheet.players.find(x => x.name === p.name)
+              return sum + (player ? (player[m] || 0) : 0)
+            }, 0)
+            weekTotals.push(weekTotal)
+          }
+        }
+        playerPastAvg[m] = weekTotals.length > 0 ? Math.round(weekTotals.reduce((s,v) => s+v, 0) / weekTotals.length) : 0
       }
       return { ...p, acwr, zone: acwrZone(acwr), playerPastAvg }
     })
@@ -290,12 +307,15 @@ export async function GET(request: Request) {
     const pastWeeks = weeklyData.filter(w => w.week.week !== (currentWeek?.week ?? -1))
     const metrics = ["distance","siD","hiD","sprint","accelZ3","decelZ3"]
     const pastAvg: Record<string, number> = {}
+    // 週累計平均: 各週のDay1-4の合計値を計算し、その週平均
     for (const m of metrics) {
-      const vals = pastWeeks.flatMap(w =>
-        w.days.filter(d => ["Day1","Day2","Day3","Day4"].includes(d.dayType))
-               .map(d => d.data?.[m] ?? null)
-      ).filter((v) => v !== null)
-      pastAvg[m] = vals.length > 0 ? Math.round(vals.reduce((s,v) => s+v, 0) / vals.length) : 0
+      const weekTotals = pastWeeks.map(w => {
+        const days = w.days.filter(d => ["Day1","Day2","Day3","Day4"].includes(d.dayType))
+        if (days.length === 0) return null
+        const total = days.reduce((s, d) => s + (d.data?.[m] ?? 0), 0)
+        return total > 0 ? total : null
+      }).filter(v => v !== null)
+      pastAvg[m] = weekTotals.length > 0 ? Math.round(weekTotals.reduce((s,v) => s+v, 0) / weekTotals.length) : 0
     }
     const currentWeekData = weeklyData.find(w => w.week.week === currentWeek?.week)
     return NextResponse.json({ playerName, currentWeek, currentWeekDays: currentWeekData?.days ?? [], weeklyData, pastAvg, dates })
