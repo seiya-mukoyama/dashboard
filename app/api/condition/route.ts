@@ -268,7 +268,9 @@ export async function GET(request: Request) {
         }
         playerPastAvg[m] = weekTotals.length > 0 ? Math.round(weekTotals.reduce((s,v) => s+v, 0) / weekTotals.length) : 0
       }
-      return { ...p, acwr, zone: acwrZone(acwr), playerPastAvg }
+      const acwrSI = calcAcwr(p.name, "siD")
+      const zoneSI = acwrZone(acwrSI)
+      return { ...p, acwr, zone: acwrZone(acwr), acwrSI, zoneSI, playerPastAvg }
     })
 
     return NextResponse.json({
@@ -284,7 +286,7 @@ export async function GET(request: Request) {
     for (const d of allData) {
       for (const p of d.players) {
         if (!seriesMap[p.name]) seriesMap[p.name] = []
-        seriesMap[p.name].push({ date: d.date, distance: p.distance, acwr: null, zone: "none" })
+        seriesMap[p.name].push({ date: d.date, distance: p.distance, siD: p.siD, acwr: null, zone: "none", acwrSI: null, zoneSI: "none" })
       }
     }
     for (const name of Object.keys(seriesMap)) {
@@ -295,6 +297,12 @@ export async function GET(request: Request) {
         const chronic = ser.slice(s28, i+1).reduce((s,x) => s+x.distance,0) / Math.max(1, i-s28+1)
         entry.acwr = chronic > 0 ? +(acute/chronic).toFixed(2) : null
         entry.zone = acwrZone(entry.acwr)
+        // SI ACWR
+        const siHistory = seriesMap[name].slice(0, i+1).map(x => x.siD || 0)
+        const siAcute = siHistory.slice(s7).reduce((s,v)=>s+v,0) / Math.max(1, siHistory.slice(s7).length)
+        const siChronic = siHistory.slice(s28).reduce((s,v)=>s+v,0) / Math.max(1, siHistory.slice(s28).length)
+        entry.acwrSI = siChronic > 0 ? +(siAcute/siChronic).toFixed(2) : null
+        entry.zoneSI = acwrZone(entry.acwrSI)
       })
     }
     return NextResponse.json({ dates, series: seriesMap })
