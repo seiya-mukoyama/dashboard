@@ -113,7 +113,7 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
     ]).then(([d, acwr]: [PlayerDetail, {series: AcwrSeries}]) => {
       setDetail(d)
       const ser = acwr.series?.[playerName] ?? []
-      setAcwrSer(ser.map(s => ({ date: s.date, ACWR: s.acwr })))
+      setAcwrSer(ser.map(s => ({ date: s.date, ACWR: s.acwr, ACWRSI: s.acwrSI ?? null })))
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [playerName, selectedDetailWeek])
