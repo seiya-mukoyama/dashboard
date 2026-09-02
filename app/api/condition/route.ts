@@ -331,8 +331,18 @@ export async function GET(request: Request) {
       }).filter(v => v !== null)
       pastAvg[m] = weekTotals.length > 0 ? Math.round(weekTotals.reduce((s,v) => s+v, 0) / weekTotals.length) : 0
     }
-    const currentWeekData = weeklyData.find(w => w.week.week === currentWeek?.week)
-    return NextResponse.json({ playerName, currentWeek, currentWeekDays: currentWeekData?.days ?? [], weeklyData, pastAvg, dates })
+    // weekパラメータで表示週を切り替え
+    const requestedWeekNum = searchParams.get("week") ? parseInt(searchParams.get("week")) : null
+    const displayWeek = requestedWeekNum
+      ? weekTargets.find(w => w.week === requestedWeekNum) ?? currentWeek
+      : currentWeek
+    const currentWeekData = weeklyData.find(w => w.week.week === displayWeek?.week)
+    return NextResponse.json({
+      playerName, currentWeek: displayWeek,
+      currentWeekDays: currentWeekData?.days ?? [],
+      weeklyData, pastAvg, dates,
+      allWeeks: weekTargets.sort((a,b) => b.week - a.week).map(w => ({ week: w.week, day1: w.day1, game: w.game }))
+    })
   }
 
   return NextResponse.json({ dates, allData, weekTargets })
