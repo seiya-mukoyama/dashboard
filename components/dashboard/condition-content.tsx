@@ -280,12 +280,12 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
           )}
           {/* 週別グラフ 6枚 */}
           {[
-            { key: "総走行距離", label: "週別総走行距離", color: "#22c55e", unit: "m" },
-            { key: "SI", label: "週別中強度 SI", color: "#3b82f6", unit: "m" },
-            { key: "HI", label: "週別高強度 HI", color: "#8b5cf6", unit: "m" },
-            { key: "スプリント", label: "週別スプリント", color: "#f59e0b", unit: "回" },
-            { key: "高加速Z3", label: "週別高加速 Z3", color: "#ef4444", unit: "回" },
-            { key: "高減速Z3", label: "週別高減速 Z3", color: "#ec4899", unit: "回" },
+            { key: "distance", label: "週別総走行距離", color: "#22c55e", unit: "m" },
+            { key: "siD", label: "週別中強度 SI", color: "#3b82f6", unit: "m" },
+            { key: "hiD", label: "週別高強度 HI", color: "#8b5cf6", unit: "m" },
+            { key: "sprint", label: "週別スプリント", color: "#f59e0b", unit: "回" },
+            { key: "accelZ3", label: "週別高加速 Z3", color: "#ef4444", unit: "回" },
+            { key: "decelZ3", label: "週別高減速 Z3", color: "#ec4899", unit: "回" },
           ].map(({ key, label, color, unit }) => (
             <div key={key} className="bg-card rounded-xl border p-4">
               <h3 className="font-semibold mb-2 text-sm">{label}</h3>
