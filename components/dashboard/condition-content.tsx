@@ -133,11 +133,16 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
 
   // 週別履歴チャート: 各週の累計値
   const weekHistChart = detail.weeklyData.map(w => {
-    const totals: Record<string, number> = {}
-    for (const m of METRICS) {
-      totals[m.label] = Math.round(w.days.reduce((s, d) => s + ((d.data as Record<string,number>|null)?.[m.key]||0), 0))
+    const days = w.days.filter(d => ["Day1","Day2","Day3","Day4"].includes(d.dayType))
+    return {
+      name: `W${w.week.week}`,
+      distance: Math.round(days.reduce((s,d) => s+((d.data?.distance)||0), 0)),
+      siD:      Math.round(days.reduce((s,d) => s+((d.data?.siD)||0), 0)),
+      hiD:      Math.round(days.reduce((s,d) => s+((d.data?.hiD)||0), 0)),
+      sprint:   Math.round(days.reduce((s,d) => s+((d.data?.sprint)||0), 0)),
+      accelZ3:  Math.round(days.reduce((s,d) => s+((d.data?.accelZ3)||0), 0)),
+      decelZ3:  Math.round(days.reduce((s,d) => s+((d.data?.decelZ3)||0), 0)),
     }
-    return { name: `W${w.week.week}`, ...totals }
   })
 
   return (
