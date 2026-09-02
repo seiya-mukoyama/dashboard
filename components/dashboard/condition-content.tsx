@@ -104,10 +104,11 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
   const [acwrSer, setAcwrSer] = useState<{ date: string; ACWR: number|null }[]>([])
   const [loading, setLoading] = useState(true)
   const [detailTab, setDetailTab] = useState<"week"|"day"|"history">("week")
+  const [selectedDetailWeek, setSelectedDetailWeek] = useState<number|null>(null)
 
   useEffect(() => {
     Promise.all([
-      fetch(`/api/condition?action=player&name=${encodeURIComponent(playerName)}`).then(r => r.json()),
+      fetch(`/api/condition?action=player&name=${encodeURIComponent(playerName)}${selectedDetailWeek ? "&week="+selectedDetailWeek : ""}`).then(r => r.json()),
       fetch(`/api/condition?action=acwr`).then(r => r.json()),
     ]).then(([d, acwr]: [PlayerDetail, {series: AcwrSeries}]) => {
       setDetail(d)
@@ -115,7 +116,7 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
       setAcwrSer(ser.map(s => ({ date: s.date, ACWR: s.acwr })))
       setLoading(false)
     }).catch(() => setLoading(false))
-  }, [playerName])
+  }, [playerName, selectedDetailWeek])
 
   if (loading) return <div className="p-8 text-muted-foreground">読み込み中...</div>
   if (!detail) return <div className="p-8 text-muted-foreground">データなし</div>
@@ -146,6 +147,13 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
         </button>
         <span className="font-bold text-lg">{playerName}</span>
         {wt && <span className="text-sm text-muted-foreground">Week{wt.week}</span>}
+        {allWeeks && allWeeks.length > 1 && (
+          <select value={selectedDetailWeek ?? detail?.currentWeek?.week ?? ""}
+            onChange={e => { setSelectedDetailWeek(Number(e.target.value)); setLoading(true) }}
+            className="text-xs border border-border rounded px-2 py-1 bg-background text-foreground">
+            {allWeeks.map(w => <option key={w.week} value={w.week}>Week{w.week} ({w.day1.slice(4,6)}/{w.day1.slice(6,8)}〜)</option>)}
+          </select>
+        )}
       </div>
 
       {/* タブ */}
