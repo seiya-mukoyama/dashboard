@@ -26,6 +26,7 @@ type PlayerDetail = {
   playerName: string; currentWeek: WeekTarget | null
   currentWeekDays: DayData[]; weeklyData: WeeklyData[]
   pastAvg: Record<string, number>
+  allWeeks?: {week:number;day1:string;game:string}[]
 }
 type AcwrSeries = Record<string, { date: string; acwr: number | null; zone: string }[]>
 
@@ -147,11 +148,11 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
         </button>
         <span className="font-bold text-lg">{playerName}</span>
         {wt && <span className="text-sm text-muted-foreground">Week{wt.week}</span>}
-        {allWeeks && allWeeks.length > 1 && (
+        {(allWeeks ?? detail?.allWeeks) && (allWeeks ?? detail?.allWeeks)!.length > 1 && (
           <select value={selectedDetailWeek ?? detail?.currentWeek?.week ?? ""}
-            onChange={e => { setSelectedDetailWeek(Number(e.target.value)); setLoading(true) }}
+            onChange={e => { setSelectedDetailWeek(Number(e.target.value)); setDetail(null); setLoading(true) }}
             className="text-xs border border-border rounded px-2 py-1 bg-background text-foreground">
-            {allWeeks.map(w => <option key={w.week} value={w.week}>Week{w.week} ({w.day1.slice(4,6)}/{w.day1.slice(6,8)}〜)</option>)}
+            {(allWeeks ?? detail?.allWeeks ?? []).map(w => <option key={w.week} value={w.week}>Week{w.week} ({w.day1.slice(4,6)}/{w.day1.slice(6,8)}〜)</option>)}
           </select>
         )}
       </div>
