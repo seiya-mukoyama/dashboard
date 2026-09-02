@@ -2,18 +2,9 @@
 import { NextResponse } from "next/server"
 
 const SHEET_ID = "1Cf9UCMrJDu6upu2n6LObRqfo8HxCCjtaikyHXssyvao"
-const WEEK_GID = "510630760"  // 週目標値シートはgid固定
+const WEEK_GID = "510630760"
 
-// 練習日シート一覧 - シート名=YYYYMMDD（新しい日を追加したらここに追尾）
-const DATE_SHEETS: string[] = [
-  "20260624","20260625","20260626","20260627","20260628",
-  "20260630","20260701","20260702","20260703","20260704",
-  "20260825","20260826","20260827","20260828","20260829",
-  "20260901",
-]
-
-// 最初のシート（使い方）の先頭行—存在しないシートを検出するために使用
-let firstSheetCSV = ""
+// 練習日シートは週目標値シートから自動生成—手動管理不要
 
 function parseCSVLine(line: string): string[] {
   const cols: string[] = []
@@ -41,8 +32,7 @@ async function fetchCSVByName(sheetName: string): Promise<string | null> {
     const res = await fetch(url, { cache: "no-store" })
     if (!res.ok) return null
     const text = await res.text()
-    // gvizは存在しないシート名で最初のシートを返す。
-    // 「Number」ヘッダーがなければ練習日データではない。
+    // Numberヘッダーがなければ別シートが返ってきた（存在しないシート名の場合）
     const firstLine = text.split("\n")[0] ?? ""
     const headers = parseCSVLine(firstLine).map(h => h.replace(/"/g, '').trim())
     if (!headers.includes("Number")) return null
@@ -61,6 +51,32 @@ type WeekTarget = {
   week: number
   day1: string; day2: string; day3: string; day4: string; game: string; recovery: string
   distance: number; siD: number; hiD: number; sprint: number; accelZ3: number; decelZ3: number
+}
+
+async function fetchWeekTargets(): Promise<WeekTarget[]> {
+  const csv = await fetchCSVByGid(WEEK_GID)
+  if (!csv) return []
+  const lines = csv.split("\n").filter(l => l.trim())
+  if (lines.length < 2) return []
+  const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, '').trim())
+  const idx = (key: string) => headers.indexOf(key)
+  return lines.slice(1).flatMap(line => {
+    const cols = parseCSVLine(line).map(c => c.replace(/"/g, '').trim())
+    const week = parseInt(cols[idx("Week")])
+    if (!week || isNaN(week)) return []
+    return [{
+      week,
+      day1: cols[idx("Day1")] ?? "", day2: cols[idx("Day2")] ?? "",
+      day3: cols[idx("Day3")] ?? "", day4: cols[idx("Day4")] ?? "",
+      game: cols[idx("GAME")] ?? "", recovery: cols[idx("recovery & TRorGAME")] ?? "",
+      distance: parseFloat(cols[idx("\u8ddd\u96e2\u76ee\u6a19")]) || 0,
+      siD:      parseFloat(cols[idx("SI\u76ee\u6a19")]) || 0,
+      hiD:      parseFloat(cols[idx("HI\u76ee\u6a19")]) || 0,
+      sprint:   parseFloat(cols[idx("Sprint\u76ee\u6a19")]) || 0,
+      accelZ3:  parseFloat(cols[idx("\u9ad8\u52a0\u901f\u76ee\u6a19")]) || 0,
+      decelZ3:  parseFloat(cols[idx("\u9ad8\u6e1b\u901f\u76ee\u6a19")]) || 0,
+    }]
+  })
 }
 
 async function parseSheet(sheetName: string): Promise<PlayerData[]> {
@@ -87,33 +103,6 @@ async function parseSheet(sheetName: string): Promise<PlayerData[]> {
       hrMid: parseFloat(cols[idx("HR MID")]) || 0,
       accelZ3: parseFloat(cols[idx("Accel_Z3")]) || 0,
       decelZ3: parseFloat(cols[idx("Decel_Z3")]) || 0,
-    }]
-  })
-}
-
-async function fetchWeekTargets(): Promise<WeekTarget[]> {
-  // 週目標値はgid固定
-  const csv = await fetchCSVByGid(WEEK_GID)
-  if (!csv) return []
-  const lines = csv.split("\n").filter(l => l.trim())
-  if (lines.length < 2) return []
-  const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, '').trim())
-  const idx = (key: string) => headers.indexOf(key)
-  return lines.slice(1).flatMap(line => {
-    const cols = parseCSVLine(line).map(c => c.replace(/"/g, '').trim())
-    const week = parseInt(cols[idx("Week")])
-    if (!week || isNaN(week)) return []
-    return [{
-      week,
-      day1: cols[idx("Day1")] ?? "", day2: cols[idx("Day2")] ?? "",
-      day3: cols[idx("Day3")] ?? "", day4: cols[idx("Day4")] ?? "",
-      game: cols[idx("GAME")] ?? "", recovery: cols[idx("recovery & TRorGAME")] ?? "",
-      distance: parseFloat(cols[idx("\u8ddd\u96e2\u76ee\u6a19")]) || 0,
-      siD:      parseFloat(cols[idx("SI\u76ee\u6a19")]) || 0,
-      hiD:      parseFloat(cols[idx("HI\u76ee\u6a19")]) || 0,
-      sprint:   parseFloat(cols[idx("Sprint\u76ee\u6a19")]) || 0,
-      accelZ3:  parseFloat(cols[idx("\u9ad8\u52a0\u901f\u76ee\u6a19")]) || 0,
-      decelZ3:  parseFloat(cols[idx("\u9ad8\u6e1b\u901f\u76ee\u6a19")]) || 0,
     }]
   })
 }
@@ -155,12 +144,23 @@ export async function GET(request: Request) {
   const action = searchParams.get("action") ?? "latest"
   const playerName = searchParams.get("name") ?? ""
 
-  const [weekTargets, ...sheetDataArr] = await Promise.all([
-    fetchWeekTargets(),
-    ...DATE_SHEETS.map(s => parseSheet(s))
-  ])
+  // 週目標値を先に取得して日付リストを自動生成
+  const weekTargets = await fetchWeekTargets()
 
-  const allData = DATE_SHEETS.map((s, i) => ({ date: s, players: sheetDataArr[i] }))
+  // 週目標値シートに存在する全日付を抽出（重複除去・ソート済み）
+  const allDatesSet = new Set<string>()
+  for (const wt of weekTargets) {
+    for (const d of [wt.day1, wt.day2, wt.day3, wt.day4, wt.game, wt.recovery]) {
+      if (d && /^\d{8}$/.test(d)) allDatesSet.add(d)
+    }
+  }
+  const dateSheets = Array.from(allDatesSet).sort()
+
+  // 全日程のCSVを並列取得
+  const sheetDataArr = await Promise.all(dateSheets.map(s => parseSheet(s)))
+
+  const allData = dateSheets
+    .map((s, i) => ({ date: s, players: sheetDataArr[i] }))
     .filter(d => d.players.length > 0)
     .sort((a, b) => a.date.localeCompare(b.date))
 
@@ -199,7 +199,7 @@ export async function GET(request: Request) {
   }
 
   if (action === "latest") {
-    const requestedWeek = searchParams.get("week") ? parseInt(searchParams.get("week")!) : null
+    const requestedWeek = searchParams.get("week") ? parseInt(searchParams.get("week")) : null
     const targetWeek = requestedWeek
       ? weekTargets.find(w => w.week === requestedWeek) ?? currentWeek
       : currentWeek
@@ -208,12 +208,11 @@ export async function GET(request: Request) {
           const dt = getDayType(d.date, targetWeek)
           return dt === "Day1" || dt === "Day2" || dt === "Day3" || dt === "Day4"
         })
-      : allData.slice(-4)  // fallback: 最新4日
+      : allData.slice(-4)
 
     const aggMap = aggregatePlayers(targetSheets)
-
     const pastWeekTargets = weekTargets.filter(w => w.week !== (targetWeek?.week ?? -1))
-    const metrics = ["distance","siD","hiD","sprint","accelZ3","decelZ3"] as const
+    const metrics = ["distance","siD","hiD","sprint","accelZ3","decelZ3"]
     const teamPastAvg: Record<string, number> = {}
     for (const m of metrics) {
       const vals: number[] = []
@@ -223,7 +222,7 @@ export async function GET(request: Request) {
           return dt === "Day1" || dt === "Day2" || dt === "Day3" || dt === "Day4"
         })
         for (const sheet of sheets) {
-          const dayAvg = sheet.players.reduce((s, p) => s + ((p as Record<string,number>)[m] || 0), 0) / Math.max(1, sheet.players.length)
+          const dayAvg = sheet.players.reduce((s, p) => s + (p[m] || 0), 0) / Math.max(1, sheet.players.length)
           vals.push(dayAvg)
         }
       }
@@ -232,7 +231,6 @@ export async function GET(request: Request) {
 
     const players = Array.from(aggMap.values()).map(p => {
       const acwr = calcAcwr(p.name)
-      // 選手個人の過去週平均（1日あたり）
       const playerPastAvg: Record<string, number> = {}
       for (const m of metrics) {
         const vals = pastWeekTargets.flatMap(wt => {
@@ -249,6 +247,7 @@ export async function GET(request: Request) {
       }
       return { ...p, acwr, zone: acwrZone(acwr), playerPastAvg }
     })
+
     return NextResponse.json({
       dates, date: latestDate, weekDays: targetSheets.length,
       currentWeek: targetWeek,
@@ -289,13 +288,14 @@ export async function GET(request: Request) {
       if (days.some(d => d.data !== null)) weeklyData.push({ week: wt, days })
     }
     const pastWeeks = weeklyData.filter(w => w.week.week !== (currentWeek?.week ?? -1))
+    const metrics = ["distance","siD","hiD","sprint","accelZ3","decelZ3"]
     const pastAvg: Record<string, number> = {}
     for (const m of metrics) {
       const vals = pastWeeks.flatMap(w =>
         w.days.filter(d => ["Day1","Day2","Day3","Day4"].includes(d.dayType))
                .map(d => d.data?.[m] ?? null)
-      ).filter((v): v is number => v !== null)
-      pastAvg[m] = vals.length > 0 ? Math.round(vals.reduce((s,v)=>s+v,0)/vals.length) : 0
+      ).filter((v) => v !== null)
+      pastAvg[m] = vals.length > 0 ? Math.round(vals.reduce((s,v) => s+v, 0) / vals.length) : 0
     }
     const currentWeekData = weeklyData.find(w => w.week.week === currentWeek?.week)
     return NextResponse.json({ playerName, currentWeek, currentWeekDays: currentWeekData?.days ?? [], weeklyData, pastAvg, dates })
