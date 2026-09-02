@@ -242,9 +242,10 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
       {/* 週別履歴 */}
       {detailTab === "history" && (
         <div className="space-y-3">
+          {/* 距離ACWR */}
           {acwrSer.length > 1 && (
             <div className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold mb-2 text-sm">ACWR推移</h3>
+              <h3 className="font-semibold mb-2 text-sm">総走距離 ACWR推移</h3>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={acwrSer} margin={{ top:5, right:10, bottom:5, left:0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
@@ -254,25 +255,51 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
                   <ReferenceLine y={0.8} stroke="#3b82f6" strokeDasharray="4 4" />
                   <ReferenceLine y={1.3} stroke="#eab308" strokeDasharray="4 4" />
                   <ReferenceLine y={1.5} stroke="#ef4444" strokeDasharray="4 4" />
-                  <Line type="monotone" dataKey="ACWR" name="距離ACWR" stroke="#22c55e" strokeWidth={2} dot={{ r:3 }} connectNulls />
-                    <Line type="monotone" dataKey="ACWRSI" name="SI ACWR" stroke="#f59e0b" strokeWidth={2} dot={{ r:3 }} connectNulls strokeDasharray="4 2" />
-                    <Legend />
+                  <Line type="monotone" dataKey="ACWR" stroke="#22c55e" strokeWidth={2} dot={{ r:3 }} connectNulls />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           )}
-          <div className="bg-card rounded-xl border p-4">
-            <h3 className="font-semibold mb-2 text-sm">週別総走行距離</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={weekHistChart} margin={{ top:5, right:10, bottom:5, left:0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip />
-                <Bar dataKey="総走行距離" fill="#22c55e" radius={[4,4,0,0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {/* SI ACWR */}
+          {acwrSer.length > 1 && (
+            <div className="bg-card rounded-xl border p-4">
+              <h3 className="font-semibold mb-2 text-sm">中強度SI ACWR推移</h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={acwrSer} margin={{ top:5, right:10, bottom:5, left:0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
+                  <XAxis dataKey="date" tick={{ fontSize: 9 }} />
+                  <YAxis domain={[0,2]} tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <ReferenceLine y={0.8} stroke="#3b82f6" strokeDasharray="4 4" />
+                  <ReferenceLine y={1.3} stroke="#eab308" strokeDasharray="4 4" />
+                  <ReferenceLine y={1.5} stroke="#ef4444" strokeDasharray="4 4" />
+                  <Line type="monotone" dataKey="ACWRSI" stroke="#f59e0b" strokeWidth={2} dot={{ r:3 }} connectNulls />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+          {/* 週別グラフ 6枚 */}
+          {[
+            { key: "総走行距離", label: "週別総走行距離", color: "#22c55e", unit: "m" },
+            { key: "SI", label: "週別中強度 SI", color: "#3b82f6", unit: "m" },
+            { key: "HI", label: "週別高強度 HI", color: "#8b5cf6", unit: "m" },
+            { key: "スプリント", label: "週別スプリント", color: "#f59e0b", unit: "回" },
+            { key: "高加速Z3", label: "週別高加速 Z3", color: "#ef4444", unit: "回" },
+            { key: "高減速Z3", label: "週別高減速 Z3", color: "#ec4899", unit: "回" },
+          ].map(({ key, label, color, unit }) => (
+            <div key={key} className="bg-card rounded-xl border p-4">
+              <h3 className="font-semibold mb-2 text-sm">{label}</h3>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={weekHistChart} margin={{ top:5, right:10, bottom:5, left:0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip formatter={(v) => [`${v}${unit}`, label]} />
+                  <Bar dataKey={key} fill={color} radius={[4,4,0,0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ))}
         </div>
       )}
     </div>
