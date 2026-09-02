@@ -254,7 +254,9 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
                   <ReferenceLine y={0.8} stroke="#3b82f6" strokeDasharray="4 4" />
                   <ReferenceLine y={1.3} stroke="#eab308" strokeDasharray="4 4" />
                   <ReferenceLine y={1.5} stroke="#ef4444" strokeDasharray="4 4" />
-                  <Line type="monotone" dataKey="ACWR" stroke="#22c55e" strokeWidth={2} dot={{ r:3 }} connectNulls />
+                  <Line type="monotone" dataKey="ACWR" name="距離ACWR" stroke="#22c55e" strokeWidth={2} dot={{ r:3 }} connectNulls />
+                    <Line type="monotone" dataKey="ACWRSI" name="SI ACWR" stroke="#f59e0b" strokeWidth={2} dot={{ r:3 }} connectNulls strokeDasharray="4 2" />
+                    <Legend />
                 </LineChart>
               </ResponsiveContainer>
             </div>
