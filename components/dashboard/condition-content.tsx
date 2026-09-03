@@ -114,7 +114,7 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
     ]).then(([d, acwr]: [PlayerDetail, {series: AcwrSeries}]) => {
       setDetail(d)
       const ser = acwr.series?.[playerName] ?? []
-      setAcwrSer(ser.map(s => ({ date: s.date, ACWR: s.acwr, ACWRSI: s.acwrSI ?? null })))
+      setAcwrSer(ser.map(s => ({ date: s.date, ACWR: s.acwr ?? null, ACWRSI: s.acwrSI ?? null, ACWRHI: s.acwrHI ?? null, ACWRSprint: s.acwrSprint ?? null, ACWRAccel: s.acwrAccel ?? null, ACWRDecel: s.acwrDecel ?? null })))
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [playerName, selectedDetailWeek])
@@ -247,10 +247,17 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
       {/* 週別履歴 */}
       {detailTab === "history" && (
         <div className="space-y-3">
-          {/* 距離ACWR */}
-          {acwrSer.length > 1 && (
-            <div className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold mb-2 text-sm">総走距離 ACWR推移</h3>
+          {/* ACWR 6枚 */}
+          {acwrSer.length > 1 && [
+            { key: "ACWR",      label: "総走距離 ACWR推移",  color: "#22c55e" },
+            { key: "ACWRSI",    label: "中強度SI ACWR推移", color: "#3b82f6" },
+            { key: "ACWRHI",    label: "高強度HI ACWR推移", color: "#8b5cf6" },
+            { key: "ACWRSprint",label: "スプリント ACWR推移",  color: "#f59e0b" },
+            { key: "ACWRAccel", label: "高加速Z3 ACWR推移", color: "#ef4444" },
+            { key: "ACWRDecel", label: "高減速Z3 ACWR推移", color: "#ec4899" },
+          ].map(({ key, label, color }) => (
+            <div key={key} className="bg-card rounded-xl border p-4">
+              <h3 className="font-semibold mb-2 text-sm">{label}</h3>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={acwrSer} margin={{ top:5, right:10, bottom:5, left:0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
@@ -260,29 +267,11 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
                   <ReferenceLine y={0.8} stroke="#3b82f6" strokeDasharray="4 4" />
                   <ReferenceLine y={1.3} stroke="#eab308" strokeDasharray="4 4" />
                   <ReferenceLine y={1.5} stroke="#ef4444" strokeDasharray="4 4" />
-                  <Line type="monotone" dataKey="ACWR" stroke="#22c55e" strokeWidth={2} dot={{ r:3 }} connectNulls />
+                  <Line type="monotone" dataKey={key} stroke={color} strokeWidth={2} dot={{ r:3 }} connectNulls />
                 </LineChart>
               </ResponsiveContainer>
             </div>
-          )}
-          {/* SI ACWR */}
-          {acwrSer.length > 1 && (
-            <div className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold mb-2 text-sm">中強度SI ACWR推移</h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={acwrSer} margin={{ top:5, right:10, bottom:5, left:0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
-                  <XAxis dataKey="date" tick={{ fontSize: 9 }} />
-                  <YAxis domain={[0,2]} tick={{ fontSize: 10 }} />
-                  <Tooltip />
-                  <ReferenceLine y={0.8} stroke="#3b82f6" strokeDasharray="4 4" />
-                  <ReferenceLine y={1.3} stroke="#eab308" strokeDasharray="4 4" />
-                  <ReferenceLine y={1.5} stroke="#ef4444" strokeDasharray="4 4" />
-                  <Line type="monotone" dataKey="ACWRSI" stroke="#f59e0b" strokeWidth={2} dot={{ r:3 }} connectNulls />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+          ))}
           {/* 週別グラフ 6枚 */}
           {[
             { key: "distance", label: "週別総走行距離", color: "#22c55e", unit: "m" },
