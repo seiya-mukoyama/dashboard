@@ -268,9 +268,12 @@ export async function GET(request: Request) {
         }
         playerPastAvg[m] = weekTotals.length > 0 ? Math.round(weekTotals.reduce((s,v) => s+v, 0) / weekTotals.length) : 0
       }
-      const acwrSI = calcAcwr(p.name, "siD")
-      const zoneSI = acwrZone(acwrSI)
-      return { ...p, acwr, zone: acwrZone(acwr), acwrSI, zoneSI, playerPastAvg }
+      const acwrSI     = calcAcwr(p.name, "siD")
+      const acwrHI     = calcAcwr(p.name, "hiD")
+      const acwrSprint = calcAcwr(p.name, "sprint")
+      const acwrAccel  = calcAcwr(p.name, "accelZ3")
+      const acwrDecel  = calcAcwr(p.name, "decelZ3")
+      return { ...p, acwr, zone: acwrZone(acwr), acwrSI, zoneSI: acwrZone(acwrSI), acwrHI, acwrSprint, acwrAccel, acwrDecel, playerPastAvg }
     })
 
     return NextResponse.json({
@@ -286,7 +289,7 @@ export async function GET(request: Request) {
     for (const d of allData) {
       for (const p of d.players) {
         if (!seriesMap[p.name]) seriesMap[p.name] = []
-        seriesMap[p.name].push({ date: d.date, distance: p.distance, siD: p.siD, acwr: null, zone: "none", acwrSI: null, zoneSI: "none" })
+        seriesMap[p.name].push({ date: d.date, distance: p.distance, siD: p.siD, hiD: p.hiD, sprint: p.sprint, accelZ3: p.accelZ3, decelZ3: p.decelZ3, acwr: null, zone: "none", acwrSI: null, acwrHI: null, acwrSprint: null, acwrAccel: null, acwrDecel: null })
       }
     }
     for (const name of Object.keys(seriesMap)) {
@@ -303,6 +306,17 @@ export async function GET(request: Request) {
         const siChronic = siHistory.slice(s28).reduce((s,v)=>s+v,0) / Math.max(1, siHistory.slice(s28).length)
         entry.acwrSI = siChronic > 0 ? +(siAcute/siChronic).toFixed(2) : null
         entry.zoneSI = acwrZone(entry.acwrSI)
+        // HI / Sprint / Accel / Decel ACWR
+        const calcSerAcwr = (field) => {
+          const h = seriesMap[name].slice(0, i+1).map(x => x[field] || 0)
+          const ac = h.slice(s7).reduce((s,v)=>s+v,0) / Math.max(1, h.slice(s7).length)
+          const ch = h.slice(s28).reduce((s,v)=>s+v,0) / Math.max(1, h.slice(s28).length)
+          return ch > 0 ? +(ac/ch).toFixed(2) : null
+        }
+        entry.acwrHI     = calcSerAcwr("hiD")
+        entry.acwrSprint = calcSerAcwr("sprint")
+        entry.acwrAccel  = calcSerAcwr("accelZ3")
+        entry.acwrDecel  = calcSerAcwr("decelZ3")
       })
     }
     return NextResponse.json({ dates, series: seriesMap })
