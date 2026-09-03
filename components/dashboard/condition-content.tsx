@@ -247,51 +247,49 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
       {/* 週別履歴 */}
       {detailTab === "history" && (
         <div className="space-y-3">
-          {/* ACWR 6枚 */}
-          {acwrSer.length > 1 && [
-            { key: "ACWR",      label: "総走距離 ACWR推移",  color: "#22c55e" },
-            { key: "ACWRSI",    label: "中強度SI ACWR推移", color: "#3b82f6" },
-            { key: "ACWRHI",    label: "高強度HI ACWR推移", color: "#8b5cf6" },
-            { key: "ACWRSprint",label: "スプリント ACWR推移",  color: "#f59e0b" },
-            { key: "ACWRAccel", label: "高加速Z3 ACWR推移", color: "#ef4444" },
-            { key: "ACWRDecel", label: "高減速Z3 ACWR推移", color: "#ec4899" },
-          ].map(({ key, label, color }) => (
-            <div key={key} className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold mb-2 text-sm">{label}</h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={acwrSer} margin={{ top:5, right:10, bottom:5, left:0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
-                  <XAxis dataKey="date" tick={{ fontSize: 9 }} />
-                  <YAxis domain={[0,2]} tick={{ fontSize: 10 }} />
-                  <Tooltip />
-                  <ReferenceLine y={0.8} stroke="#3b82f6" strokeDasharray="4 4" />
-                  <ReferenceLine y={1.3} stroke="#eab308" strokeDasharray="4 4" />
-                  <ReferenceLine y={1.5} stroke="#ef4444" strokeDasharray="4 4" />
-                  <Line type="monotone" dataKey={key} stroke={color} strokeWidth={2} dot={{ r:3 }} connectNulls />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          ))}
-          {/* 週別グラフ 6枚 */}
+          {/* ACWR + 週別グラフ 指標ごとに横並び */}
           {[
-            { key: "distance", label: "週別総走行距離", color: "#22c55e", unit: "m" },
-            { key: "siD", label: "週別中強度 SI", color: "#3b82f6", unit: "m" },
-            { key: "hiD", label: "週別高強度 HI", color: "#8b5cf6", unit: "m" },
-            { key: "sprint", label: "週別スプリント", color: "#f59e0b", unit: "回" },
-            { key: "accelZ3", label: "週別高加速 Z3", color: "#ef4444", unit: "回" },
-            { key: "decelZ3", label: "週別高減速 Z3", color: "#ec4899", unit: "回" },
-          ].map(({ key, label, color, unit }) => (
-            <div key={key} className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold mb-2 text-sm">{label}</h3>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={weekHistChart} margin={{ top:5, right:10, bottom:5, left:0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
-                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip formatter={(v) => [`${v}${unit}`, label]} />
-                  <Bar dataKey={key} fill={color} radius={[4,4,0,0]} />
-                </BarChart>
-              </ResponsiveContainer>
+            { acwrKey: "ACWR",       acwrLabel: "総走距離 ACWR推移",  weekKey: "distance", weekLabel: "週別総走行距離", color: "#22c55e", unit: "m" },
+            { acwrKey: "ACWRSI",     acwrLabel: "中強度SI ACWR推移", weekKey: "siD",      weekLabel: "週別中強度 SI",     color: "#3b82f6", unit: "m" },
+            { acwrKey: "ACWRHI",     acwrLabel: "高強度HI ACWR推移", weekKey: "hiD",      weekLabel: "週別高強度 HI",     color: "#8b5cf6", unit: "m" },
+            { acwrKey: "ACWRSprint", acwrLabel: "スプリント ACWR推移",  weekKey: "sprint",   weekLabel: "週別スプリント",     color: "#f59e0b", unit: "回" },
+            { acwrKey: "ACWRAccel",  acwrLabel: "高加速Z3 ACWR推移", weekKey: "accelZ3",  weekLabel: "週別高加速 Z3",   color: "#ef4444", unit: "回" },
+            { acwrKey: "ACWRDecel",  acwrLabel: "高減速Z3 ACWR推移", weekKey: "decelZ3",  weekLabel: "週別高減速 Z3",   color: "#ec4899", unit: "回" },
+          ].map(({ acwrKey, acwrLabel, weekKey, weekLabel, color, unit }) => (
+            <div key={acwrKey} className="grid grid-cols-2 gap-3">
+              {/* ACWR推移 */}
+              {acwrSer.length > 1 ? (
+                <div className="bg-card rounded-xl border p-4">
+                  <h3 className="font-semibold mb-2 text-sm" style={{ color }}>{acwrLabel}</h3>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <LineChart data={acwrSer} margin={{ top:5, right:5, bottom:5, left:0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
+                      <XAxis dataKey="date" tick={{ fontSize: 8 }} />
+                      <YAxis domain={[0,2]} tick={{ fontSize: 9 }} />
+                      <Tooltip />
+                      <ReferenceLine y={0.8} stroke="#3b82f6" strokeDasharray="4 4" />
+                      <ReferenceLine y={1.3} stroke="#eab308" strokeDasharray="4 4" />
+                      <ReferenceLine y={1.5} stroke="#ef4444" strokeDasharray="4 4" />
+                      <Line type="monotone" dataKey={acwrKey} stroke={color} strokeWidth={2} dot={{ r:2 }} connectNulls />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="bg-card rounded-xl border p-4 flex items-center justify-center text-muted-foreground text-sm">データ不足</div>
+              )}
+              {/* 週別棒グラフ */}
+              <div className="bg-card rounded-xl border p-4">
+                <h3 className="font-semibold mb-2 text-sm" style={{ color }}>{weekLabel}</h3>
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={weekHistChart} margin={{ top:5, right:5, bottom:5, left:0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
+                    <XAxis dataKey="name" tick={{ fontSize: 9 }} />
+                    <YAxis tick={{ fontSize: 9 }} />
+                    <Tooltip formatter={(v) => [`${v}${unit}`, weekLabel]} />
+                    <Bar dataKey={weekKey} fill={color} radius={[4,4,0,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           ))}
         </div>
