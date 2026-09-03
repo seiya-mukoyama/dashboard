@@ -100,7 +100,7 @@ function PlayerCard({ p, sel, onClick, wt }: { p: Player; sel: boolean; onClick:
 }
 
 // 選手詳細ビュー
-function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: WeekTarget | null; onBack: () => void }) {
+function PlayerDetailView({ playerName, wt, players, onBack, onSelectPlayer }: { playerName: string; wt: WeekTarget | null; players?: {name:string;zone:string}[]; onBack: () => void; onSelectPlayer?: (name:string)=>void }) {
   const [detail, setDetail] = useState<PlayerDetail | null>(null)
   const [acwrSer, setAcwrSer] = useState<{ date: string; ACWR: number|null }[]>([])
   const [loading, setLoading] = useState(true)
@@ -161,6 +161,22 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
           </select>
         )}
       </div>
+
+      {/* 選手ナビゲーション */}
+      {players && players.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {players.map(p => {
+            const z = ZONE[p.zone] || ZONE.none
+            const isActive = p.name === playerName
+            return (
+              <button key={p.name} onClick={() => onSelectPlayer?.(p.name)}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${isActive ? "bg-primary text-white border-primary" : `${z.bg} ${z.border} ${z.text} hover:opacity-80`}`}>
+                {p.name}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* タブ */}
       <div className="flex gap-2">
@@ -230,7 +246,7 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
           {dayChartData.length > 0 && (
             <div className="bg-card rounded-xl border p-4">
               <h3 className="font-semibold mb-3 text-sm">Day別走行距離</h3>
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={dayChartData} margin={{ top:5, right:10, bottom:5, left:0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} />
@@ -261,7 +277,7 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
               {acwrSer.length > 1 ? (
                 <div className="bg-card rounded-xl border p-4">
                   <h3 className="font-semibold mb-2 text-sm" style={{ color }}>{acwrLabel}</h3>
-                  <ResponsiveContainer width="100%" height={180}>
+                  <ResponsiveContainer width="100%" height={220}>
                     <LineChart data={acwrSer} margin={{ top:5, right:5, bottom:5, left:0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
                       <XAxis dataKey="date" tick={{ fontSize: 8 }} />
@@ -280,7 +296,7 @@ function PlayerDetailView({ playerName, wt, onBack }: { playerName: string; wt: 
               {/* 週別棒グラフ */}
               <div className="bg-card rounded-xl border p-4">
                 <h3 className="font-semibold mb-2 text-sm" style={{ color }}>{weekLabel}</h3>
-                <ResponsiveContainer width="100%" height={180}>
+                <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={weekHistChart} margin={{ top:5, right:5, bottom:5, left:0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
                     <XAxis dataKey="name" tick={{ fontSize: 9 }} />
@@ -327,8 +343,8 @@ export default function ConditionContent() {
   // 選手詳細ビュー
   if (selPlayer) {
     return (
-      <div className="p-4 max-w-4xl">
-        <PlayerDetailView playerName={selPlayer} wt={wt} onBack={() => setSelPlayer(null)} />
+      <div className="p-4">
+        <PlayerDetailView playerName={selPlayer} wt={wt} players={data.players.map(p=>({name:p.name,zone:p.zone}))} onBack={() => setSelPlayer(null)} onSelectPlayer={(name) => { setSelPlayer(name) }} />
       </div>
     )
   }
