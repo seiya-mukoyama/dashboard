@@ -263,7 +263,12 @@ export async function GET(request: Request) {
               const player = sheet.players.find(x => x.name === p.name)
               return sum + (player ? (player[m] || 0) : 0)
             }, 0)
-            weekTotals.push(weekTotal)
+            // 辺備不調などでdistance=0の日がある場合は周に少なくとも1日以上actualなデータがある場合のみ平均に含める
+            const validDays = days.filter(sheet => {
+              const player = sheet.players.find(x => x.name === p.name)
+              return player && (player.distance > 0)  // distance>0の日のみ有効
+            })
+            if (validDays.length > 0) weekTotals.push(weekTotal)
           }
         }
         playerPastAvg[m] = weekTotals.length > 0 ? Math.round(weekTotals.reduce((s,v) => s+v, 0) / weekTotals.length) : 0
@@ -338,7 +343,7 @@ export async function GET(request: Request) {
     // 週累計平均: 各週のDay1-4の合計値を計算し、その週平均
     for (const m of metrics) {
       const weekTotals = pastWeeks.map(w => {
-        const days = w.days.filter(d => ["Day1","Day2","Day3","Day4"].includes(d.dayType))
+        const days = w.days.filter(d => ["Day1","Day2","Day3","Day4"].includes(d.dayType) && d.data && d.data.distance > 0)
         if (days.length === 0) return null
         const total = days.reduce((s, d) => s + (d.data?.[m] ?? 0), 0)
         return total > 0 ? total : null
