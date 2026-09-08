@@ -1,5 +1,19 @@
 import { NextResponse } from "next/server"
 
+// 姓のみ→フルネーム変換（記録が姓のみの時期とフルネーム時期の両方に対応）
+const NAME_MAP: Record<string, string> = {
+  "鉗木": "鉗木 瑞生",
+  "深川": "深川 大輔",
+}
+
+function normalizeName(nm: string): string {
+  if (!nm) return nm
+  // フルネーム（スペース入り）はそのまま返す
+  if (nm.includes(" ") || nm.includes("　")) return nm
+  // 姓のみの場合はマッピングで変換
+  return NAME_MAP[nm] ?? nm
+}
+
 const PACKING_SHEET_ID = "1i1PmWTCT_x73GlDHTes9lN-e956gKPfapdY_P_nK11g"
 const PLAYERS_SHEET_ID = "1vnHF5iHJkirI6PhUzD3isKmdkz6Vani4aQfItMgL80k"
 const TRACKING_SHEET_ID = "1FNxTC76yGGXbswZa5TTXTVDoSBvzh8gWiCsS-c7lvn4"
@@ -74,7 +88,7 @@ async function fetchPackingBySheetName(
     if (!cat || SKIP_CATS.has(cat)) return
     if (cat.endsWith('シュート')) {
       const nm = cat.slice(0, -4).trim()
-      if (nm && !nm.startsWith('被')) { const sp = getOrCreate(nm, stats); sp.shoot += 1 }
+      if (nm && !nm.startsWith('被')) { const sp = getOrCreate(normalizeName(nm), stats); sp.shoot += 1 }
       return
     }
     // 得点・失点行の処理
@@ -86,20 +100,20 @@ async function fetchPackingBySheetName(
         const assistName = assistRaw.toLowerCase().includes("assist") ? assistRaw.split(/[\s\u3000]/)[0] : ""
         const preAssistRaw = cols[8]?.trim() ?? ""
         const preAssistName = preAssistRaw.toLowerCase().includes("preassist") ? preAssistRaw.split(/[\s\u3000]/)[0] : ""
-        if (scorer) { const p = getOrCreate(scorer, stats); p.goals += 1 }
-        if (assistName) { const p = getOrCreate(assistName, stats); p.assists += 1 }
-        if (preAssistName) { const p = getOrCreate(preAssistName, stats); p.preAssists += 1 }
+        if (scorer) { const p = getOrCreate(normalizeName(scorer), stats); p.goals += 1 }
+        if (assistName) { const p = getOrCreate(normalizeName(assistName), stats); p.assists += 1 }
+        if (preAssistName) { const p = getOrCreate(normalizeName(preAssistName), stats); p.preAssists += 1 }
       }
       return
     }
-    const p = getOrCreate(cat, stats)
+    const p = getOrCreate(normalizeName(cat), stats)
     for (let i = 6; i < cols.length; i++) {
       const d = cols[i]?.trim(); if (!d) continue
       if (/^P [\d.]+/.test(d) || /^Packing [\d.]+/.test(d)) p.packing += extractNum(d)
       if (/^I [\d.]+/.test(d) || /^Impect [\d.]+/.test(d)) p.impact += extractNum(d)
       const resMatch = d.match(/^(.+?) Res$/)
       if (resMatch) {
-        const rec = getOrCreate(resMatch[1].split(/[\s\u3000]/)[0], stats)
+        const rec = getOrCreate(normalizeName(resMatch[1].split(/[\s\u3000]/)[0]), stats)
         for (let j = i + 1; j < Math.min(i + 4, cols.length); j++) {
           const next = cols[j]?.trim(); if (!next) continue
           if (/^Packing [\d.]+/.test(next)) rec.packingR += extractNum(next)
@@ -180,14 +194,14 @@ export async function GET(request: Request) {
         csv.split("\n").slice(1).map(parseCSVLine).forEach(cols => {
           const cat = cols[1]?.trim(); if (!cat || SKIP_CATS.has(cat)) return
           if (cat === "得点" || cat === "失点") return
-          const p = getOrCreate(cat, stats)
+          const p = getOrCreate(normalizeName(cat), stats)
           for (let i = 6; i < cols.length; i++) {
             const d = cols[i]?.trim(); if (!d) continue
             if (/^P [\d.]+/.test(d) || /^Packing [\d.]+/.test(d)) p.packing += extractNum(d)
             if (/^I [\d.]+/.test(d) || /^Impect [\d.]+/.test(d)) p.impact += extractNum(d)
             const resMatch = d.match(/^(.+?) Res$/)
             if (resMatch) {
-              const rec = getOrCreate(resMatch[1].split(/[\s\u3000]/)[0], stats)
+              const rec = getOrCreate(normalizeName(resMatch[1].split(/[\s\u3000]/)[0]), stats)
               for (let j = i + 1; j < Math.min(i + 4, cols.length); j++) {
                 const next = cols[j]?.trim(); if (!next) continue
                 if (/^Packing [\d.]+/.test(next)) rec.packingR += extractNum(next)
@@ -245,7 +259,7 @@ export async function GET(request: Request) {
                 : null
               if (!info) return
               const lastName = info.fullName.split(/[\s\u3000]/)[0]
-              matched = getOrCreate(lastName, stats)
+              matched = getOrCreate(normalizeName(lastName), stats)
             }
             if (idxDist >= 0) matched.distance = Math.round(parseFloat(cols[idxDist]) || 0) || null
             if (idxSpeed >= 0) matched.maxSpeed = parseFloat(cols[idxSpeed]) || null
