@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server"
 
+export const revalidate = 300
+
 // 姓のみ→フルネーム変換（記録が姓のみの時期とフルネーム時期の両方に対応）
 const NAME_MAP: Record<string, string> = {
   "鉗木": "鉗木 瑞生",
   "深川": "深川 大輔",
+}
+
 }
 
 function normalizeName(nm: string): string {
