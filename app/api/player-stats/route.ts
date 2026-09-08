@@ -251,7 +251,7 @@ export async function GET(request: Request) {
             // session列でフィルタ
             const rowSession = cols[idxSession]?.trim()
             if (rowSession && rowSession !== 'session' && rowSession !== session) return
-            const normRaw = normName(rawName)
+            const normRaw = normName(normalizeName(rawName))
             let matched = Object.values(stats).find(s => normName(s.fullName) === normRaw)
             if (!matched) {
               const info = lastNameMapCache
