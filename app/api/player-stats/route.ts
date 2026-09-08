@@ -8,7 +8,6 @@ const NAME_MAP: Record<string, string> = {
   "深川": "深川 大輔",
 }
 
-}
 
 function normalizeName(nm: string): string {
   if (!nm) return nm
