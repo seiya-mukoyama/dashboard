@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 
+export const revalidate = 300
+
 const LOGIN_URL = "https://members-api.know-s.com/webapp/login"
 const STATS_URL = "https://members-api.know-s.com/webapp/team/acwr"
 
