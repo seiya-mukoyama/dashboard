@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 
+export const revalidate = 300
+
 const STATS_SHEET_ID = "1Y_im99vGkmEc-6GgwXqXQC2Lz6yriRGqy-xV5wlm48g"
 const STATS_GID = "1979610514"
 
