@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 
+export const revalidate = 300
+
 const PACKING_SHEET_ID = "1i1PmWTCT_x73GlDHTes9lN-e956gKPfapdY_P_nK11g"
 
 function parseCSVLine(line: string): string[] {
