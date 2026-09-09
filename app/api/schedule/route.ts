@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 
+export const revalidate = 300
+
 const JFL_URL = "https://www.jfl.or.jp/jfl-pc/view/s.php?a=2591&f=2026A001_spc.html"
 const OUR_TEAM = "ボンズ市原"
 
