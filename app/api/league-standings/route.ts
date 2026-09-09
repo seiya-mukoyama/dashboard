@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 
+export const revalidate = 300
+
 const JFL_URL = "https://www.jfl.or.jp/jfl-pc/view/s.php?a=2592"
 
 function stripTags(str: string): string {
