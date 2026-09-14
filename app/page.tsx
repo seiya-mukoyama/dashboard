@@ -7,6 +7,7 @@ import { RecentMatches } from "@/components/dashboard/recent-matches"
 import { MatchInfoCard } from "@/components/dashboard/match-info-card"
 import { OfficialMatches } from "@/components/dashboard/official-matches"
 import { TrainingMatches } from "@/components/dashboard/training-matches"
+import MatchComparison from "@/components/dashboard/match-comparison"
 import dynamic from "next/dynamic"
 const ConditionContent = dynamic(() => import("@/components/dashboard/condition-content"), { ssr: false })
 import { StatsCards } from "@/components/dashboard/stats-cards"
@@ -27,6 +28,7 @@ const mainMenuItems = [
   { id: "players", label: "選手", icon: Users },
   { id: "official-matches", label: "公式戦", icon: Medal },
   { id: "training-matches", label: "トレーニングマッチ", icon: Dumbbell },
+  { id: "match-comparison", label: "試合比較", icon: BarChart2 },
   { id: "condition", label: "コンディション", icon: Activity },
 ]
 
@@ -42,6 +44,7 @@ const viewTitles: Record<string, string> = {
   players: "選手",
   "official-matches": "公式戦",
   "training-matches": "トレーニングマッチ",
+  "match-comparison": "試合比較",
   "condition": "コンディション管理",
   training: "トレーニング",
   events: "イベント",
@@ -353,6 +356,7 @@ export default function DashboardPage() {
           )}
           {activeView === "official-matches" && <OfficialMatches />}
           {activeView === "training-matches" && <TrainingMatches />}
+          {activeView === "match-comparison" && <MatchComparison />}
           {activeView === "condition" && <ConditionContent />}
           {activeView === "training" && <StatsCards />}
           {activeView === "events" && <UpcomingMatches />}
