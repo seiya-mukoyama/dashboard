@@ -19,7 +19,7 @@ import { MatchPerformance } from "@/components/dashboard/match-performance"
 import {
   LayoutDashboard, Users, Medal, Dumbbell, Target, Calendar, Activity,
   Settings, Menu,
-  ArrowLeft, ExternalLink, Cake, Ruler, Weight,
+  ArrowLeft, ExternalLink, Cake, Ruler, Weight, BarChart2,
 } from "lucide-react"
 import Image from "next/image"
 
