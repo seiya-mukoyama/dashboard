@@ -6,8 +6,8 @@ export const revalidate = 300
 const STATS_SHEET_ID = "1Y_im99vGkmEc-6GgwXqXQC2Lz6yriRGqy-xV5wlm48g"
 const STATS_GID = "1979610514"
 
-function serialToTimeStr(serial: number): string {
-  const totalSec = Math.round(serial * 86400)
+function serialToTimeStr(v: number): string {
+  const totalSec = Math.round(v * 86400)
   const m = Math.floor(totalSec / 60)
   const s = totalSec % 60
   return ":" + String(m).padStart(2,'0') + ":" + String(s).padStart(2,'0')
@@ -30,24 +30,27 @@ export async function GET(request: Request) {
 
   if (!rawRows.length) return NextResponse.json({ matches: [] })
 
-  // 山内の行構造 (確認済み):
-  // rows[0]: col2以降 = 日付
-  // rows[1]: col1="大会名"(label), col2以降 = HOME/AWAY
-  // rows[2]: col1=null(空), col2以降 = TM or 公式戦名
-  // rows[3]: col1="本数", col2以降 = 前半/後半
-  // rows[4]: col1="対戦相手", col2以降 = 対戦相手名
-  // rows[5]以降: col1=ラベル, col2以降 = 値
-
-  const rows = rawRows.map(r => r.c ?? [])
+  const rows = rawRows.map((r: any) => r.c ?? [])
   const numCols = rows[0]?.length ?? 0
 
-  const getV = (cell: any) => cell?.v ?? null
-  const getF = (cell: any) => cell?.f ?? null
+  const getV = (cell: any): any => cell?.v ?? null
+  const getF = (cell: any): string | null => cell?.f ?? null
 
-  // ラベル検索(大会名などcol1がある行用)
-  const getRowIdx = (label: string) => rows.findIndex(r => getV(r[1]) === label)
+  // 行ラベルを文字列変換して比較
+  const getRowIdx = (label: string): number =>
+    rows.findIndex((r: any[]) => {
+      const v = r[1]?.v
+      return v !== null && v !== undefined && String(v) === label
+    })
 
-  // 各ラベル行のインデックス
+  // メタ行インデックス (固定値でフォールバック)
+  const venueRowIdx  = getRowIdx("大会名")  // 1
+  const periodRowIdx = getRowIdx("本数")    // 3
+  const oppRowIdx    = getRowIdx("対戦相手") // 4
+  // TM行 = venueRowIdx+1 (rows[2], col1が空のためgetRowIdxで辺れない)
+  const typeRowIdx = venueRowIdx >= 0 ? venueRowIdx + 1 : 2
+
+  // 数値ラベル行
   const labelRows: Record<string, number> = {}
   for (const label of [
     "得点","失点","試合時間","APT(90分換算)",
@@ -55,65 +58,59 @@ export async function GET(request: Request) {
     "ラインブレイク","ラインブレイクＡＣ","クロス","シュート","ＣＫ数","ＦＫ数","xG"
   ]) { labelRows[label] = getRowIdx(label) }
 
-  const num = (rowIdx: number, col: number): number | null => {
-    if (rowIdx < 0) return null
-    const v = getV(rows[rowIdx]?.[col])
+  const num = (idx: number, col: number): number | null => {
+    if (idx < 0) return null
+    const v = getV(rows[idx]?.[col])
     if (v === null) return null
     const n = parseFloat(String(v))
     return isNaN(n) ? null : n
   }
 
-  const matches = []
+  const matches: any[] = []
 
   for (let col = 2; col < numCols; col++) {
     const dateCell = rows[0]?.[col]
     const dateV = getV(dateCell)
-    if (!dateV) continue
+    if (!dateV && dateV !== 0) continue
     const date = getF(dateCell) ?? String(dateV)
 
-    // 「大会名」の行(rows[1])から HOME/AWAYを取得
-    const venueRowIdx = getRowIdx("大会名")
-    const venue = venueRowIdx >= 0 ? (getV(rows[venueRowIdx]?.[col]) ?? "") : ""
+    const venue     = venueRowIdx >= 0  ? String(getV(rows[venueRowIdx]?.[col])  ?? "") : ""
+    const matchType = typeRowIdx >= 0   ? String(getV(rows[typeRowIdx]?.[col])   ?? "") : ""
+    const period    = periodRowIdx >= 0 ? String(getV(rows[periodRowIdx]?.[col]) ?? "") : ""
+    const opponent  = oppRowIdx >= 0    ? String(getV(rows[oppRowIdx]?.[col])    ?? "") : ""
 
-    // TM/公式戦は rows[2] (「本数」の1行上 = idx 2)
-    const typeRowIdx = venueRowIdx >= 0 ? venueRowIdx + 1 : 2
-    const matchType = getV(rows[typeRowIdx]?.[col]) ?? ""
-
-    // 本数 = rows[3]
-    const periodRowIdx = getRowIdx("本数")
-    const period = periodRowIdx >= 0 ? (getV(rows[periodRowIdx]?.[col]) ?? "") : ""
-
-    // 対戦相手 = rows[4]
-    const oppRowIdx = getRowIdx("対戦相手")
-    const opponent = oppRowIdx >= 0 ? (getV(rows[oppRowIdx]?.[col]) ?? "") : ""
-
-    const isTM = String(matchType) === "TM"
+    const isTM = matchType === "TM"
     if (filter === "tm" && !isTM) continue
     if (filter === "official" && isTM) continue
 
-    // APT
-    const aptCell = rows[labelRows["APT(90分換算)"]]?.[col]
+    const aptIdx = labelRows["APT(90分換算)"]
+    const aptCell = aptIdx >= 0 ? rows[aptIdx]?.[col] : null
     const aptV = getV(aptCell)
-    const apt = aptCell?.f ?? (aptV != null
+    const apt = getF(aptCell) ?? (aptV != null
       ? (typeof aptV === 'number' && aptV < 1 ? serialToTimeStr(aptV) : String(aptV))
       : null)
 
     matches.push({
-      date, venue: String(venue), type: isTM ? "TM" : "official",
-      matchType: String(matchType), period: String(period), opponent: String(opponent),
-      score: num(labelRows["得点"], col), conceded: num(labelRows["失点"], col),
-      matchTime: num(labelRows["試合時間"], col), apt,
-      packing: num(labelRows["パッキングレート"], col),
-      impact: num(labelRows["インペクト"], col),
-      boxEntries: num(labelRows["ボックス侵入回数"], col),
+      date: date.startsWith("Date(") ? String(dateV) : date,
+      venue, type: isTM ? "TM" : "official",
+      matchType, period, opponent,
+      score:           num(labelRows["得点"], col),
+      conceded:        num(labelRows["失点"], col),
+      matchTime:       num(labelRows["試合時間"], col),
+      apt,
+      packing:         num(labelRows["パッキングレート"], col),
+      impact:          num(labelRows["インペクト"], col),
+      boxEntries:      num(labelRows["ボックス侵入回数"], col),
       goalAreaEntries: num(labelRows["ゴールエリア侵入回数"], col),
-      lineBreak: num(labelRows["ラインブレイク"], col),
-      lineBreakAC: num(labelRows["ラインブレイクＡＣ"], col),
-      cross: num(labelRows["クロス"], col),
-      shots: num(labelRows["シュート"], col),
-      corners: num(labelRows["ＣＫ数"], col),
-      freeKicks: num(labelRows["ＦＫ数"], col),
-      xg: num(labelRows["xG"], col),
+      lineBreak:       num(labelRows["ラインブレイク"], col),
+      lineBreakAC:     num(labelRows["ラインブレイクＡＣ"], col),
+      cross:           num(labelRows["クロス"], col),
+      shots:           num(labelRows["シュート"], col),
+      corners:         num(labelRows["ＣＫ数"], col),
+      freeKicks:       num(labelRows["ＦＫ数"], col),
+      xg:              num(labelRows["xG"], col),
+      // デバッグ用
+      _idx: { venueRowIdx, typeRowIdx, periodRowIdx, oppRowIdx },
     })
   }
 
