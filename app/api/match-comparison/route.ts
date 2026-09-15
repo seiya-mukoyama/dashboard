@@ -33,7 +33,10 @@ export async function GET(request: Request) {
   const rows = rawRows.map((r: any) => r.c ?? [])
   const numCols = rows[0]?.length ?? 0
 
-  const getV = (cell: any): any => cell?.v ?? null
+  const getV = (cell: any): any => {
+    if (cell === null || cell === undefined) return null
+    return cell.v ?? null
+  }
   const getF = (cell: any): string | null => cell?.f ?? null
 
   // 行ラベルを文字列変換して比較
@@ -112,9 +115,9 @@ export async function GET(request: Request) {
       // デバッグ用
       _idx: { venueRowIdx, typeRowIdx, periodRowIdx, oppRowIdx },
       _raw: {
-        r1c2: rows[1]?.[2]?.v, r2c2: rows[2]?.[2]?.v,
-        r3c2: rows[3]?.[2]?.v, r4c2: rows[4]?.[2]?.v,
-        venueVal: rows[venueRowIdx]?.[2]?.v,
+        r1c2: getV(rows[1]?.[2]), r2c2: getV(rows[2]?.[2]),
+        r3c2: getV(rows[3]?.[2]), r4c2: getV(rows[4]?.[2]),
+        venueVal: getV(rows[venueRowIdx]?.[2]),
       },
     })
   }
