@@ -111,6 +111,11 @@ export async function GET(request: Request) {
       xg:              num(labelRows["xG"], col),
       // デバッグ用
       _idx: { venueRowIdx, typeRowIdx, periodRowIdx, oppRowIdx },
+      _raw: {
+        r1c2: rows[1]?.[2]?.v, r2c2: rows[2]?.[2]?.v,
+        r3c2: rows[3]?.[2]?.v, r4c2: rows[4]?.[2]?.v,
+        venueVal: rows[venueRowIdx]?.[2]?.v,
+      },
     })
   }
 
