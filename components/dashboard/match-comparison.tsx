@@ -71,12 +71,12 @@ export default function MatchComparison() {
       ) : matches.length === 0 ? (
         <div className="text-muted-foreground text-sm py-8 text-center">データなし</div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto" style={{maxHeight: "calc(100vh - 200px)"}}>
           <table className="text-xs border-collapse min-w-max">
-            <thead>
+            <thead className="sticky top-0 z-30">
               <tr>
                 <th className="sticky left-0 z-20 bg-background border border-border px-2 py-1.5 text-left whitespace-nowrap" rowSpan={2}>日付</th>
-                <th className="sticky left-[80px] z-20 bg-background border border-border px-2 py-1.5 text-left whitespace-nowrap" rowSpan={2}>対戦相手</th>
+                <th className="sticky left-[80px] z-30 bg-background border border-border px-2 py-1.5 text-left whitespace-nowrap" rowSpan={2}>対戦相手</th>
                 <th colSpan={3} className="border border-border px-2 py-1 text-center bg-muted text-muted-foreground whitespace-nowrap">試合</th>
                 <th colSpan={STAT_COLS.length} className="border border-border px-2 py-1 text-center bg-sky-50/50 dark:bg-sky-950/20 text-sky-700 dark:text-sky-400 whitespace-nowrap">自チーム / 相手</th>
               </tr>
