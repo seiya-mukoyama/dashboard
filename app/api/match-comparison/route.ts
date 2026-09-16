@@ -5,6 +5,7 @@ export const revalidate = 300
 
 const STATS_SHEET_ID = "1Y_im99vGkmEc-6GgwXqXQC2Lz6yriRGqy-xV5wlm48g"
 const STATS_GID = "1979610514"
+const TRACKING_SHEET_ID = "1FNxTC76yGGXbswZa5TTXTVDoSBvzh8gWiCsS-c7lvn4"
 
 function serialToTimeStr(v: number): string {
   const totalSec = Math.round(v * 86400)
@@ -29,6 +30,48 @@ async function fetchGvizJson(sheetId: string, gid: string, range?: string) {
   } catch { return [] }
 }
 
+function parseCSVLine(line: string): string[] {
+  const cols: string[] = []
+  let cur = "", inQ = false
+  for (const ch of line) {
+    if (ch === '"') inQ = !inQ
+    else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = "" }
+    else cur += ch
+  }
+  cols.push(cur.trim())
+  return cols.map(c => c.replace(/^"|"$/g, '').trim())
+}
+
+async function fetchTrackingStats(date: string): Promise<{ distance: number|null, sprint: number|null, hi: number|null }> {
+  const url = `https://docs.google.com/spreadsheets/d/${TRACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(date)}`
+  try {
+    const res = await fetch(url, { cache: "no-store" })
+    if (!res.ok) return { distance: null, sprint: null, hi: null }
+    const lines = (await res.text()).split("\n").map(parseCSVLine)
+    const header = lines[0]
+    const distIdx = header.findIndex(h => h === "Distance")
+    const hiIdx   = header.findIndex(h => h === "HI_(%)")
+    const spIdx   = header.findIndex(h => h === "Sprint")
+    if (distIdx < 0) return { distance: null, sprint: null, hi: null }
+    const goukei = lines.slice(1).filter(r => r[1] === "合計")
+    let totalDist = 0, totalSprint = 0, totalHI = 0
+    let distCount = 0, sprintCount = 0, hiCount = 0
+    for (const row of goukei) {
+      const d = parseFloat(row[distIdx])
+      const hi = parseFloat(row[hiIdx])
+      const sp = parseFloat(row[spIdx])
+      if (!isNaN(d) && d > 0) { totalDist += d; distCount++ }
+      if (!isNaN(sp)) { totalSprint += sp; sprintCount++ }
+      if (!isNaN(hi) && hi > 0) { totalHI += hi; hiCount++ }
+    }
+    return {
+      distance: distCount > 0 ? Math.round(totalDist / 1000 * 10) / 10 : null,
+      sprint:   sprintCount > 0 ? totalSprint : null,
+      hi:       hiCount > 0 ? Math.round(totalHI / hiCount * 10) / 10 : null,
+    }
+  } catch { return { distance: null, sprint: null, hi: null } }
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const filter = searchParams.get("type") ?? "all"
@@ -41,7 +84,6 @@ export async function GET(request: Request) {
   if (!allRows.length) return NextResponse.json({ matches: [] })
 
   const numCols = allRows[0]?.length ?? 0
-
   const metaDateRow  = metaRows[0] ?? []
   const metaVenueRow = metaRows[1] ?? []
   const metaTypeRow  = metaRows[2] ?? []
@@ -50,27 +92,21 @@ export async function GET(request: Request) {
   const getRowIdx = (label: string) =>
     allRows.findIndex(r => { const v = getV(r[1]); return v !== null && String(v) === label })
 
-  // 自チームラベル
   const OWN_LABELS = [
     "得点","失点","試合時間","APT(90分換算)",
     "パッキングレート","インペクト","ボックス侵入回数","ゴールエリア侵入回数",
     "ラインブレイク","ラインブレイクAC","クロス","シュート","CK数","FK数","xG"
   ]
-  // 相手チームラベル (「相手チーム」の次の行から同じ順序)
   const OPP_LABELS = [
     "パッキングレート","インペクト","ボックス侵入回数","ゴールエリア侵入回数",
     "ラインブレイク","ラインブレイクAC","クロス","シュート","CK数","FK数","xG"
   ]
 
-  // 「相手チーム」ラベルの行番号を基準に相手行のインデックスを取得
   const oppSectionIdx = getRowIdx("相手チーム")
-
   const labelRows: Record<string, number> = {}
   for (const label of OWN_LABELS) { labelRows["own_" + label] = getRowIdx(label) }
-  // 相手は「相手チーム」セクション以降の行を探索
   for (let i = 0; i < OPP_LABELS.length; i++) {
     const label = OPP_LABELS[i]
-    // oppSectionIdx以降で同じラベルの行を探索
     const idx = oppSectionIdx >= 0
       ? allRows.findIndex((r, ri) => ri > oppSectionIdx && getV(r[1]) !== null && String(getV(r[1])) === label)
       : -1
@@ -85,8 +121,6 @@ export async function GET(request: Request) {
     return isNaN(n) ? null : n
   }
 
-  // 前半/後半/3本目を同一試合としてグループ化し合算
-  // 同じ (date, opponent, matchType) の列をまとめる
   type Col = { col: number; matchTime: number | null }
   const matchGroups: Map<string, Col[]> = new Map()
 
@@ -108,13 +142,20 @@ export async function GET(request: Request) {
     matchGroups.get(key)!.push({ col, matchTime: numVal(labelRows["own_試合時間"], col) })
   }
 
+  // トラッキングデータを日付ごとに並列取得
+  const uniqueDates = [...new Set([...matchGroups.keys()].map(k => k.split("||")[0]))]
+  const trackingMap = new Map<string, { distance: number|null, sprint: number|null, hi: number|null }>()
+  await Promise.all(uniqueDates.map(async date => {
+    const stats = await fetchTrackingStats(date)
+    trackingMap.set(date, stats)
+  }))
+
   const matches: any[] = []
 
   for (const [key, cols] of matchGroups) {
     const [date, opponent, matchType, venue] = key.split("||")
     const isTM = matchType === "TM"
 
-    // 合算関数
     const sumOwn = (label: string) => {
       const idx = labelRows["own_" + label]
       if (idx < 0) return null
@@ -136,7 +177,6 @@ export async function GET(request: Request) {
       return hasVal ? Math.round(s * 10) / 10 : null
     }
 
-    // APTは最後の列の値を使用 (時間になるので合算しない)
     const aptIdx = labelRows["own_APT(90分換算)"]
     const aptCell = aptIdx >= 0 ? allRows[aptIdx]?.[cols[cols.length-1].col] : null
     const aptV = getV(aptCell)
@@ -144,19 +184,20 @@ export async function GET(request: Request) {
       ? (typeof aptV === 'number' && aptV < 1 ? serialToTimeStr(aptV) : String(aptV))
       : null)
 
+    const tracking = trackingMap.get(date) ?? { distance: null, sprint: null, hi: null }
+
     matches.push({
-      date: date.startsWith('Date(') ? date : date,
-      venue, type: isTM ? "TM" : "official", matchType, opponent,
-      totalTime: sumOwn("試合時間"),
-      apt,
-      // 自チーム
+      date, venue, type: isTM ? "TM" : "official", matchType, opponent,
+      totalTime: sumOwn("試合時間"), apt,
+      distance: tracking.distance,
+      sprint: tracking.sprint,
+      hi: tracking.hi,
       score: sumOwn("得点"), conceded: sumOwn("失点"),
       packing: sumOwn("パッキングレート"), impact: sumOwn("インペクト"),
       boxEntries: sumOwn("ボックス侵入回数"), goalAreaEntries: sumOwn("ゴールエリア侵入回数"),
       lineBreak: sumOwn("ラインブレイク"), lineBreakAC: sumOwn("ラインブレイクAC"),
       cross: sumOwn("クロス"), shots: sumOwn("シュート"),
       corners: sumOwn("CK数"), freeKicks: sumOwn("FK数"), xg: sumOwn("xG"),
-      // 相手チーム
       oppPacking: sumOpp("パッキングレート"), oppImpact: sumOpp("インペクト"),
       oppBoxEntries: sumOpp("ボックス侵入回数"), oppGoalAreaEntries: sumOpp("ゴールエリア侵入回数"),
       oppLineBreak: sumOpp("ラインブレイク"), oppLineBreakAC: sumOpp("ラインブレイクAC"),
