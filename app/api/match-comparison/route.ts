@@ -54,12 +54,12 @@ export async function GET(request: Request) {
   const OWN_LABELS = [
     "得点","失点","試合時間","APT(90分換算)",
     "パッキングレート","インペクト","ボックス侵入回数","ゴールエリア侵入回数",
-    "ラインブレイク","ラインブレイクＡＣ","クロス","シュート","ＣＫ数","ＦＫ数","xG"
+    "ラインブレイク","ラインブレイクAC","クロス","シュート","CK数","FK数","xG"
   ]
   // 相手チームラベル (「相手チーム」の次の行から同じ順序)
   const OPP_LABELS = [
     "パッキングレート","インペクト","ボックス侵入回数","ゴールエリア侵入回数",
-    "ラインブレイク","ラインブレイクＡＣ","クロス","シュート","ＣＫ数","ＦＫ数","xG"
+    "ラインブレイク","ラインブレイクAC","クロス","シュート","CK数","FK数","xG"
   ]
 
   // 「相手チーム」ラベルの行番号を基準に相手行のインデックスを取得
@@ -153,15 +153,15 @@ export async function GET(request: Request) {
       score: sumOwn("得点"), conceded: sumOwn("失点"),
       packing: sumOwn("パッキングレート"), impact: sumOwn("インペクト"),
       boxEntries: sumOwn("ボックス侵入回数"), goalAreaEntries: sumOwn("ゴールエリア侵入回数"),
-      lineBreak: sumOwn("ラインブレイク"), lineBreakAC: sumOwn("ラインブレイクＡＣ"),
+      lineBreak: sumOwn("ラインブレイク"), lineBreakAC: sumOwn("ラインブレイクAC"),
       cross: sumOwn("クロス"), shots: sumOwn("シュート"),
-      corners: sumOwn("ＣＫ数"), freeKicks: sumOwn("ＦＫ数"), xg: sumOwn("xG"),
+      corners: sumOwn("CK数"), freeKicks: sumOwn("FK数"), xg: sumOwn("xG"),
       // 相手チーム
       oppPacking: sumOpp("パッキングレート"), oppImpact: sumOpp("インペクト"),
       oppBoxEntries: sumOpp("ボックス侵入回数"), oppGoalAreaEntries: sumOpp("ゴールエリア侵入回数"),
-      oppLineBreak: sumOpp("ラインブレイク"), oppLineBreakAC: sumOpp("ラインブレイクＡＣ"),
+      oppLineBreak: sumOpp("ラインブレイク"), oppLineBreakAC: sumOpp("ラインブレイクAC"),
       oppCross: sumOpp("クロス"), oppShots: sumOpp("シュート"),
-      oppCorners: sumOpp("ＣＫ数"), oppFreeKicks: sumOpp("ＦＫ数"), oppXg: sumOpp("xG"),
+      oppCorners: sumOpp("CK数"), oppFreeKicks: sumOpp("FK数"), oppXg: sumOpp("xG"),
     })
   }
 
