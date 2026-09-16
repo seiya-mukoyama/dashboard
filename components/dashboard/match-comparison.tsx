@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 type Match = {
   date: string; venue: string; type: string; opponent: string
   totalTime: number|null; apt: string|null
+  distance: number|null; sprint: number|null; hi: number|null
   score: number|null; conceded: number|null
   packing: number|null; impact: number|null; boxEntries: number|null; goalAreaEntries: number|null
   lineBreak: number|null; lineBreakAC: number|null; cross: number|null; shots: number|null
@@ -83,6 +84,9 @@ export default function MatchComparison() {
                 <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">得点</th>
                 <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">失点</th>
                 <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">時間</th>
+                <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">距離(km)</th>
+                <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">スプリント</th>
+                <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">HI%平均</th>
                 {STAT_COLS.map(c => (
                   <th key={c.key} className="border border-border px-2 py-1 text-center bg-sky-50/30 dark:bg-sky-950/10 whitespace-nowrap font-medium">{c.label}</th>
                 ))}
@@ -106,6 +110,9 @@ export default function MatchComparison() {
                     <td className="border border-border px-2 py-1 text-center font-bold">{fmt(m.score)}</td>
                     <td className="border border-border px-2 py-1 text-center">{fmt(m.conceded)}</td>
                     <td className="border border-border px-2 py-1 text-center text-muted-foreground">{fmt(m.totalTime)}</td>
+                    <td className="border border-border px-2 py-1 text-center tabular-nums">{fmt(m.distance)}</td>
+                    <td className="border border-border px-2 py-1 text-center tabular-nums">{fmt(m.sprint)}</td>
+                    <td className="border border-border px-2 py-1 text-center tabular-nums">{fmt(m.hi)}</td>
                     {STAT_COLS.map(c => (
                       <td key={c.key} className="border border-border px-2 py-1 text-center tabular-nums">
                         {fmt((m as any)[c.key])}
