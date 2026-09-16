@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 
 type Match = {
-  date: string; venue: string; type: string; matchType: string; opponent: string
+  date: string; venue: string; type: string; opponent: string
   totalTime: number|null; apt: string|null
   score: number|null; conceded: number|null
   packing: number|null; impact: number|null; boxEntries: number|null; goalAreaEntries: number|null
@@ -14,47 +14,30 @@ type Match = {
   oppCorners: number|null; oppFreeKicks: number|null; oppXg: number|null
 }
 
-// 自チームの列定義
-const OWN_COLS = [
-  { key: "score",           label: "得点",    group: "試合" },
-  { key: "conceded",        label: "失点",    group: "試合" },
-  { key: "totalTime",       label: "時間(min)", group: "試合" },
-  { key: "apt",             label: "APT",      group: "試合" },
-  { key: "packing",         label: "PR",       group: "自チーム" },
-  { key: "impact",          label: "Impact",   group: "自チーム" },
-  { key: "boxEntries",      label: "ボックス",  group: "自チーム" },
-  { key: "goalAreaEntries", label: "GA",       group: "自チーム" },
-  { key: "lineBreak",       label: "LB",       group: "自チーム" },
-  { key: "lineBreakAC",     label: "LBAC",     group: "自チーム" },
-  { key: "cross",           label: "クロス",   group: "自チーム" },
-  { key: "shots",           label: "シュート", group: "自チーム" },
-  { key: "corners",         label: "CK",       group: "自チーム" },
-  { key: "freeKicks",       label: "FK",       group: "自チーム" },
-  { key: "xg",              label: "xG",       group: "自チーム" },
+const STAT_COLS = [
+  { key: "packing",         oppKey: "oppPacking",         label: "PR"     },
+  { key: "impact",          oppKey: "oppImpact",          label: "Impact" },
+  { key: "boxEntries",      oppKey: "oppBoxEntries",      label: "ボックス"  },
+  { key: "goalAreaEntries", oppKey: "oppGoalAreaEntries", label: "GA"     },
+  { key: "lineBreak",       oppKey: "oppLineBreak",       label: "LB"     },
+  { key: "lineBreakAC",     oppKey: "oppLineBreakAC",     label: "LBAC"   },
+  { key: "cross",           oppKey: "oppCross",           label: "クロス"   },
+  { key: "shots",           oppKey: "oppShots",           label: "シュート" },
+  { key: "corners",         oppKey: "oppCorners",         label: "CK"     },
+  { key: "freeKicks",       oppKey: "oppFreeKicks",       label: "FK"     },
+  { key: "xg",              oppKey: "oppXg",              label: "xG"     },
 ]
-
-// 相手チームの列定義
-const OPP_COLS = [
-  { key: "oppPacking",         label: "PR",       group: "相手" },
-  { key: "oppImpact",          label: "Impact",   group: "相手" },
-  { key: "oppBoxEntries",      label: "ボックス",  group: "相手" },
-  { key: "oppGoalAreaEntries", label: "GA",       group: "相手" },
-  { key: "oppLineBreak",       label: "LB",       group: "相手" },
-  { key: "oppLineBreakAC",     label: "LBAC",     group: "相手" },
-  { key: "oppCross",           label: "クロス",   group: "相手" },
-  { key: "oppShots",           label: "シュート", group: "相手" },
-  { key: "oppCorners",         label: "CK",       group: "相手" },
-  { key: "oppFreeKicks",       label: "FK",       group: "相手" },
-  { key: "oppXg",              label: "xG",       group: "相手" },
-]
-
-const ALL_COLS = [...OWN_COLS, ...OPP_COLS]
 
 const TABS = [
   { key: "all",      label: "全て" },
   { key: "official", label: "公式戦" },
   { key: "tm",       label: "TRマッチ" },
 ]
+
+const fmt = (v: any) =>
+  v !== null && v !== undefined
+    ? <span>{v}</span>
+    : <span className="text-muted-foreground/30">-</span>
 
 export default function MatchComparison() {
   const [tab, setTab] = useState<"all"|"official"|"tm">("all")
@@ -68,9 +51,6 @@ export default function MatchComparison() {
       .then(d => { setMatches(d.matches ?? []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [tab])
-
-  // グループ名を順番通りに取得
-  const groups = [...new Set(ALL_COLS.map(c => c.group))]
 
   return (
     <div className="p-4">
@@ -96,48 +76,52 @@ export default function MatchComparison() {
               <tr>
                 <th className="sticky left-0 z-20 bg-background border border-border px-2 py-1.5 text-left whitespace-nowrap" rowSpan={2}>日付</th>
                 <th className="sticky left-[80px] z-20 bg-background border border-border px-2 py-1.5 text-left whitespace-nowrap" rowSpan={2}>対戦相手</th>
-                {groups.map(g => {
-                  const count = ALL_COLS.filter(c => c.group === g).length
-                  const isOpp = g === "相手"
-                  return <th key={g} colSpan={count}
-                    className={`border border-border px-2 py-1 text-center whitespace-nowrap ${isOpp ? "bg-red-50/50 dark:bg-red-950/20 text-red-700 dark:text-red-400" : "bg-muted text-muted-foreground"}`}>
-                    {g}
-                  </th>
-                })}
+                <th colSpan={3} className="border border-border px-2 py-1 text-center bg-muted text-muted-foreground whitespace-nowrap">試合</th>
+                <th colSpan={STAT_COLS.length} className="border border-border px-2 py-1 text-center bg-sky-50/50 dark:bg-sky-950/20 text-sky-700 dark:text-sky-400 whitespace-nowrap">自チーム / 相手</th>
               </tr>
               <tr>
-                {ALL_COLS.map(c => {
-                  const isOpp = c.group === "相手"
-                  return <th key={c.key}
-                    className={`border border-border px-2 py-1 text-center whitespace-nowrap font-medium ${isOpp ? "bg-red-50/30 dark:bg-red-950/10" : "bg-muted"}`}>
-                    {c.label}
-                  </th>
-                })}
+                <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">得点</th>
+                <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">失点</th>
+                <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">時間</th>
+                {STAT_COLS.map(c => (
+                  <th key={c.key} className="border border-border px-2 py-1 text-center bg-sky-50/30 dark:bg-sky-950/10 whitespace-nowrap font-medium">{c.label}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {matches.map((m, i) => (
-                <tr key={i} className={`hover:bg-muted/40 ${m.type === "official" ? "bg-green-50/30 dark:bg-green-950/20" : ""}`}>
-                  <td className="sticky left-0 z-10 bg-background border border-border px-2 py-1.5 whitespace-nowrap font-medium">
-                    {m.date}
-                    <span className={`ml-1 text-[10px] px-1 rounded ${m.type === "official" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>
-                      {m.type === "official" ? "公" : "TM"}
-                    </span>
-                  </td>
-                  <td className="sticky left-[80px] z-10 bg-background border border-border px-2 py-1.5 whitespace-nowrap">
-                    {m.venue && <span className="text-[10px] text-muted-foreground mr-1">{m.venue}</span>}
-                    {m.opponent}
-                  </td>
-                  {ALL_COLS.map(c => {
-                    const v = (m as any)[c.key]
-                    const isOpp = c.group === "相手"
-                    return (
-                      <td key={c.key} className={`border border-border px-2 py-1.5 text-center tabular-nums ${isOpp ? "bg-red-50/20 dark:bg-red-950/10" : ""}`}>
-                        {v !== null && v !== undefined ? v : <span className="text-muted-foreground/30">-</span>}
+                <>
+                  {/* 1行目: 日付・対戦相手・試合情報・自チーム */}
+                  <tr key={`${i}-own`} className={`${m.type === "official" ? "bg-green-50/30 dark:bg-green-950/20" : ""} hover:bg-muted/30`}>
+                    <td className="sticky left-0 z-10 bg-background border-t border-l border-r border-border px-2 pt-1.5 pb-0 whitespace-nowrap font-medium" rowSpan={2}>
+                      {m.date}
+                      <span className={`ml-1 text-[10px] px-1 rounded ${m.type === "official" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>
+                        {m.type === "official" ? "公" : "TM"}
+                      </span>
+                    </td>
+                    <td className="sticky left-[80px] z-10 bg-background border-t border-l border-r border-border px-2 pt-1.5 pb-0 whitespace-nowrap" rowSpan={2}>
+                      {m.venue && <span className="text-[10px] text-muted-foreground mr-1">{m.venue}</span>}
+                      {m.opponent}
+                    </td>
+                    <td className="border border-border px-2 py-1 text-center font-bold">{fmt(m.score)}</td>
+                    <td className="border border-border px-2 py-1 text-center">{fmt(m.conceded)}</td>
+                    <td className="border border-border px-2 py-1 text-center text-muted-foreground">{fmt(m.totalTime)}</td>
+                    {STAT_COLS.map(c => (
+                      <td key={c.key} className="border border-border px-2 py-1 text-center tabular-nums">
+                        {fmt((m as any)[c.key])}
                       </td>
-                    )
-                  })}
-                </tr>
+                    ))}
+                  </tr>
+                  {/* 2行目: 相手チームのスタッツ */}
+                  <tr key={`${i}-opp`} className={`${m.type === "official" ? "bg-green-50/30 dark:bg-green-950/20" : ""} hover:bg-muted/30`}>
+                    <td colSpan={3} className="border border-border px-2 py-1 text-right text-[10px] text-muted-foreground whitespace-nowrap">相手</td>
+                    {STAT_COLS.map(c => (
+                      <td key={c.oppKey} className="border border-border px-2 py-1 text-center tabular-nums text-red-600 dark:text-red-400">
+                        {fmt((m as any)[c.oppKey])}
+                      </td>
+                    ))}
+                  </tr>
+                </>
               ))}
             </tbody>
           </table>
