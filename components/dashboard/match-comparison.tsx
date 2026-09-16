@@ -78,18 +78,18 @@ export default function MatchComparison() {
                 <th className="sticky left-0 z-20 bg-background border border-border px-2 py-1.5 text-left whitespace-nowrap" rowSpan={2}>日付</th>
                 <th className="sticky left-[80px] z-30 bg-background border border-border px-2 py-1.5 text-left whitespace-nowrap" rowSpan={2}>対戦相手</th>
                 <th colSpan={3} className="border border-border px-2 py-1 text-center bg-muted text-muted-foreground whitespace-nowrap">試合</th>
-                <th colSpan={STAT_COLS.length} className="border border-border px-2 py-1 text-center bg-sky-50/50 dark:bg-sky-950/20 text-sky-700 dark:text-sky-400 whitespace-nowrap">自チーム / 相手</th>
+                <th colSpan={STAT_COLS.length + 3} className="border border-border px-2 py-1 text-center bg-sky-50/50 dark:bg-sky-950/20 text-sky-700 dark:text-sky-400 whitespace-nowrap">自チーム / 相手</th>
               </tr>
               <tr>
                 <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">得点</th>
                 <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">失点</th>
                 <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">時間</th>
-                <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">距離(km)</th>
-                <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">スプリント</th>
-                <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">HI%平均</th>
                 {STAT_COLS.map(c => (
                   <th key={c.key} className="border border-border px-2 py-1 text-center bg-sky-50/30 dark:bg-sky-950/10 whitespace-nowrap font-medium">{c.label}</th>
                 ))}
+                <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">距離(km)</th>
+                <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">スプリント</th>
+                <th className="border border-border px-2 py-1 text-center bg-muted whitespace-nowrap">HI%平均</th>
               </tr>
             </thead>
             <tbody>
@@ -110,14 +110,14 @@ export default function MatchComparison() {
                     <td className="border border-border px-2 py-1 text-center font-bold">{fmt(m.score)}</td>
                     <td className="border border-border px-2 py-1 text-center">{fmt(m.conceded)}</td>
                     <td className="border border-border px-2 py-1 text-center text-muted-foreground">{fmt(m.totalTime)}</td>
-                    <td className="border border-border px-2 py-1 text-center tabular-nums">{fmt(m.distance)}</td>
-                    <td className="border border-border px-2 py-1 text-center tabular-nums">{fmt(m.sprint)}</td>
-                    <td className="border border-border px-2 py-1 text-center tabular-nums">{fmt(m.hi)}</td>
                     {STAT_COLS.map(c => (
                       <td key={c.key} className="border border-border px-2 py-1 text-center tabular-nums">
                         {fmt((m as any)[c.key])}
                       </td>
                     ))}
+                    <td className="border border-border px-2 py-1 text-center tabular-nums">{fmt(m.distance)}</td>
+                    <td className="border border-border px-2 py-1 text-center tabular-nums">{fmt(m.sprint)}</td>
+                    <td className="border border-border px-2 py-1 text-center tabular-nums">{fmt(m.hi)}</td>
                   </tr>
                   {/* 2行目: 相手チームのスタッツ */}
                   <tr key={`${i}-opp`} className={`${m.type === "official" ? "bg-green-50/30 dark:bg-green-950/20" : ""} hover:bg-muted/30`}>
