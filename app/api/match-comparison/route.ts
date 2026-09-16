@@ -41,7 +41,7 @@ export async function GET(request: Request) {
   const filter = searchParams.get("type") ?? "all"
 
   // CSVで取得 (fillRowで結合セルを展開)
-  const csvUrl = `https://docs.google.com/spreadsheets/d/${STATS_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${STATS_GID}`
+  const csvUrl = `https://docs.google.com/spreadsheets/d/${STATS_SHEET_ID}/export?format=csv&gid=${STATS_GID}`
   let csvRows: string[][] = []
   try {
     const res = await fetch(csvUrl, { cache: "no-store" })
