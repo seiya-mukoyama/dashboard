@@ -20,48 +20,64 @@ async function fetchGvizJson(sheetId: string, gid: string, range?: string) {
   const url = range
     ? `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}&range=${range}`
     : `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`
-  const res = await fetch(url, { cache: "no-store" })
-  if (!res.ok) return []
-  const text = await res.text()
-  const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}')+1))
-  return (json.table?.rows ?? []).map((r: any) => r.c ?? [])
+  try {
+    const res = await fetch(url, { cache: "no-store" })
+    if (!res.ok) return []
+    const text = await res.text()
+    const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}')+1))
+    return (json.table?.rows ?? []).map((r: any) => r.c ?? [])
+  } catch { return [] }
 }
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const filter = searchParams.get("type") ?? "all"
 
-  // メタ行 (1-6) を range指定で取得 - 結合セルが展開される
-  // 全体取得 - 数値はこちらから
   const [metaRows, allRows] = await Promise.all([
     fetchGvizJson(STATS_SHEET_ID, STATS_GID, "A1:CZ6"),
     fetchGvizJson(STATS_SHEET_ID, STATS_GID),
-  ]).catch(() => [[], []])
+  ])
 
   if (!allRows.length) return NextResponse.json({ matches: [] })
 
   const numCols = allRows[0]?.length ?? 0
 
-  // メタ行の内容 (range指定で結合セル展開済み)
-  // metaRows[0]=日付, [1]=HOME/AWAY, [2]=TM/公式戦, [3]=本数, [4]=対戦相手
-  const metaDateRow   = metaRows[0] ?? []
-  const metaVenueRow  = metaRows[1] ?? []
-  const metaTypeRow   = metaRows[2] ?? []
-  const metaPeriodRow = metaRows[3] ?? []
-  const metaOppRow    = metaRows[4] ?? []
+  const metaDateRow  = metaRows[0] ?? []
+  const metaVenueRow = metaRows[1] ?? []
+  const metaTypeRow  = metaRows[2] ?? []
+  const metaOppRow   = metaRows[4] ?? []
 
-  // allRowsのラベル検索
   const getRowIdx = (label: string) =>
     allRows.findIndex(r => { const v = getV(r[1]); return v !== null && String(v) === label })
 
-  const labelRows: Record<string, number> = {}
-  for (const label of [
+  // 自チームラベル
+  const OWN_LABELS = [
     "得点","失点","試合時間","APT(90分換算)",
     "パッキングレート","インペクト","ボックス侵入回数","ゴールエリア侵入回数",
     "ラインブレイク","ラインブレイクＡＣ","クロス","シュート","ＣＫ数","ＦＫ数","xG"
-  ]) { labelRows[label] = getRowIdx(label) }
+  ]
+  // 相手チームラベル (「相手チーム」の次の行から同じ順序)
+  const OPP_LABELS = [
+    "パッキングレート","インペクト","ボックス侵入回数","ゴールエリア侵入回数",
+    "ラインブレイク","ラインブレイクＡＣ","クロス","シュート","ＣＫ数","ＦＫ数","xG"
+  ]
 
-  const num = (idx: number, col: number): number | null => {
+  // 「相手チーム」ラベルの行番号を基準に相手行のインデックスを取得
+  const oppSectionIdx = getRowIdx("相手チーム")
+
+  const labelRows: Record<string, number> = {}
+  for (const label of OWN_LABELS) { labelRows["own_" + label] = getRowIdx(label) }
+  // 相手は「相手チーム」セクション以降の行を探索
+  for (let i = 0; i < OPP_LABELS.length; i++) {
+    const label = OPP_LABELS[i]
+    // oppSectionIdx以降で同じラベルの行を探索
+    const idx = oppSectionIdx >= 0
+      ? allRows.findIndex((r, ri) => ri > oppSectionIdx && getV(r[1]) !== null && String(getV(r[1])) === label)
+      : -1
+    labelRows["opp_" + label] = idx
+  }
+
+  const numVal = (idx: number, col: number): number | null => {
     if (idx < 0) return null
     const v = getV(allRows[idx]?.[col])
     if (v === null) return null
@@ -69,49 +85,83 @@ export async function GET(request: Request) {
     return isNaN(n) ? null : n
   }
 
-  const matches: any[] = []
+  // 前半/後半/3本目を同一試合としてグループ化し合算
+  // 同じ (date, opponent, matchType) の列をまとめる
+  type Col = { col: number; matchTime: number | null }
+  const matchGroups: Map<string, Col[]> = new Map()
 
   for (let col = 2; col < numCols; col++) {
-    const dateCell = metaDateRow[col]
-    const dateV = getV(dateCell)
+    const dateV = getV(metaDateRow[col])
     if (!dateV) continue
+    const dateCell = metaDateRow[col]
     const date = dateCell?.f ?? String(dateV)
-
-    const venue     = String(getV(metaVenueRow[col])  ?? "")
-    const matchType = String(getV(metaTypeRow[col])   ?? "")
-    const period    = String(getV(metaPeriodRow[col]) ?? "")
-    const opponent  = String(getV(metaOppRow[col])    ?? "")
+    const matchType = String(getV(metaTypeRow[col]) ?? "")
+    const opponent  = String(getV(metaOppRow[col])  ?? "")
+    const venue     = String(getV(metaVenueRow[col]) ?? "")
 
     const isTM = matchType === "TM"
     if (filter === "tm" && !isTM) continue
     if (filter === "official" && isTM) continue
 
-    const aptIdx = labelRows["APT(90分換算)"]
-    const aptCell = aptIdx >= 0 ? allRows[aptIdx]?.[col] : null
+    const key = date + "||" + opponent + "||" + matchType + "||" + venue
+    if (!matchGroups.has(key)) matchGroups.set(key, [])
+    matchGroups.get(key)!.push({ col, matchTime: numVal(labelRows["own_試合時間"], col) })
+  }
+
+  const matches: any[] = []
+
+  for (const [key, cols] of matchGroups) {
+    const [date, opponent, matchType, venue] = key.split("||")
+    const isTM = matchType === "TM"
+
+    // 合算関数
+    const sumOwn = (label: string) => {
+      const idx = labelRows["own_" + label]
+      if (idx < 0) return null
+      let s = 0, hasVal = false
+      for (const { col } of cols) {
+        const v = numVal(idx, col)
+        if (v !== null) { s += v; hasVal = true }
+      }
+      return hasVal ? s : null
+    }
+    const sumOpp = (label: string) => {
+      const idx = labelRows["opp_" + label]
+      if (idx < 0) return null
+      let s = 0, hasVal = false
+      for (const { col } of cols) {
+        const v = numVal(idx, col)
+        if (v !== null) { s += v; hasVal = true }
+      }
+      return hasVal ? s : null
+    }
+
+    // APTは最後の列の値を使用 (時間になるので合算しない)
+    const aptIdx = labelRows["own_APT(90分換算)"]
+    const aptCell = aptIdx >= 0 ? allRows[aptIdx]?.[cols[cols.length-1].col] : null
     const aptV = getV(aptCell)
     const apt = aptCell?.f ?? (aptV != null
       ? (typeof aptV === 'number' && aptV < 1 ? serialToTimeStr(aptV) : String(aptV))
       : null)
 
     matches.push({
-      date: date.startsWith('Date(') ? String(dateV) : date,
-      venue, type: isTM ? "TM" : "official",
-      matchType, period, opponent,
-      score:           num(labelRows["得点"], col),
-      conceded:        num(labelRows["失点"], col),
-      matchTime:       num(labelRows["試合時間"], col),
+      date: date.startsWith('Date(') ? date : date,
+      venue, type: isTM ? "TM" : "official", matchType, opponent,
+      totalTime: sumOwn("試合時間"),
       apt,
-      packing:         num(labelRows["パッキングレート"], col),
-      impact:          num(labelRows["インペクト"], col),
-      boxEntries:      num(labelRows["ボックス侵入回数"], col),
-      goalAreaEntries: num(labelRows["ゴールエリア侵入回数"], col),
-      lineBreak:       num(labelRows["ラインブレイク"], col),
-      lineBreakAC:     num(labelRows["ラインブレイクＡＣ"], col),
-      cross:           num(labelRows["クロス"], col),
-      shots:           num(labelRows["シュート"], col),
-      corners:         num(labelRows["ＣＫ数"], col),
-      freeKicks:       num(labelRows["ＦＫ数"], col),
-      xg:              num(labelRows["xG"], col),
+      // 自チーム
+      score: sumOwn("得点"), conceded: sumOwn("失点"),
+      packing: sumOwn("パッキングレート"), impact: sumOwn("インペクト"),
+      boxEntries: sumOwn("ボックス侵入回数"), goalAreaEntries: sumOwn("ゴールエリア侵入回数"),
+      lineBreak: sumOwn("ラインブレイク"), lineBreakAC: sumOwn("ラインブレイクＡＣ"),
+      cross: sumOwn("クロス"), shots: sumOwn("シュート"),
+      corners: sumOwn("ＣＫ数"), freeKicks: sumOwn("ＦＫ数"), xg: sumOwn("xG"),
+      // 相手チーム
+      oppPacking: sumOpp("パッキングレート"), oppImpact: sumOpp("インペクト"),
+      oppBoxEntries: sumOpp("ボックス侵入回数"), oppGoalAreaEntries: sumOpp("ゴールエリア侵入回数"),
+      oppLineBreak: sumOpp("ラインブレイク"), oppLineBreakAC: sumOpp("ラインブレイクＡＣ"),
+      oppCross: sumOpp("クロス"), oppShots: sumOpp("シュート"),
+      oppCorners: sumOpp("ＣＫ数"), oppFreeKicks: sumOpp("ＦＫ数"), oppXg: sumOpp("xG"),
     })
   }
 
