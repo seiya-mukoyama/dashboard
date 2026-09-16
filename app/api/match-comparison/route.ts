@@ -123,7 +123,7 @@ export async function GET(request: Request) {
         const v = numVal(idx, col)
         if (v !== null) { s += v; hasVal = true }
       }
-      return hasVal ? s : null
+      return hasVal ? Math.round(s * 10) / 10 : null
     }
     const sumOpp = (label: string) => {
       const idx = labelRows["opp_" + label]
@@ -133,7 +133,7 @@ export async function GET(request: Request) {
         const v = numVal(idx, col)
         if (v !== null) { s += v; hasVal = true }
       }
-      return hasVal ? s : null
+      return hasVal ? Math.round(s * 10) / 10 : null
     }
 
     // APTは最後の列の値を使用 (時間になるので合算しない)
