@@ -47,7 +47,7 @@ function buildChartData(half: HalfData) {
   })
 
   const mapped = half.labels.map((label, i) => ({
-    t: parseInt(label) || 0,
+    t: (parseInt(label) || 0) + 2.5, // バケット中央値
     vPack: half.vonds.packing[i] ?? null,
     vImp: half.vonds.impact[i] ?? null,
     oPack: half.opp.packing[i] ?? null,
@@ -104,7 +104,7 @@ function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
               // data[last].t は parseInt(label) なので最後の開始値
               // ticks は 0,5,10,...,lastT+5 まで
               const lastT = data[data.length - 1].t
-              return lastT + 5
+              return lastT + 2.5
             })()]}
             ticks={(() => {
               if (data.length === 0) return [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
