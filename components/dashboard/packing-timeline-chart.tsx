@@ -31,7 +31,7 @@ export type TimelineData = {
 }
 
 function minuteToLabel(minute: number): string {
-  const bucket = Math.max(1, Math.floor(minute / 5)) // 0-4分は最初のバケット(5-10)に入れる
+  const bucket = Math.floor(minute / 5)
   return `${bucket * 5}-${(bucket + 1) * 5}`
 }
 
@@ -96,7 +96,7 @@ function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
           <XAxis
             dataKey="t"
             type="number"
-            domain={[0, (() => {
+            domain={[-5, (() => {
               if (data.length === 0) return 90
               // 最後のラベルの終端値: "50-EX"→50, "95-100"→100, "100-EX"→100
               // 最後のデータ点のt値（parseInt("50-EX")=50, parseInt("95-100")=95）ではなく
