@@ -31,7 +31,7 @@ export type TimelineData = {
 }
 
 function minuteToLabel(minute: number): string {
-  const bucket = Math.floor(minute / 5)
+  const bucket = Math.max(1, Math.floor(minute / 5)) // 0-4分は最初のバケット(5-10)に入れる
   return `${bucket * 5}-${(bucket + 1) * 5}`
 }
 
