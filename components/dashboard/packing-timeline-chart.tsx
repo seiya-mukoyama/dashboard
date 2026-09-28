@@ -47,7 +47,7 @@ function buildChartData(half: HalfData) {
   })
 
   const mapped = half.labels.map((label, i) => ({
-    t: (parseInt(label) || 0) + 2.5, // バケット中央値
+    t: parseInt(label) || 0,
     vPack: half.vonds.packing[i] ?? null,
     vImp: half.vonds.impact[i] ?? null,
     oPack: half.opp.packing[i] ?? null,
@@ -91,7 +91,7 @@ function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
     <div>
       {half.label && <p className="text-xs font-semibold text-muted-foreground mb-3">{half.label}</p>}
       <ResponsiveContainer width="100%" height={400}>
-        <ComposedChart data={data} margin={{ top: 20, right: 40, left: -16, bottom: 4 }}>
+        <ComposedChart data={data} margin={{ top: 20, right: 40, left: 10, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
           <XAxis
             dataKey="t"
@@ -104,7 +104,7 @@ function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
               // data[last].t は parseInt(label) なので最後の開始値
               // ticks は 0,5,10,...,lastT+5 まで
               const lastT = data[data.length - 1].t
-              return lastT + 2.5
+              return lastT + 5
             })()]}
             ticks={(() => {
               if (data.length === 0) return [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
