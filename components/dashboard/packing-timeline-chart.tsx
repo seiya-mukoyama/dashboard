@@ -47,7 +47,7 @@ function buildChartData(half: HalfData) {
   })
 
   const mapped = half.labels.map((label, i) => ({
-    t: parseInt(label) || 0,
+    t: (parseInt(label) || 0) + 2.5,
     vPack: half.vonds.packing[i] ?? null,
     vImp: half.vonds.impact[i] ?? null,
     oPack: half.opp.packing[i] ?? null,
@@ -96,7 +96,6 @@ function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
           <XAxis
             dataKey="t"
             type="number"
-            padding={{ left: 20, right: 20 }}
             domain={[0, (() => {
               if (data.length === 0) return 90
               // 最後のラベルの終端値: "50-EX"→50, "95-100"→100, "100-EX"→100
