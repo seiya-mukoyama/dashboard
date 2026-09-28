@@ -96,7 +96,7 @@ function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
           <XAxis
             dataKey="t"
             type="number"
-            domain={[0, (() => {
+            domain={[-2, (() => {
               if (data.length === 0) return 90
               // 最後のラベルの終端値: "50-EX"→50, "95-100"→100, "100-EX"→100
               // 最後のデータ点のt値（parseInt("50-EX")=50, parseInt("95-100")=95）ではなく
