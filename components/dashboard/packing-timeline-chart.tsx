@@ -47,11 +47,12 @@ function buildChartData(half: HalfData) {
   })
 
   const mapped = half.labels.map((label, i) => ({
-    t: (parseInt(label) || 0) + 5,
+    t: parseInt(label) || 0,
     vPack: half.vonds.packing[i] ?? null,
     vImp: half.vonds.impact[i] ?? null,
     oPack: half.opp.packing[i] ?? null,
     oImp: half.opp.impact[i] ?? null,
+    barT: (parseInt(label) || 0) + 5,
     vondsGoal: vondsGoalMap[label] ?? null,
     oppGoal: oppGoalMap[label] ?? null,
     }))
@@ -130,39 +131,39 @@ function HalfChart({ half, opponent }: { half: HalfData; opponent: string }) {
           <Legend wrapperStyle={{ fontSize: 10, color: 'rgb(148,163,184)', paddingTop: 8 }} iconSize={16} />
 
           {/* VONDS得点バー */}
-          <Bar yAxisId="right" dataKey="vondsGoal" name="VONDS 得点" fill="rgb(34,197,94)" opacity={0.8} barSize={8}>
+          <Bar xAxisId="bar" yAxisId="right" dataKey="vondsGoal" name="VONDS 得点" fill="rgb(34,197,94)" opacity={0.8} barSize={8}>
             <LabelList content={(props: any) => {
               const entry = data[props.index]
               return <GoalBarLabel {...props} goals={goals} team="vonds" bucketLabel={entry?.t} />
             }} />
           </Bar>
           {/* 相手得点バー */}
-          <Bar yAxisId="right" dataKey="oppGoal" name={`${opponent} 得点`} fill="rgb(148,163,184)" opacity={0.8} barSize={8}>
+          <Bar xAxisId="bar" yAxisId="right" dataKey="oppGoal" name={`${opponent} 得点`} fill="rgb(148,163,184)" opacity={0.8} barSize={8}>
             <LabelList content={(props: any) => {
               const entry = data[props.index]
               return <GoalBarLabel {...props} goals={goals} team="opp" bucketLabel={entry?.t} />
             }} />
           </Bar>
 
-          <Line yAxisId="left" type="linear" dataKey="vPack" name="VONDS パッキング" stroke="rgb(34,197,94)" strokeWidth={2} dot={false}>
+          <Line xAxisId="line" yAxisId="left" type="linear" dataKey="vPack" name="VONDS パッキング" stroke="rgb(34,197,94)" strokeWidth={2} dot={false}>
             <LabelList dataKey="vPack" content={(props) => {
               if (props.index !== lastIdx) return null
               return <EndLabel x={props.x as number} y={props.y as number} value={props.value as number} color="rgb(21,128,61)" />
             }} />
           </Line>
-          <Line yAxisId="left" type="linear" dataKey="vImp" name="VONDS インペクト" stroke="rgba(34,197,94,0.5)" strokeWidth={1.5} dot={false} strokeDasharray="4 3">
+          <Line xAxisId="line" yAxisId="left" type="linear" dataKey="vImp" name="VONDS インペクト" stroke="rgba(34,197,94,0.5)" strokeWidth={1.5} dot={false} strokeDasharray="4 3">
             <LabelList dataKey="vImp" content={(props) => {
               if (props.index !== lastIdx) return null
               return <EndLabel x={props.x as number} y={props.y as number} value={props.value as number} color="rgb(21,128,61)" />
             }} />
           </Line>
-          <Line yAxisId="left" type="linear" dataKey="oPack" name={`${opponent} パッキング`} stroke="rgb(148,163,184)" strokeWidth={2} dot={false}>
+          <Line xAxisId="line" yAxisId="left" type="linear" dataKey="oPack" name={`${opponent} パッキング`} stroke="rgb(148,163,184)" strokeWidth={2} dot={false}>
             <LabelList dataKey="oPack" content={(props) => {
               if (props.index !== lastIdx) return null
               return <EndLabel x={props.x as number} y={props.y as number} value={props.value as number} color="rgb(71,85,105)" />
             }} />
           </Line>
-          <Line yAxisId="left" type="linear" dataKey="oImp" name={`${opponent} インペクト`} stroke="rgba(148,163,184,0.5)" strokeWidth={1.5} dot={false} strokeDasharray="4 3">
+          <Line xAxisId="line" yAxisId="left" type="linear" dataKey="oImp" name={`${opponent} インペクト`} stroke="rgba(148,163,184,0.5)" strokeWidth={1.5} dot={false} strokeDasharray="4 3">
             <LabelList dataKey="oImp" content={(props) => {
               if (props.index !== lastIdx) return null
               return <EndLabel x={props.x as number} y={props.y as number} value={props.value as number} color="rgb(71,85,105)" />
