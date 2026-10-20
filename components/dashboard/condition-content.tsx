@@ -13,6 +13,7 @@ type Player = {
   hrMax: number; hrMid: number; accelZ3: number; decelZ3: number
   acwr: number | null; zone: "sweet"|"caution"|"danger"|"low"|"none"
   acwrSI?: number | null; zoneSI?: "sweet"|"caution"|"danger"|"low"|"none"
+  acwrHI?: number | null; zoneHI?: "sweet"|"caution"|"danger"|"low"|"none"
   playerPastAvg?: Record<string, number>
 }
 type WeekTarget = {
@@ -82,6 +83,12 @@ function PlayerCard({ p, sel, onClick, wt }: { p: Player; sel: boolean; onClick:
             const zsi = ZONE[p.zoneSI]
             return <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${zsi.bg} ${zsi.border} ${zsi.text}`} title="SI ACWR">
               SI{zsi.label} {p.acwrSI?.toFixed(2) ?? "-"}
+            </span>
+          })()}
+          {p.acwrHI !== undefined && p.zoneHI && (() => {
+            const zhi = ZONE[p.zoneHI]
+            return <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${zhi.bg} ${zhi.border} ${zhi.text}`} title="HI ACWR">
+              HI{zhi.label} {p.acwrHI?.toFixed(2) ?? "-"}
             </span>
           })()}
         </div>
