@@ -275,7 +275,7 @@ export async function GET(request: Request) {
       const acwrSprint = calcAcwr(p.name, "sprint")
       const acwrAccel  = calcAcwr(p.name, "accelZ3")
       const acwrDecel  = calcAcwr(p.name, "decelZ3")
-      return { ...p, acwr, zone: acwrZone(acwr), acwrSI, zoneSI: acwrZone(acwrSI), acwrHI, acwrSprint, acwrAccel, acwrDecel, playerPastAvg }
+      return { ...p, acwr, zone: acwrZone(acwr), acwrSI, zoneSI: acwrZone(acwrSI), acwrHI, zoneHI: acwrZone(acwrHI), acwrSprint, acwrAccel, acwrDecel, playerPastAvg }
     })
 
     return NextResponse.json({
