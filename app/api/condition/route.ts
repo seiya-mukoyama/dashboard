@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { NextResponse } from "next/server"
 
-export const revalidate = 300
+export const revalidate = 0
 
 const SHEET_ID = "1Cf9UCMrJDu6upu2n6LObRqfo8HxCCjtaikyHXssyvao"
 const WEEK_GID = "510630760"
