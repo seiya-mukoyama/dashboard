@@ -47,6 +47,14 @@ const METRICS = [
   { key: "decelZ3",  label: "高減速 Z3",  unit: "回", tKey: "decelZ3" },
 ]
 
+function acwrZone(v: number | null | undefined): "sweet"|"caution"|"danger"|"low"|"none" {
+  if (v == null) return "none"
+  if (v >= 1.5) return "danger"
+  if (v >= 1.3) return "caution"
+  if (v >= 0.8) return "sweet"
+  return "low"
+}
+
 function fmtDate(s: string) { return s.replace(/(\d{4})(\d{2})(\d{2})/, "$2/$3") }
 
 function Bar2({ label, value, target, avg, unit="" }: { label: string; value: number; target: number; avg?: number; unit?: string }) {
@@ -85,8 +93,9 @@ function PlayerCard({ p, sel, onClick, wt }: { p: Player; sel: boolean; onClick:
               SI{zsi.label} {p.acwrSI?.toFixed(2) ?? "-"}
             </span>
           })()}
-          {p.acwrHI !== undefined && p.zoneHI && (() => {
-            const zhi = ZONE[p.zoneHI]
+          {p.acwrHI !== undefined && p.acwrHI !== null && (() => {
+            const zhiKey = p.zoneHI ?? acwrZone(p.acwrHI)
+            const zhi = ZONE[zhiKey]
             return <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${zhi.bg} ${zhi.border} ${zhi.text}`} title="HI ACWR">
               HI{zhi.label} {p.acwrHI?.toFixed(2) ?? "-"}
             </span>
