@@ -364,3 +364,4 @@ export async function GET(request: Request) {
 
   return NextResponse.json({ dates, allData, weekTargets })
 }
+// cache-bust: 1792590189214
