@@ -1,3 +1,4 @@
+
 // @ts-nocheck
 import { NextResponse } from "next/server"
 
@@ -363,4 +364,4 @@ export async function GET(request: Request) {
 
   return NextResponse.json({ dates, allData, weekTargets })
 }
-// build-1792532316
+// cache-bust: 1792590189214

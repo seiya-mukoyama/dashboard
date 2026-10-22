@@ -234,15 +234,12 @@ function PlayerDetail({ player, onBack }: { player: Player; onBack: () => void }
 
 // URLパラメータを読んでビューを切り替える
 export default function DashboardPage() {
-  const [activeView, setActiveView] = useState(() => {
-    // URLパラメータから初期section取得
-    if (typeof window !== "undefined") {
-      const p = new URLSearchParams(window.location.search).get("section")
-      if (p) return p
-    }
-    return "overview"
-  })
+  const [activeView, setActiveView] = useState("overview")
   // 最近の試合カードからのナビゲーションイベントを受け取る
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("section")
+    if (p) setActiveView(p)
+  }, [])
   useEffect(() => {
     const handler = (e: Event) => {
       const { section, date } = (e as CustomEvent).detail

@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { ChevronRight, ArrowLeft } from "lucide-react"
-import { StatsComparisonChart } from "@/components/dashboard/stats-comparison-chart"
-import { PackingTimelineChart, type TimelineData } from "@/components/dashboard/packing-timeline-chart"
-import { PlayerStatsTable } from "@/components/dashboard/player-stats-table"
+import dynamic from "next/dynamic"
+import type { TimelineData } from "@/components/dashboard/packing-timeline-chart"
 
+const StatsComparisonChart = dynamic(() => import("@/components/dashboard/stats-comparison-chart").then(m => m.StatsComparisonChart), { ssr: false })
+const PackingTimelineChart = dynamic(() => import("@/components/dashboard/packing-timeline-chart").then(m => m.PackingTimelineChart), { ssr: false })
+const PlayerStatsTable = dynamic(() => import("@/components/dashboard/player-stats-table").then(m => m.PlayerStatsTable), { ssr: false })
 // APT ":HH:MM:SS" → "61:20" 形式に変換
 function formatApt(raw: string | undefined): string {
   if (!raw) return ''
