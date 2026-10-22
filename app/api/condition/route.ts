@@ -202,8 +202,8 @@ export async function GET(request: Request) {
     const history = allData.map(d => d.players.find(x => x.name === name)?.[metric] ?? 0)
     const i = history.length - 1
     const s7 = Math.max(0, i - 6); const s28 = Math.max(0, i - 27)
-    const acute = history.slice(s7).reduce((s,v) => s+v, 0) / Math.max(1, history.slice(s7).length)
-    const chronic = history.slice(s28).reduce((s,v) => s+v, 0) / Math.max(1, history.slice(s28).length)
+    const acute = history.slice(s7).reduce((s,v) => s+v, 0) / 7
+    const chronic = history.slice(s28).reduce((s,v) => s+v, 0) / 28
     return chronic > 0 ? +(acute / chronic).toFixed(2) : null
   }
 
@@ -299,8 +299,8 @@ export async function GET(request: Request) {
       seriesMap[name].forEach((entry, i) => {
         const s7 = Math.max(0, i-6); const s28 = Math.max(0, i-27)
         const ser = seriesMap[name]
-        const acute = ser.slice(s7, i+1).reduce((s,x) => s+x.distance,0) / Math.max(1, i-s7+1)
-        const chronic = ser.slice(s28, i+1).reduce((s,x) => s+x.distance,0) / Math.max(1, i-s28+1)
+        const acute = ser.slice(s7, i+1).reduce((s,x) => s+x.distance,0) / 7
+        const chronic = ser.slice(s28, i+1).reduce((s,x) => s+x.distance,0) / 28
         entry.acwr = chronic > 0 ? +(acute/chronic).toFixed(2) : null
         entry.zone = acwrZone(entry.acwr)
         // SI ACWR
