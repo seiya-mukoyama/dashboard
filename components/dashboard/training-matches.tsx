@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react"
 import { ChevronRight, ArrowLeft } from "lucide-react"
 import { StatsComparisonChart } from "@/components/dashboard/stats-comparison-chart"
-import { PackingTimelineChart, type TimelineData } from "@/components/dashboard/packing-timeline-chart"
+import dynamic from "next/dynamic"
+import type { TimelineData } from "@/components/dashboard/packing-timeline-chart"
+const PackingTimelineChart = dynamic(() => import("@/components/dashboard/packing-timeline-chart").then(m => m.PackingTimelineChart), { ssr: false })
 import { PlayerStatsTable } from "@/components/dashboard/player-stats-table"
 
 // APT ":HH:MM:SS" → "61:20" 形式に変換 (例: ":01:20" = 61分20秒)
