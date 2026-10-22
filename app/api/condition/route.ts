@@ -199,11 +199,22 @@ export async function GET(request: Request) {
   }
 
   function calcAcwr(name: string, metric = "distance") {
-    const history = allData.map(d => d.players.find(x => x.name === name)?.[metric] ?? 0)
-    const i = history.length - 1
-    const s7 = Math.max(0, i - 6); const s28 = Math.max(0, i - 27)
-    const acute = history.slice(s7).reduce((s,v) => s+v, 0) / 7
-    const chronic = history.slice(s28).reduce((s,v) => s+v, 0) / 28
+    const latestDate = allData[allData.length - 1]?.date ?? ""
+    if (!latestDate) return null
+    const toDate = (s: string) => new Date(s.slice(0,4)+"-"+s.slice(4,6)+"-"+s.slice(6,8))
+    const latest = toDate(latestDate)
+    const msPerDay = 86400000
+    const d7  = new Date(latest.getTime() - 6  * msPerDay)
+    const d28 = new Date(latest.getTime() - 27 * msPerDay)
+    let acute7 = 0, chronic28 = 0
+    for (const d of allData) {
+      const dt = toDate(d.date)
+      const val: number = (d.players.find(x => x.name === name) as any)?.[metric] ?? 0
+      if (dt >= d7  && dt <= latest) acute7    += val
+      if (dt >= d28 && dt <= latest) chronic28 += val
+    }
+    const acute   = acute7   / 7
+    const chronic = chronic28 / 28
     return chronic > 0 ? +(acute / chronic).toFixed(2) : null
   }
 
