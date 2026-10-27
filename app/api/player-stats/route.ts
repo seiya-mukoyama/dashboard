@@ -67,11 +67,16 @@ function isNewPackingFormat(dateStr: string): boolean {
   return false
 }
 
-// 新フォーマット: 選手名, packing, receive, IMPECT, receive の列構造
+// 新フォーマット: 選手名, packing, packing receive, IMPECT, IMPECT receive の列構造
 async function fetchNewFormatPacking(
   sheetName: string,
+  defaultSig: string,
   stats: Record<string, PlayerStats>
 ): Promise<void> {
+  // シート存在確認（sigがdefaultと同じ = シートが存在しない）
+  const sig = await getGvizSig(PACKING_SHEET_ID, sheetName)
+  if (!sig || sig === defaultSig) return
+
   const csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
   try {
     const res = await fetch(csvUrl, { cache: "no-store" })
@@ -82,7 +87,12 @@ async function fetchNewFormatPacking(
     const rows = csv.split("\n").map(parseCSVLine)
     if (rows.length < 2) return
 
-    // 1行目はヘッダー（選手名, packing, receive, IMPECT, receive）
+    // 1行目はヘッダー（選手名, packing, packing receive, IMPECT, IMPECT receive）
+    // ヘッダーで新フォーマットかどうか確認
+    const header = rows[0].map(h => h.toLowerCase().replace(/[\s\u3000]/g, ""))
+    const isNewFormat = header.some(h => h.includes("receive") || h.includes("impect"))
+    if (!isNewFormat) return
+
     rows.slice(1).forEach(cols => {
       const name = cols[0]?.trim()
       if (!name) return
@@ -220,18 +230,18 @@ export async function GET(request: Request) {
 
     // ===== パッキングデータ集計 =====
     if (date) {
+      const defaultSig = await getGvizSig(PACKING_SHEET_ID)
       if (isNewPackingFormat(date)) {
         // 新フォーマット（10月25日以降）: 列ベースの集計表
         if (session === "合計") {
           for (const suffix of ["前半", "後半", "3本目", "4本目"]) {
-            await fetchNewFormatPacking(`${date}${suffix}`, stats)
+            await fetchNewFormatPacking(`${date}${suffix}`, defaultSig, stats)
           }
         } else {
-          await fetchNewFormatPacking(`${date}${session}`, stats)
+          await fetchNewFormatPacking(`${date}${session}`, defaultSig, stats)
         }
       } else {
         // 旧フォーマット: イベント行ベース
-        const defaultSig = await getGvizSig(PACKING_SHEET_ID)
 
         if (session === "合計") {
           // 合計: 前半 + 後半 + 3本目 + 4本目 を全て合算
