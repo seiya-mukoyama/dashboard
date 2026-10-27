@@ -73,9 +73,10 @@ async function fetchNewFormatPacking(
   defaultSig: string,
   stats: Record<string, PlayerStats>
 ): Promise<void> {
-  // シート存在確認（sigがdefaultと同じ = シートが存在しない）
+  // シート存在確認（sigが空 = シートが存在しない）
+  // ※ 前半シートがデフォルトシートになっている場合もあるのでsig一致チェックはしない
   const sig = await getGvizSig(PACKING_SHEET_ID, sheetName)
-  if (!sig || sig === defaultSig) return
+  if (!sig) return
 
   const csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
   try {
@@ -87,25 +88,27 @@ async function fetchNewFormatPacking(
     const rows = csv.split("\n").map(parseCSVLine)
     if (rows.length < 2) return
 
-    // 1行目はヘッダー（選手名, packing, packing receive, IMPECT, IMPECT receive）
+    // 1行目: A1がシート名、B1以降が列名（packing, packing receive, IMPECT, IMPECT receive, goal, assist, preassist, shoot）
     // ヘッダーで新フォーマットかどうか確認
     const header = rows[0].map(h => h.toLowerCase().replace(/[\s\u3000]/g, ""))
     const isNewFormat = header.some(h => h.includes("receive") || h.includes("impect"))
     if (!isNewFormat) return
 
+    // A1=シート名, B1=packing, C1=packing receive... なのでデータ行はA列=選手名, B列=packing...
+    // col[0]=選手名, col[1]=packing, col[2]=packingR, col[3]=impact, col[4]=impactR
+    // col[5]=goal, col[6]=assist, col[7]=preassist, col[8]=shoot
     rows.slice(1).forEach(cols => {
       const name = cols[0]?.trim()
       if (!name) return
       const p = getOrCreate(normalizeName(name), stats)
-      // col[1]: packing（出し手）, col[2]: packingR（受け手）
-      // col[3]: impact（出し手）, col[4]: impactR（受け手）
-      p.packing += parseFloat(cols[1]?.trim() ?? "") || 0
-      p.packingR += parseFloat(cols[2]?.trim() ?? "") || 0
-      p.impact += parseFloat(cols[3]?.trim() ?? "") || 0
-      p.impactR += parseFloat(cols[4]?.trim() ?? "") || 0
-      p.goals += parseInt(cols[5]?.trim() ?? "") || 0
-      p.assists += parseInt(cols[6]?.trim() ?? "") || 0
-      p.preAssists += parseInt(cols[7]?.trim() ?? "") || 0
+      p.packing   += parseFloat(cols[1]?.trim() ?? "") || 0
+      p.packingR  += parseFloat(cols[2]?.trim() ?? "") || 0
+      p.impact    += parseFloat(cols[3]?.trim() ?? "") || 0
+      p.impactR   += parseFloat(cols[4]?.trim() ?? "") || 0
+      p.goals     += parseInt(cols[5]?.trim() ?? "")   || 0
+      p.assists   += parseInt(cols[6]?.trim() ?? "")   || 0
+      p.preAssists+= parseInt(cols[7]?.trim() ?? "")   || 0
+      p.shoot     += parseInt(cols[8]?.trim() ?? "")   || 0
     })
   } catch { /* ignore */ }
 }
