@@ -103,6 +103,9 @@ async function fetchNewFormatPacking(
       p.packingR += parseFloat(cols[2]?.trim() ?? "") || 0
       p.impact += parseFloat(cols[3]?.trim() ?? "") || 0
       p.impactR += parseFloat(cols[4]?.trim() ?? "") || 0
+      p.goals += parseInt(cols[5]?.trim() ?? "") || 0
+      p.assists += parseInt(cols[6]?.trim() ?? "") || 0
+      p.preAssists += parseInt(cols[7]?.trim() ?? "") || 0
     })
   } catch { /* ignore */ }
 }
