@@ -55,6 +55,48 @@ async function getGvizSig(sheetId: string, sheetName?: string): Promise<string> 
   } catch { return '' }
 }
 
+
+// 日付文字列（例: "10月25日"）が新フォーマット切替日（10月25日）以降かどうかを判定
+function isNewPackingFormat(dateStr: string): boolean {
+  const m = dateStr.match(/(\d+)月(\d+)日/)
+  if (!m) return false
+  const month = parseInt(m[1])
+  const day = parseInt(m[2])
+  if (month > 10) return true
+  if (month === 10 && day >= 25) return true
+  return false
+}
+
+// 新フォーマット: 選手名, packing, receive, IMPECT, receive の列構造
+async function fetchNewFormatPacking(
+  sheetName: string,
+  stats: Record<string, PlayerStats>
+): Promise<void> {
+  const csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
+  try {
+    const res = await fetch(csvUrl, { cache: "no-store" })
+    if (!res.ok) return
+    const csv = await res.text()
+    if (!csv.trim()) return
+
+    const rows = csv.split("\n").map(parseCSVLine)
+    if (rows.length < 2) return
+
+    // 1行目はヘッダー（選手名, packing, receive, IMPECT, receive）
+    rows.slice(1).forEach(cols => {
+      const name = cols[0]?.trim()
+      if (!name) return
+      const p = getOrCreate(normalizeName(name), stats)
+      // col[1]: packing（出し手）, col[2]: packingR（受け手）
+      // col[3]: impact（出し手）, col[4]: impactR（受け手）
+      p.packing += parseFloat(cols[1]?.trim() ?? "") || 0
+      p.packingR += parseFloat(cols[2]?.trim() ?? "") || 0
+      p.impact += parseFloat(cols[3]?.trim() ?? "") || 0
+      p.impactR += parseFloat(cols[4]?.trim() ?? "") || 0
+    })
+  } catch { /* ignore */ }
+}
+
 async function fetchPackingBySheetName(
   sheetName: string,
   defaultSig: string,
@@ -178,16 +220,28 @@ export async function GET(request: Request) {
 
     // ===== パッキングデータ集計 =====
     if (date) {
-      const defaultSig = await getGvizSig(PACKING_SHEET_ID)
-
-      if (session === "合計") {
-        // 合計: 前半 + 後半 + 3本目 + 4本目 を全て合算
-        for (const suffix of ["前半", "後半", "3本目", "4本目"]) {
-          await fetchPackingBySheetName(`${date}${suffix}`, defaultSig, stats)
+      if (isNewPackingFormat(date)) {
+        // 新フォーマット（10月25日以降）: 列ベースの集計表
+        if (session === "合計") {
+          for (const suffix of ["前半", "後半", "3本目", "4本目"]) {
+            await fetchNewFormatPacking(`${date}${suffix}`, stats)
+          }
+        } else {
+          await fetchNewFormatPacking(`${date}${session}`, stats)
         }
       } else {
-        // 前半/後半/3本目/4本目: 指定のシートのみ
-        await fetchPackingBySheetName(`${date}${session}`, defaultSig, stats)
+        // 旧フォーマット: イベント行ベース
+        const defaultSig = await getGvizSig(PACKING_SHEET_ID)
+
+        if (session === "合計") {
+          // 合計: 前半 + 後半 + 3本目 + 4本目 を全て合算
+          for (const suffix of ["前半", "後半", "3本目", "4本目"]) {
+            await fetchPackingBySheetName(`${date}${suffix}`, defaultSig, stats)
+          }
+        } else {
+          // 前半/後半/3本目/4本目: 指定のシートのみ
+          await fetchPackingBySheetName(`${date}${session}`, defaultSig, stats)
+        }
       }
     } else {
       // date未指定: デフォルトシート（全体集計）のみ
