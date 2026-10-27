@@ -73,11 +73,6 @@ async function fetchNewFormatPacking(
   defaultSig: string,
   stats: Record<string, PlayerStats>
 ): Promise<void> {
-  // シート存在確認（sigが空 = シートが存在しない）
-  // ※ 前半シートがデフォルトシートになっている場合もあるのでsig一致チェックはしない
-  const sig = await getGvizSig(PACKING_SHEET_ID, sheetName)
-  if (!sig) return
-
   const csvUrl = `https://docs.google.com/spreadsheets/d/${PACKING_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
   try {
     const res = await fetch(csvUrl, { cache: "no-store" })
@@ -88,8 +83,11 @@ async function fetchNewFormatPacking(
     const rows = csv.split("\n").map(parseCSVLine)
     if (rows.length < 2) return
 
-    // 1行目: A1がシート名、B1以降が列名（packing, packing receive, IMPECT, IMPECT receive, goal, assist, preassist, shoot）
-    // ヘッダーで新フォーマットかどうか確認
+    // A1セルがシート名と一致するか確認（存在しないシートは別シートのデータが返るため不一致になる）
+    const a1 = rows[0][0]?.trim() ?? ""
+    if (a1 !== sheetName) return
+
+    // ヘッダーで新フォーマットかどうか確認（B1以降にreceive/impectが含まれる）
     const header = rows[0].map(h => h.toLowerCase().replace(/[\s\u3000]/g, ""))
     const isNewFormat = header.some(h => h.includes("receive") || h.includes("impect"))
     if (!isNewFormat) return
