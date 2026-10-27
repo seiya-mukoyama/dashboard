@@ -57,16 +57,9 @@ async function getGvizSig(sheetId: string, sheetName?: string): Promise<string> 
 
 
 // 日付文字列（例: "10月25日"）が新フォーマット切替日（10月25日）以降かどうかを判定
-function isNewPackingFormat(dateStr: string): boolean {
-  const m = dateStr.match(/(\d+)月(\d+)日/)
-  if (!m) return false
-  const month = parseInt(m[1])
-  const day = parseInt(m[2])
-  if (month > 10) return true
-  if (month === 10 && day >= 25) return true
-  return false
-}
-
+// シートのヘッダーを見て新旧フォーマットを自動判定して処理する
+// 新フォーマット: A1=シート名, B1以降にreceive/impectを含む列ヘッダー
+// 旧フォーマット: イベント行ベース
 // 新フォーマット: 選手名, packing, packing receive, IMPECT, IMPECT receive の列構造
 async function fetchNewFormatPacking(
   sheetName: string,
@@ -141,6 +134,11 @@ async function fetchPackingBySheetName(
   if (!res.ok) return
   const csv = await res.text()
   if (!csv.trim()) return
+
+  // 新フォーマットシート（ヘッダーにreceive/impectあり）は fetchNewFormatPacking で処理済みのためスキップ
+  const firstRow = csv.split("\n")[0]
+  const firstRowLower = firstRow.toLowerCase().replace(/[\s\u3000]/g, "")
+  if (firstRowLower.includes("receive") || firstRowLower.includes("impect")) return
 
   const rows = csv.split("\n").slice(1).map(parseCSVLine)
   rows.forEach(cols => {
@@ -235,27 +233,16 @@ export async function GET(request: Request) {
     // ===== パッキングデータ集計 =====
     if (date) {
       const defaultSig = await getGvizSig(PACKING_SHEET_ID)
-      if (isNewPackingFormat(date)) {
-        // 新フォーマット（10月25日以降）: 列ベースの集計表
-        if (session === "合計") {
-          for (const suffix of ["前半", "後半", "3本目", "4本目"]) {
-            await fetchNewFormatPacking(`${date}${suffix}`, defaultSig, stats)
-          }
-        } else {
-          await fetchNewFormatPacking(`${date}${session}`, defaultSig, stats)
-        }
-      } else {
-        // 旧フォーマット: イベント行ベース
-
-        if (session === "合計") {
-          // 合計: 前半 + 後半 + 3本目 + 4本目 を全て合算
-          for (const suffix of ["前半", "後半", "3本目", "4本目"]) {
-            await fetchPackingBySheetName(`${date}${suffix}`, defaultSig, stats)
-          }
-        } else {
-          // 前半/後半/3本目/4本目: 指定のシートのみ
-          await fetchPackingBySheetName(`${date}${session}`, defaultSig, stats)
-        }
+      // シートのヘッダーで自動判定: 新フォーマット→旧フォーマットの順で試みる
+      // fetchNewFormatPackingは内部でヘッダー確認し、旧フォーマットなら何もしない
+      // fetchPackingBySheetNameも同様にシート存在確認をする
+      const suffixes = session === "合計" ? ["前半", "後半", "3本目", "4本目"] : [session]
+      for (const suffix of suffixes) {
+        const sheetName = `${date}${suffix}`
+        // 新フォーマット試行（ヘッダーに receive/impect がなければ内部でスキップ）
+        await fetchNewFormatPacking(sheetName, defaultSig, stats)
+        // 旧フォーマット試行（新フォーマットで処理済みなら重複しないよう内部で判定）
+        await fetchPackingBySheetName(sheetName, defaultSig, stats)
       }
     } else {
       // date未指定: デフォルトシート（全体集計）のみ
