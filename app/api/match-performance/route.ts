@@ -18,24 +18,8 @@ export async function GET(request: Request) {
     )
     const statsDates = [...statsMatchMap.keys()]
 
-    // 2. stats日付の月範囲を求めて、その月の全日付を候補に追加
-    const monthSet = new Set<number>()
-    statsDates.forEach(date => {
-      const m = date.match(/^(d+)月/)
-      if (m) monthSet.add(parseInt(m[1]))
-    })
-    const monthDays = [31,29,31,30,31,30,31,31,30,31,30,31]
-    const extraCandidates: string[] = []
-    monthSet.forEach(m => {
-      for (let d = 1; d <= monthDays[m-1]; d++) {
-        const date = `${m}月${d}日`
-        if (!statsMatchMap.has(date)) extraCandidates.push(date)
-      }
-    })
-
-    // 3. stats日付 + 追加候補を全部player-statsに投げる（並列）
-    // player-stats APIがデータなし=[]を返すのでそれで自動フィルタ
-    const allDates = [...statsDates, ...extraCandidates]
+    // 2. stats日付のみをplayer-statsに投げる（安定性のため候補を絞る）
+    const allDates = statsDates
 
     const results = await Promise.all(
       allDates.map(async (date) => {
@@ -89,7 +73,7 @@ export async function GET(request: Request) {
     const filtered = (results.filter(Boolean) as any[])
       .sort((a, b) => {
         const p = (d: string) => {
-          const m = d.match(/(d+)月(d+)日/)
+          const m = d.match(/(\d+)月(\d+)日/)
           return m ? +m[1] * 100 + +m[2] : 0
         }
         return p(a.date) - p(b.date)
